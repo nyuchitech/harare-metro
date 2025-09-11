@@ -508,16 +508,36 @@ async function getEnhancedFallbackHTML(env, debugInfo = {}) {
     // Initialize services to get articles
     const { cacheService } = initializeServices(env)
     
-    // Get latest 12 articles from cache
+    // Get latest 12 articles from cache, with D1 fallback
     let articles = []
     let articlesError = null
+    let source = 'cache'
+    
     try {
       const cachedArticles = await cacheService.getCachedArticles()
       articles = cachedArticles.slice(0, 12) // Get latest 12
-    } catch (error) {
-      console.warn('Failed to load articles for fallback HTML:', error)
-      articlesError = error.message
-      articles = [] // Use empty array if cache fails
+    } catch (cacheError) {
+      console.warn('Failed to load articles from cache for fallback HTML:', cacheError)
+      articlesError = cacheError.message
+      
+      // Fallback to D1 database when cache fails
+      try {
+        console.log('Attempting to load articles from D1 database as fallback...')
+        const { articleService } = initializeServices(env)
+        const dbResult = await articleService.getArticles({ 
+          limit: 12, 
+          orderBy: 'published_at', 
+          orderDirection: 'DESC' 
+        })
+        articles = dbResult.articles || []
+        source = 'database'
+        articlesError = null // Clear cache error since D1 worked
+        console.log(`Successfully loaded ${articles.length} articles from D1 database`)
+      } catch (dbError) {
+        console.error('Failed to load articles from D1 database:', dbError)
+        articlesError = `Cache failed: ${cacheError.message}. Database failed: ${dbError.message}`
+        articles = [] // Use empty array if both cache and DB fail
+      }
     }
     
     // Generate articles HTML
@@ -771,7 +791,7 @@ async function getEnhancedFallbackHTML(env, debugInfo = {}) {
                 <div class="debug-details" style="font-family: 'Courier New', monospace; font-size: 0.8rem; color: #ccc;">
                     <div><strong>Reason:</strong> ${debugInfo.reason || 'Static assets unavailable'}</div>
                     <div><strong>Static Content Available:</strong> ${debugInfo.hasStaticContent ? 'Yes' : 'No'}</div>
-                    <div><strong>Articles Loaded:</strong> ${articles.length} articles</div>
+                    <div><strong>Articles Loaded:</strong> ${articles.length} articles (source: ${source})</div>
                     ${articlesError ? `<div><strong>Articles Error:</strong> ${articlesError}</div>` : ''}
                     <div><strong>Environment:</strong> ${env.NODE_ENV || 'unknown'}</div>
                     <div><strong>Timestamp:</strong> ${new Date().toISOString()}</div>
