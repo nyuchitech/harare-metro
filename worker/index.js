@@ -951,9 +951,9 @@ export default {
           } catch (kvError) {
             console.warn('KV Asset Handler failed:', kvError.message)
             
-            // In development, if KV fails due to RPC issues, retry once
-            if (isDev && (kvError.message.includes('RPC receiver') || kvError.message.includes('does not implement'))) {
-              console.log('KV RPC issue in development, attempting retry...')
+            // If KV fails due to RPC issues, retry once (in both dev and production)
+            if (kvError.message.includes('RPC receiver') || kvError.message.includes('does not implement') || kvError.message.includes('method "get"')) {
+              console.log('KV RPC issue detected, attempting retry...')
               
               // Try again with a small delay
               await new Promise(resolve => setTimeout(resolve, 100))
@@ -985,6 +985,21 @@ export default {
                 return new Response('Not found', { status: 404 })
               }
             } else {
+              // If it's not an RPC issue, still provide fallback for critical assets
+              if (url.pathname === '/index.html' || url.pathname === '/') {
+                console.warn('Critical index.html failed to load, using fallback HTML')
+                const fallbackHTML = await getEnhancedFallbackHTML(env, {
+                  reason: `Asset loading failed: ${kvError.message}`,
+                  hasStaticContent: true,
+                  path: request.url
+                })
+                return new Response(fallbackHTML, {
+                  headers: { 
+                    'Content-Type': 'text/html;charset=UTF-8',
+                    'Cache-Control': 'public, max-age=300'
+                  }
+                })
+              }
               throw new Error(`Asset loading failed: ${kvError.message}`)
             }
           }
@@ -1078,8 +1093,8 @@ export default {
         } catch (kvError) {
           console.warn('Failed to load index.html from KV:', kvError.message)
           
-          // In development, retry for index.html due to RPC issues
-          if (env.NODE_ENV === 'development' && (kvError.message.includes('RPC receiver') || kvError.message.includes('does not implement'))) {
+          // In both development and production, retry for index.html due to RPC/KV issues
+          if (kvError.message.includes('RPC receiver') || kvError.message.includes('does not implement') || kvError.message.includes('method "get"')) {
             console.log('Retrying index.html load due to KV RPC issues...')
             
             // Retry with delay
