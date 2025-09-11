@@ -12,9 +12,9 @@ binding = "__STATIC_CONTENT"
 NODE_ENV = "production"
 USE_FALLBACK_CONFIG = "false"
 LOG_LEVEL = "info"
-# Supabase Configuration
-VITE_SUPABASE_URL = "https://oybatvdffsbaxwuxfetz.supabase.co"
-VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95YmF0dmRmZnNiYXh3dXhmZXR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1OTA2MjgsImV4cCI6MjA3MzE2NjYyOH0.tLr6-BXM9LvrpmR99ZPcDP_8I0p5EfNvnpX0QAl6plo"
+# Supabase Configuration - These will be set via GitHub Secrets in CI/CD
+# VITE_SUPABASE_URL = "your-supabase-url"
+# VITE_SUPABASE_ANON_KEY = "your-supabase-anon-key"
 # Role-based access configuration
 ROLES_ENABLED = "true"
 DEFAULT_ROLE = "creator"
