@@ -1,6 +1,6 @@
-# Mukoko - News Aggregation Platform
+# Harare Metro - News Aggregation Platform
 
-A modern news aggregation platform built with React and Cloudflare Workers. Mukoko provides a clean, fast interface for staying informed with the latest news from trusted sources.
+A modern news aggregation platform built with React and Cloudflare Workers. Harare Metro provides a clean, fast interface for staying informed with the latest news from trusted sources.
 
 ## 🌟 Features
 
@@ -45,7 +45,7 @@ A modern news aggregation platform built with React and Cloudflare Workers. Muko
 - **Backend**: Cloudflare Worker with KV storage and D1 database
 - **Build Tool**: Vite for fast development and optimized builds
 - **Deployment**: Single Cloudflare Worker serving both frontend and API
-- **Domain**: app.mukoko.com
+- **Domain**: www.hararemetro.co.zw
 
 ## 📰 News Sources
 
@@ -72,8 +72,8 @@ A modern news aggregation platform built with React and Cloudflare Workers. Muko
 
 1. **Clone and setup the repository**:
    ```bash
-   git clone <your-repo-url>
-   cd mukoko
+   git clone https://github.com/nyuchitech/harare-metro.git
+   cd harare-metro
    npm install
    ```
 
@@ -86,7 +86,7 @@ A modern news aggregation platform built with React and Cloudflare Workers. Muko
 3. **Set up environment variables**:
    ```bash
    # Create .env.local file
-   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_URL=https://oybatvdffsbaxwuxfetz.supabase.co
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
@@ -240,8 +240,8 @@ A modern news aggregation platform built with React and Cloudflare Workers. Muko
    ```
 
 3. **Configure domains**:
-   - App: `app.mukoko.com`
-   - Landing page: `www.mukoko.com`
+   - App: `www.hararemetro.co.zw`
+   - Landing page: `www.hararemetro.co.zw`
 
 ## 🛠️ Development
 
@@ -286,7 +286,7 @@ worker/
 └── services/          # Worker services
 
 scripts/
-├── dev-start.sh       # Development helper
+├── dev-local.sh       # Development helper
 ├── build.sh          # Build script
 └── deploy.sh         # Deployment script
 ```
@@ -298,7 +298,7 @@ scripts/
 Create a `.env.local` file:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_URL=https://oybatvdffsbaxwuxfetz.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 

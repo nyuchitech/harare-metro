@@ -4,7 +4,7 @@ const CACHE_NAME = 'harare-metro-v1.0.0'
 const API_CACHE_NAME = 'harare-metro-api-v1.0.0'
 
 // Check if we're in development mode
-const isDevelopment = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === 'app.mukoko.com'
+const isDevelopment = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === 'www.hararemetro.co.zw'
 
 // Files to cache for offline functionality (skip in development)
 const STATIC_CACHE_URLS = isDevelopment ? [] : [

@@ -43,7 +43,7 @@ const SEO = ({
     // Update meta tags
     updateMetaTag('description', finalDescription)
     updateMetaTag('keywords', finalKeywords)
-    updateMetaTag('author', 'Mukoko')
+    updateMetaTag('author', 'Harare Metro')
     updateMetaTag('robots', 'index, follow')
     updateMetaTag('viewport', 'width=device-width, initial-scale=1.0')
 

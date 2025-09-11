@@ -2,62 +2,99 @@
 /* global Response, Request, URL, __STATIC_CONTENT_MANIFEST */
 import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
 import ConfigService from './services/ConfigService.js'
-// import { D1UserService } from './services/D1UserService.js'  // DISABLED: Using Supabase now
+import { ArticleService } from './services/ArticleService.js'
 import { AnalyticsEngineService } from './services/AnalyticsEngineService.js'
 import RSSFeedService from './services/RSSFeedService.js'
 import { CacheService } from './services/CacheService.js'
 import { handleApiRequest } from './api.js'
 import { CloudflareImagesService } from './services/CloudflareImagesService.js'
 
-// Cache configuration
-const CACHE_CONFIG = {
-  ARTICLES_TTL: 14 * 24 * 60 * 60, // 2 weeks in seconds
-  SCHEDULED_REFRESH_INTERVAL: 60 * 60 * 1000, // 1 hour in milliseconds
-  MAX_ARTICLES: 20000,           // Increased from 10000
-  ITEMS_PER_SOURCE: 100,         // Increased from 50
-  MIN_LIMIT: 100,                // New minimum limit
-  MAX_LIMIT: 1000,               // New maximum limit
-  CACHE_HEADERS: {
-    'Cache-Control': 'public, max-age=300, s-maxage=600',
-    'CDN-Cache-Control': 'max-age=600',
-    'Cloudflare-CDN-Cache-Control': 'max-age=600'
+// Cache headers - static configuration
+const CACHE_HEADERS = {
+  'Cache-Control': 'public, max-age=300, s-maxage=600',
+  'CDN-Cache-Control': 'max-age=600', 
+  'Cloudflare-CDN-Cache-Control': 'max-age=600'
+}
+
+// Helper to detect environment and get config
+async function getConfig(configService, env) {
+  const isPreview = env.NODE_ENV === 'development' || env.NODE_ENV === 'preview'
+  
+  const [
+    maxArticlesPerSource,
+    maxTotalArticles, 
+    cacheSettings
+  ] = await Promise.all([
+    configService.getMaxArticlesPerSource(isPreview),
+    configService.getMaxTotalArticles(isPreview),
+    configService.getCacheSettings(isPreview)
+  ])
+  
+  return {
+    maxArticlesPerSource,
+    maxTotalArticles,
+    refreshInterval: cacheSettings.refreshInterval,
+    articlesTtl: cacheSettings.articlesTtl,
+    apiMinLimit: 100, // Keep static for now
+    apiMaxLimit: 1000, // Keep static for now
+    cacheHeaders: CACHE_HEADERS
   }
 }
 
 // Initialize services with CORRECT bindings
 function initializeServices(env) {
-  // FIXED: Use correct binding names
-  const configService = new ConfigService(env.CONFIG_STORAGE)
+  // Multi-tier storage architecture initialization
   
-  // FIXED: CacheService expects (newsStorageKV, contentCacheKV) with correct binding names
+  // System configuration (app settings, limits)
+  const configService = new ConfigService(env.HM_CONFIGURATIONS)
+  
+  // Articles database (D1 with slugs and content) 
+  const articleService = new ArticleService(env.ARTICLES_DB)
+  
+  // News content storage (feeds, categories, keywords, tags)
+  const newsStorageService = new ConfigService(env.HM_NEWS_STORAGE)
+  
+  // Cache configuration storage (cache settings, TTL, strategies)
+  const cacheConfigService = new ConfigService(env.HM_CACHE_CONFIG)
+  
+  // Main articles cache storage (with D1 article persistence)
   const cacheService = new CacheService(
-    env.NEWS_STORAGE,      // newsStorageKV (for articles)
-    env.CONTENT_CACHE      // contentCacheKV (for search/general cache) - FIXED name
+    env.HM_CACHE_STORAGE,  // Articles and news cache
+    env.HM_CACHE_CONFIG,   // Cache configuration
+    articleService         // D1 database service for article persistence
   )
   
-  // DISABLED: User service now handled by Supabase directly in frontend
-  // const userService = env.USER_DB ? new D1UserService(env.USER_DB) : null
-  const userService = null // User operations moved to Supabase
+  // User storage service (for user-specific data like bookmarks, likes)
+  const userStorageService = new CacheService(
+    env.HM_USER_STORAGE,   // User data storage
+    env.HM_CACHE_CONFIG    // Cache configuration
+  )
   
-  // FIXED: Analytics service with correct 3 datasets
+  // RSS feed processing service (now uses both config and news storage)
+  const rssService = new RSSFeedService(configService, newsStorageService)
+  
+  // Analytics service with correct 3 datasets
   const analyticsService = new AnalyticsEngineService({
     categoryClicks: env.CATEGORY_CLICKS || null,
     newsInteractions: env.NEWS_INTERACTIONS || null,
     searchQueries: env.SEARCH_QUERIES || null
   })
   
+  // Image optimization service
   const imagesService = new CloudflareImagesService(env)
-  const rssService = new RSSFeedService(configService)
 
-  // Services initialized successfully
+  // Services initialized with multi-tier storage architecture
   
   return {
-    configService,
-    cacheService,
-    userService,
-    analyticsService,
-    imagesService,
-    rssService
+    configService,           // System configuration
+    articleService,          // D1 articles database  
+    newsStorageService,      // News content (feeds/categories/keywords)
+    cacheConfigService,      // Cache configuration
+    cacheService,            // Main articles cache storage
+    userStorageService,      // Fast user data (likes/bookmarks/saves)
+    rssService,              // RSS feed processing
+    analyticsService,        // Analytics
+    imagesService            // Image optimization
   }
 }
 
@@ -68,10 +105,11 @@ async function runScheduledRefresh(env) {
   try {
     // Starting autonomous scheduled refresh
     
-    const { cacheService, rssService } = initializeServices(env)
+    const { userStorageService, rssService, configService, articleService } = initializeServices(env)
+    const config = await getConfig(configService, env)
     
     // Check if refresh is needed (autonomous decision)
-    const needsRefresh = await cacheService.shouldRunScheduledRefresh(CACHE_CONFIG.SCHEDULED_REFRESH_INTERVAL)
+    const needsRefresh = await userStorageService.shouldRunScheduledRefresh(config.refreshInterval)
     if (!needsRefresh) {
       // Scheduled refresh not needed yet
       return { success: true, reason: 'Not time for refresh', skipped: true }
@@ -86,10 +124,10 @@ async function runScheduledRefresh(env) {
 
     // Starting RSS fetch from all sources
     
-    // Fetch fresh articles autonomously
+    // Fetch fresh articles autonomously using dynamic config
     const freshArticles = await rssService.fetchAllFeedsBackground(
-      CACHE_CONFIG.ITEMS_PER_SOURCE,
-      CACHE_CONFIG.MAX_ARTICLES
+      config.maxArticlesPerSource,
+      config.maxTotalArticles
     )
     
     if (freshArticles && freshArticles.length > 0) {
@@ -142,7 +180,8 @@ async function _ensureInitialData(env) {
   try {
     // Checking if initial data load is needed
     
-    const { cacheService, rssService } = initializeServices(env)
+    const { cacheService, rssService, configService } = initializeServices(env)
+    const config = await getConfig(configService, env)
     
     // Check if we have any cached articles
     const existingArticles = await cacheService.getCachedArticles()
@@ -162,10 +201,10 @@ async function _ensureInitialData(env) {
     }
     
     try {
-      // Perform initial RSS fetch
+      // Perform initial RSS fetch using dynamic config
       const articles = await rssService.fetchAllFeedsBackground(
-        CACHE_CONFIG.ITEMS_PER_SOURCE,
-        CACHE_CONFIG.MAX_ARTICLES
+        config.maxArticlesPerSource,
+        config.maxTotalArticles
       )
       
       if (articles && articles.length > 0) {
@@ -199,12 +238,14 @@ function _validateEnvironment(env) {
   const warnings = []
   
   // Critical bindings - FIXED names
-  if (!env.NEWS_STORAGE) issues.push('NEWS_STORAGE KV binding missing')
-  if (!env.CONFIG_STORAGE) issues.push('CONFIG_STORAGE KV binding missing')
+  if (!env.HM_NEWS_STORAGE) issues.push('HM_NEWS_STORAGE KV binding missing')
+  if (!env.HM_CONFIGURATIONS) issues.push('HM_CONFIGURATIONS KV binding missing')
+  if (!env.HM_CACHE_STORAGE) issues.push('HM_CACHE_STORAGE KV binding missing')
+  if (!env.HM_CACHE_CONFIG) issues.push('HM_CACHE_CONFIG KV binding missing')
   if (!env.CONTENT_CACHE) issues.push('CONTENT_CACHE KV binding missing')
   
   // Optional but recommended - FIXED name
-  if (!env.USER_STORAGE) warnings.push('USER_STORAGE binding missing (user features disabled)')
+  if (!env.HM_USER_STORAGE) warnings.push('HM_USER_STORAGE binding missing (user features disabled)')
   if (!env.CATEGORY_CLICKS) warnings.push('CATEGORY_CLICKS Analytics binding missing')
   if (!env.NEWS_INTERACTIONS) warnings.push('NEWS_INTERACTIONS Analytics binding missing')
   if (!env.SEARCH_QUERIES) warnings.push('SEARCH_QUERIES Analytics binding missing')
@@ -229,7 +270,7 @@ function getBasicHTML() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mukoko - Modern News Aggregator</title>
+    <title>Harare Metro - Modern News Aggregator</title>
     <link rel="icon" href="/favicon.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -422,23 +463,23 @@ function getBasicHTML() {
         <div class="logo-container">
             <div class="logo">
                 <div class="logo-inner">
-                    <div class="logo-mk">MK</div>
-                    <div class="logo-text">MUKOKO</div>
+                    <div class="logo-mk">HM</div>
+                    <div class="logo-text">HARARE METRO</div>
                 </div>
             </div>
-            <p class="tagline">Modern news aggregation platform</p>
+            <p class="tagline">Zimbabwe's premier news aggregation platform</p>
         </div>
         
         <div class="loading">
             <div class="spinner"></div>
             <h3>Loading Latest News...</h3>
-            <p>Aggregating news from trusted sources worldwide</p>
+            <p>Aggregating news from trusted Zimbabwean sources</p>
         </div>
 
         <div class="features">
             <div class="feature">
                 <h3>🌍 Global Sources</h3>
-                <p>Curated news from trusted publishers worldwide</p>
+                <p>Curated news from trusted Zimbabwean publishers</p>
             </div>
             <div class="feature">
                 <h3>🔍 Smart Search</h3>
@@ -465,9 +506,348 @@ function getBasicHTML() {
 </html>`
 }
 
+// Enhanced fallback HTML with server-side rendered articles and error diagnostics
+async function getEnhancedFallbackHTML(env, debugInfo = {}) {
+  try {
+    // Initialize services to get articles
+    const { cacheService } = initializeServices(env)
+    
+    // Get latest 12 articles from cache
+    let articles = []
+    let articlesError = null
+    try {
+      const cachedArticles = await cacheService.getCachedArticles()
+      articles = cachedArticles.slice(0, 12) // Get latest 12
+    } catch (error) {
+      console.warn('Failed to load articles for fallback HTML:', error)
+      articlesError = error.message
+      articles = [] // Use empty array if cache fails
+    }
+    
+    // Generate articles HTML
+    let articlesHTML = ''
+    if (articles.length > 0) {
+      articlesHTML = articles.map(article => `
+        <article class="article-card">
+          <div class="article-content">
+            <h3 class="article-title">
+              <a href="${article.link || '#'}" target="_blank" rel="noopener">
+                ${escapeHtml(article.title || 'Untitled Article')}
+              </a>
+            </h3>
+            <p class="article-description">
+              ${escapeHtml((article.description || article.contentSnippet || '').substring(0, 150))}${(article.description || article.contentSnippet || '').length > 150 ? '...' : ''}
+            </p>
+            <div class="article-meta">
+              <span class="article-source">${escapeHtml(article.source || 'Unknown Source')}</span>
+              <span class="article-date">${formatDate(article.pubDate || article.publishedAt)}</span>
+            </div>
+          </div>
+        </article>
+      `).join('')
+    } else {
+      articlesHTML = `
+        <div class="no-articles">
+          <h3>📰 News Loading</h3>
+          <p>Our latest articles are being updated. Please check back in a moment.</p>
+        </div>
+      `
+    }
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harare Metro - Zimbabwe News</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🇿🇼</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            font-weight: 400;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 20px;
+        }
+        
+        .header { 
+            padding: 40px 0; 
+            text-align: center;
+            border-bottom: 1px solid #262626;
+        }
+        
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .tagline {
+            color: #a3a3a3;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+        
+        .main-content {
+            padding: 40px 0;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .article-card {
+            background: #111111;
+            border: 1px solid #262626;
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.2s ease;
+        }
+        
+        .article-card:hover {
+            border-color: #404040;
+            background: #151515;
+        }
+        
+        .article-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+        
+        .article-title a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+        
+        .article-title a:hover {
+            color: #2563eb;
+        }
+        
+        .article-description {
+            color: #a3a3a3;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        
+        .article-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #666666;
+        }
+        
+        .article-source {
+            font-weight: 500;
+            color: #2563eb;
+        }
+        
+        .no-articles {
+            text-align: center;
+            background: #111111;
+            border: 1px solid #262626;
+            border-radius: 8px;
+            padding: 60px 40px;
+        }
+        
+        .no-articles h3 {
+            font-size: 1.25rem;
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+        
+        .no-articles p {
+            color: #a3a3a3;
+        }
+        
+        .refresh-notice {
+            text-align: center;
+            padding: 20px;
+            background: #111111;
+            border: 1px solid #262626;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .refresh-notice p {
+            color: #a3a3a3;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container { 
+                padding: 0 16px; 
+            }
+            .header { 
+                padding: 30px 0; 
+            }
+            .logo-text { 
+                font-size: 1.75rem; 
+            }
+            .articles-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .article-card {
+                padding: 20px;
+            }
+            .article-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+        }
+        
+        @media (prefers-color-scheme: light) {
+            body { background: #ffffff; color: #000000; }
+            .article-card, .no-articles, .refresh-notice { background: #fafafa; border-color: #e5e5e5; }
+            .article-card:hover { background: #f5f5f5; border-color: #d4d4d4; }
+            .article-title a { color: #000000; }
+            .article-description { color: #666666; }
+            .tagline, .no-articles p, .refresh-notice p { color: #666666; }
+            .no-articles h3 { color: #000000; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <span style="font-size: 2rem;">🇿🇼</span>
+                <h1 class="logo-text">Harare Metro</h1>
+            </div>
+            <p class="tagline">Zimbabwe's Premier News Aggregator</p>
+        </header>
+
+        <main class="main-content">
+            <h2 class="section-title">Latest News</h2>
+            
+            <div class="articles-grid">
+                ${articlesHTML}
+            </div>
+            
+            <div class="refresh-notice">
+                <p>📱 For the best experience, please refresh the page to load our full interactive app.</p>
+            </div>
+            
+            <!-- Debug Information -->
+            <div class="debug-info" style="margin-top: 2rem; padding: 1rem; background: #1a1a1a; border-radius: 8px; border-left: 4px solid #ef4444;">
+                <h3 style="color: #ef4444; font-size: 1.1rem; margin-bottom: 0.5rem;">🚨 Fallback Mode Active</h3>
+                <p style="font-size: 0.9rem; color: #888; margin-bottom: 1rem;">The React app failed to load. This fallback page is showing instead.</p>
+                
+                <div class="debug-details" style="font-family: 'Courier New', monospace; font-size: 0.8rem; color: #ccc;">
+                    <div><strong>Reason:</strong> ${debugInfo.reason || 'Static assets unavailable'}</div>
+                    <div><strong>Static Content Available:</strong> ${debugInfo.hasStaticContent ? 'Yes' : 'No'}</div>
+                    <div><strong>Articles Loaded:</strong> ${articles.length} articles</div>
+                    ${articlesError ? `<div><strong>Articles Error:</strong> ${articlesError}</div>` : ''}
+                    <div><strong>Environment:</strong> ${env.NODE_ENV || 'unknown'}</div>
+                    <div><strong>Timestamp:</strong> ${new Date().toISOString()}</div>
+                </div>
+                
+                <p style="font-size: 0.8rem; color: #666; margin-top: 1rem;">
+                    💡 This diagnostic info helps developers understand why the React app isn't loading.
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <div id="root"></div>
+    
+    <script>
+        // Auto-refresh after 3 seconds to try loading the React app
+        setTimeout(() => {
+            if (document.getElementById('root').innerHTML === '') {
+                window.location.reload();
+            }
+        }, 3000);
+    </script>
+</body>
+</html>`
+  } catch (error) {
+    console.error('Failed to generate enhanced fallback HTML:', error)
+    // Fall back to the basic HTML if enhanced version fails
+    return getBasicHTML()
+  }
+}
+
+// Helper functions for HTML generation
+function escapeHtml(text) {
+  if (!text) return ''
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'Recently'
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffHours / 24)
+    
+    if (diffDays > 7) {
+      return date.toLocaleDateString('en-GB', { 
+        day: 'numeric', 
+        month: 'short' 
+      })
+    } else if (diffDays > 0) {
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+    } else if (diffHours > 0) {
+      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    } else {
+      return 'Just now'
+    }
+  } catch {
+    return 'Recently'
+  }
+}
+
 // Export utility functions that the API file might need
 export {
-  CACHE_CONFIG,
+  getConfig,
+  CACHE_HEADERS,
   initializeServices,
   runScheduledRefresh
 }
@@ -477,6 +857,14 @@ export default {
   async fetch(request, env, ctx) {
     try {
       const url = new URL(request.url)
+      
+      // Initialize asset manifest
+      let assetManifest = {}
+      try {
+        assetManifest = __STATIC_CONTENT_MANIFEST || {}
+      } catch {
+        assetManifest = {}
+      }
       
       // Handle CORS preflight requests
       if (request.method === 'OPTIONS') {
@@ -516,6 +904,9 @@ export default {
       
       if (isAssetRequest) {
         try {
+          // In development, bypass KV-Asset-Handler if it's having RPC issues
+          const isDev = env.NODE_ENV === 'development'
+          
           // Check if we have static content binding
           if (!env.__STATIC_CONTENT) {
             // For source maps, return 404 silently
@@ -525,8 +916,6 @@ export default {
                 headers: { 'Content-Type': 'text/plain' }
               })
             }
-            
-            // Static content not available for: ${url.pathname}
             
             // For missing favicon, return a simple one
             if (url.pathname === '/favicon.ico' || url.pathname === '/vite.svg') {
@@ -549,14 +938,56 @@ export default {
             })
           }
 
-          // Try to get the asset directly from KV
-          const response = await getAssetFromKV({
-            request,
-            waitUntil: ctx.waitUntil.bind(ctx),
-          }, {
-            ASSET_NAMESPACE: env.__STATIC_CONTENT,
-            ASSET_MANIFEST: __STATIC_CONTENT_MANIFEST,
-          })
+          // Try to get the asset directly from KV with better error handling
+          let response
+          try {
+            response = await getAssetFromKV({
+              request,
+              waitUntil: ctx.waitUntil.bind(ctx),
+            }, {
+              ASSET_NAMESPACE: env.__STATIC_CONTENT,
+              ASSET_MANIFEST: assetManifest,
+            })
+          } catch (kvError) {
+            console.warn('KV Asset Handler failed:', kvError.message)
+            
+            // In development, if KV fails due to RPC issues, retry once
+            if (isDev && (kvError.message.includes('RPC receiver') || kvError.message.includes('does not implement'))) {
+              console.log('KV RPC issue in development, attempting retry...')
+              
+              // Try again with a small delay
+              await new Promise(resolve => setTimeout(resolve, 100))
+              
+              try {
+                response = await getAssetFromKV({
+                  request,
+                  waitUntil: ctx.waitUntil.bind(ctx),
+                }, {
+                  ASSET_NAMESPACE: env.__STATIC_CONTENT,
+                  ASSET_MANIFEST: assetManifest,
+                })
+                console.log('Retry successful for:', url.pathname)
+              } catch (retryError) {
+                console.warn('Retry also failed, serving basic response for:', url.pathname)
+                // If retry fails, don't throw error, just serve basic response
+                if (url.pathname.endsWith('.js')) {
+                  return new Response('console.log("Dev mode: asset loading issue");', { 
+                    status: 200,
+                    headers: { 'Content-Type': 'application/javascript' }
+                  })
+                }
+                if (url.pathname.endsWith('.css')) {
+                  return new Response('/* Dev mode: asset loading issue */', { 
+                    status: 200,
+                    headers: { 'Content-Type': 'text/css' }
+                  })
+                }
+                return new Response('Not found', { status: 404 })
+              }
+            } else {
+              throw new Error(`Asset loading failed: ${kvError.message}`)
+            }
+          }
           
           const newResponse = new Response(response.body, response)
           
@@ -575,7 +1006,7 @@ export default {
           
           return newResponse
           
-        } catch {
+        } catch (error) {
           // Handle source maps silently
           if (url.pathname.endsWith('.map')) {
             return new Response('Source map not found', { 
@@ -620,8 +1051,13 @@ export default {
       try {
         // Check if we have static content
         if (!env.__STATIC_CONTENT) {
-          // Static content not available, serving enhanced fallback HTML
-          return new Response(getBasicHTML(), {
+          // Static content not available, serving enhanced fallback HTML with articles
+          const fallbackHTML = await getEnhancedFallbackHTML(env, {
+            reason: 'Static content environment variable not available',
+            hasStaticContent: false,
+            path: request.url
+          })
+          return new Response(fallbackHTML, {
             headers: { 
               'Content-Type': 'text/html;charset=UTF-8',
               'Cache-Control': 'public, max-age=300'
@@ -630,22 +1066,79 @@ export default {
         }
 
         // Always serve index.html for SPA routes
-        const response = await getAssetFromKV({
-          request: new Request(new URL('/index.html', request.url)),
-          waitUntil: ctx.waitUntil.bind(ctx),
-        }, {
-          ASSET_NAMESPACE: env.__STATIC_CONTENT,
-          ASSET_MANIFEST: __STATIC_CONTENT_MANIFEST,
-        })
+        let response
+        try {
+          response = await getAssetFromKV({
+            request: new Request(new URL('/index.html', request.url)),
+            waitUntil: ctx.waitUntil.bind(ctx),
+          }, {
+            ASSET_NAMESPACE: env.__STATIC_CONTENT,
+            ASSET_MANIFEST: assetManifest,
+          })
+        } catch (kvError) {
+          console.warn('Failed to load index.html from KV:', kvError.message)
+          
+          // In development, retry for index.html due to RPC issues
+          if (env.NODE_ENV === 'development' && (kvError.message.includes('RPC receiver') || kvError.message.includes('does not implement'))) {
+            console.log('Retrying index.html load due to KV RPC issues...')
+            
+            // Retry with delay
+            await new Promise(resolve => setTimeout(resolve, 100))
+            
+            try {
+              response = await getAssetFromKV({
+                request: new Request(new URL('/index.html', request.url)),
+                waitUntil: ctx.waitUntil.bind(ctx),
+              }, {
+                ASSET_NAMESPACE: env.__STATIC_CONTENT,
+                ASSET_MANIFEST: assetManifest,
+              })
+              console.log('Index.html retry successful')
+            } catch (retryError) {
+              console.warn('Index.html retry failed, using fallback')
+              // Only use fallback as last resort
+              const fallbackHTML = await getEnhancedFallbackHTML(env, {
+                reason: `Failed to load React app after retry: ${retryError.message}`,
+                hasStaticContent: !!env.__STATIC_CONTENT,
+                path: request.url
+              })
+              return new Response(fallbackHTML, {
+                headers: { 
+                  'Content-Type': 'text/html;charset=UTF-8',
+                  'Cache-Control': 'public, max-age=300'
+                }
+              })
+            }
+          } else {
+            // For non-development or other errors, use fallback
+            const fallbackHTML = await getEnhancedFallbackHTML(env, {
+              reason: `Failed to load React app: ${kvError.message}`,
+              hasStaticContent: !!env.__STATIC_CONTENT,
+              path: request.url
+            })
+            return new Response(fallbackHTML, {
+              headers: { 
+                'Content-Type': 'text/html;charset=UTF-8',
+                'Cache-Control': 'public, max-age=300'
+              }
+            })
+          }
+        }
         
         const newResponse = new Response(response.body, response)
         newResponse.headers.set('Cache-Control', 'public, max-age=3600')
         newResponse.headers.set('Content-Type', 'text/html;charset=UTF-8')
         return newResponse
         
-      } catch {
-        // index.html not found, serving enhanced fallback HTML
-        return new Response(getBasicHTML(), {
+      } catch (error) {
+        // index.html not found, serving enhanced fallback HTML with articles
+        const fallbackHTML = await getEnhancedFallbackHTML(env, {
+          reason: `Asset loading failed: ${error.message}`,
+          hasStaticContent: true,
+          path: request.url,
+          error: error.message
+        })
+        return new Response(fallbackHTML, {
           headers: { 
             'Content-Type': 'text/html;charset=UTF-8',
             'Cache-Control': 'public, max-age=300'

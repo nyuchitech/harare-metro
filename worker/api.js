@@ -1,9 +1,11 @@
 /* eslint-env worker */
 /* global Response, URL, btoa */
-// API Request Handler for Mukoko
+// API Request Handler for Harare Metro
 
 // Import your actual services
-import { initializeServices, CACHE_CONFIG } from './index.js'
+import { initializeServices, getConfig, CACHE_HEADERS } from './index.js'
+import NewsSourceService from './services/NewsSourceService.js'
+import ArticleService from './services/ArticleService.js'
 
 // CORS headers
 const corsHeaders = {
@@ -68,7 +70,15 @@ export async function handleApiRequest(request, env, ctx) {
     if (path === 'health') {
       response = await handleHealth(request, env)
     }
-    // Feeds endpoint  
+    // Direct sync endpoint - Single call for all data (eliminates multiple APIs)
+    else if (path === 'direct-sync') {
+      response = await handleDirectSync(request, env, ctx)
+    }
+    // Track view endpoint - Fire and forget for analytics
+    else if (path === 'track-view') {
+      response = await handleTrackView(request, env)
+    }
+    // Feeds endpoint (legacy - for external APIs only)
     else if (path === 'feeds') {
       response = await handleFeeds(request, env, ctx)
     }
@@ -99,6 +109,10 @@ export async function handleApiRequest(request, env, ctx) {
     else if (path.startsWith('config/')) {
       response = await handleConfig(request, env)
     }
+    // Articles endpoints
+    else if (path.startsWith('articles/')) {
+      response = await handleArticles(request, env, ctx)
+    }
     // Admin endpoints
     else if (path.startsWith('admin/')) {
       response = await handleAdmin(request, env, ctx)
@@ -119,6 +133,7 @@ export async function handleApiRequest(request, env, ctx) {
           '/api/config/categories',
           '/api/config/keywords',
           '/api/config/all',
+          '/api/articles/enhance',
           '/api/admin/clear-cache',
           '/api/admin/refresh-config',
           '/api/admin/refresh-status',
@@ -276,9 +291,9 @@ async function handleAdminStatus(request, env) {
         usingFallback: !configService.isKVAvailable()
       },
       refresh: {
-        interval: `${CACHE_CONFIG.SCHEDULED_REFRESH_INTERVAL / (60 * 1000)} minutes`,
+        interval: `${(await configService.getSystemConfig()).refreshIntervalMinutes} minutes`,
         cronSchedule: '0 * * * *',
-        isWorking: lastScheduled && (Date.now() - new Date(lastScheduled).getTime()) < (2 * 60 * 60 * 1000)
+        isWorking: lastScheduled && (Date.now() - new Date(lastScheduled).getTime()) < (2 * (await configService.getSystemConfig()).refreshIntervalMinutes * 60 * 1000)
       },
       note: 'System operates autonomously - admin actions are manual overrides only',
       timestamp: new Date().toISOString()
@@ -389,7 +404,7 @@ async function handleInitConfig(request, env) {
     if (!configService.isKVAvailable()) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'CONFIG_STORAGE KV namespace not available',
+        error: 'HM_CONFIGURATIONS KV namespace not available',
         message: 'Please check wrangler.toml configuration and deploy with proper KV bindings'
       }), {
         status: 503,
@@ -424,7 +439,7 @@ async function handleInitConfig(request, env) {
 // DISABLED: Refresh status endpoint - not used
 async function _handleRefreshStatus(_request, env) {
   try {
-    const { cacheService } = initializeServices(env)
+    const { cacheService, configService } = initializeServices(env)
     const stats = await cacheService.getCacheStats()
     const metadata = await cacheService.getArticleMetadata()
     const lastScheduled = await cacheService.getLastScheduledRun()
@@ -437,9 +452,9 @@ async function _handleRefreshStatus(_request, env) {
         lastScheduledRun: lastScheduled || 'Never', 
         cachedArticles: metadata.articleCount,
         refreshLock: isLocked ? 'Active' : 'None',
-        refreshInterval: `${CACHE_CONFIG.SCHEDULED_REFRESH_INTERVAL / (60 * 1000)} minutes`,
+        refreshInterval: `${(await configService.getSystemConfig()).refreshIntervalMinutes} minutes`,
         cronSchedule: '0 * * * *',
-        isWorking: lastScheduled && (Date.now() - new Date(lastScheduled).getTime()) < (2 * 60 * 60 * 1000),
+        isWorking: lastScheduled && (Date.now() - new Date(lastScheduled).getTime()) < (2 * (await configService.getSystemConfig()).refreshIntervalMinutes * 60 * 1000),
         cacheStatus: metadata.cacheStatus
       },
       cache: stats,
@@ -478,9 +493,13 @@ async function handleForceRefresh(_request, env, _ctx) {
     try {
       Logger.info('[ADMIN] Starting manual RSS refresh')
       
+      const configService = initializeServices(env).configService
+      const maxArticlesPerSource = await configService.getMaxArticlesPerSource()
+      const maxTotalArticles = await configService.getMaxTotalArticles()
+      
       const articles = await rssService.fetchAllFeedsBackground(
-        CACHE_CONFIG.ITEMS_PER_SOURCE,
-        CACHE_CONFIG.MAX_ARTICLES
+        maxArticlesPerSource,
+        maxTotalArticles
       )
       
       if (articles && articles.length > 0) {
@@ -565,10 +584,12 @@ async function handleHealth(request, env) {
 
     // Check storage availability
     health.storage = {
-      configKV: !!env.CONFIG_STORAGE,
-      cacheKV: !!env.CACHE_STORAGE,
-      newsKV: !!env.NEWS_STORAGE,
-      userDB: !!env.USER_DB
+      configurationsKV: !!env.HM_CONFIGURATIONS,
+      cacheStorageKV: !!env.HM_CACHE_STORAGE,
+      newsStorageKV: !!env.HM_NEWS_STORAGE,
+      cacheConfigKV: !!env.HM_CACHE_CONFIG,
+      userStorageKV: !!env.HM_USER_STORAGE,
+      articlesDB: !!env.ARTICLES_DB
     }
 
     // Check analytics availability
@@ -579,25 +600,25 @@ async function handleHealth(request, env) {
     }
 
     // Test KV connectivity
-    if (env.CONFIG_STORAGE) {
+    if (env.HM_CONFIGURATIONS) {
       try {
-        await env.CONFIG_STORAGE.get('health-check')
-        health.storage.configKVStatus = 'connected'
+        await env.HM_CONFIGURATIONS.get('health-check')
+        health.storage.configurationsKVStatus = 'connected'
       } catch (configError) {
-        health.storage.configKVStatus = 'error'
-        health.storage.configKVError = configError.message
+        health.storage.configurationsKVStatus = 'error'
+        health.storage.configurationsKVError = configError.message
       }
     } else {
-      health.storage.configKVStatus = 'not_bound'
+      health.storage.configurationsKVStatus = 'not_bound'
     }
 
-    if (env.CACHE_STORAGE) {
+    if (env.HM_CACHE_STORAGE) {
       try {
-        await env.CACHE_STORAGE.get('health-check')
-        health.storage.cacheKVStatus = 'connected'
+        await env.HM_CACHE_STORAGE.get('health-check')
+        health.storage.cacheStorageKVStatus = 'connected'
       } catch (cacheError) {
-        health.storage.cacheKVStatus = 'error'
-        health.storage.cacheKVError = cacheError.message
+        health.storage.cacheStorageKVStatus = 'error'
+        health.storage.cacheStorageKVError = cacheError.message
       }
     } else {
       health.storage.cacheKVStatus = 'not_bound'
@@ -642,19 +663,30 @@ async function handleFeeds(request, env, ctx) {
   try {
     const url = new URL(request.url)
     
-    // Extract search parameters
+    const { cacheService, rssService, configService } = initializeServices(env)
+    
+    // Get configuration settings
+    const systemConfig = await configService.getSystemConfig()
+    const paginationConfig = systemConfig.pagination
+    
+    // Extract search parameters with mobile-first pagination support
     const category = url.searchParams.get('category') || 'all'
     const searchQuery = url.searchParams.get('search') || ''
     const timeframe = url.searchParams.get('timeframe') || 'all'
     const sortBy = url.searchParams.get('sort') || 'newest'
     const limit = Math.min(
-      parseInt(url.searchParams.get('limit') || '100'),  // ✅ Change default from 25 to 100
-      CACHE_CONFIG.MAX_LIMIT  // Still respect max limit (1000)
+      parseInt(url.searchParams.get('limit') || paginationConfig.initialLoad.toString()),
+      systemConfig.apiMaxLimit  // Max limit from config
     )
+    const offset = Math.max(parseInt(url.searchParams.get('offset') || '0'), 0)
+    const mobileOptimized = url.searchParams.get('mobile_optimized') === 'true'
+    const compressImages = url.searchParams.get('compress_images') !== 'false'
+    const previewLimit = parseInt(url.searchParams.get('preview_limit') || paginationConfig.previewTextLimit.toString())
+    const isPreload = url.searchParams.get('preload') === 'true'
     
-    Logger.debug('Feed request parameters', { category, searchQuery, timeframe, sortBy, limit })
-    
-    const { cacheService, rssService } = initializeServices(env)
+    Logger.debug('Mobile-first feed request', { 
+      category, searchQuery, timeframe, sortBy, limit, offset, mobileOptimized, previewLimit, isPreload 
+    })
     
     // Get cached articles using CacheService
     let articles = await cacheService.getCachedArticles()
@@ -674,9 +706,13 @@ async function handleFeeds(request, env, ctx) {
               const lockAcquired = await cacheService.acquireRefreshLock()
               if (lockAcquired) {
                 Logger.info('Starting background initial load')
+                const configService = initializeServices(env).configService
+                const maxArticlesPerSource = await configService.getMaxArticlesPerSource()
+                const maxTotalArticles = await configService.getMaxTotalArticles()
+                
                 const freshArticles = await rssService.fetchAllFeedsBackground(
-                  CACHE_CONFIG.ITEMS_PER_SOURCE,
-                  CACHE_CONFIG.MAX_ARTICLES
+                  maxArticlesPerSource,
+                  maxTotalArticles
                 )
                 
                 if (freshArticles && freshArticles.length > 0) {
@@ -714,7 +750,7 @@ async function handleFeeds(request, env, ctx) {
           ...corsHeaders, 
           'Content-Type': 'application/json',
           'Retry-After': '30',
-          ...CACHE_CONFIG.CACHE_HEADERS
+          ...CACHE_HEADERS
         }
       })
     }
@@ -772,42 +808,72 @@ async function handleFeeds(request, env, ctx) {
       }
     })
     
-    // Apply limit
-    const limitedArticles = articles.slice(0, limit)
+    // Apply pagination with mobile-first optimization
+    const paginatedArticles = articles.slice(offset, offset + limit)
+    
+    // Apply mobile optimizations if requested
+    let responseArticles = paginatedArticles
+    if (mobileOptimized && paginatedArticles.length > 0) {
+      responseArticles = paginatedArticles.map(article => ({
+        ...article,
+        // Truncate content for mobile preview
+        content: article.content ? 
+          article.content.substring(0, previewLimit) + (article.content.length > previewLimit ? '...' : '') : 
+          article.content,
+        // Add mobile optimization flags
+        imageOptimized: compressImages,
+        mobilePreview: true,
+        fullContentLength: article.content ? article.content.length : 0
+      }))
+    }
     
     const duration = Date.now() - startTime
-    Logger.info('Feed request completed autonomously', { 
-      returned: limitedArticles.length, 
+    Logger.info('Mobile-first feed request completed', { 
+      returned: responseArticles.length, 
       filtered: filteredCount, 
       total: originalCount,
+      offset,
+      limit,
+      mobileOptimized,
       duration: `${duration}ms`
     })
 
     return new Response(JSON.stringify({
       success: true,
-      articles: limitedArticles,
+      articles: responseArticles,
       total: filteredCount,
       totalCached: originalCount,
-      category,
-      searchQuery,
-      timeframe,
-      sortBy,
-      limit,
-      hasMore: filteredCount > limit,
-      status: 'ready',
-      autonomous: true,
+      pagination: {
+        limit,
+        offset,
+        hasMore: (offset + limit) < filteredCount,
+        mobileOptimized,
+        isPreload,
+        totalPages: Math.ceil(filteredCount / limit),
+        currentPage: Math.floor(offset / limit) + 1
+      },
+      meta: {
+        category,
+        searchQuery,
+        timeframe,
+        sortBy,
+        status: 'ready',
+        autonomous: true,
+        responseTime: duration,
+        timestamp: new Date().toISOString()
+      },
       filters: {
         category: category !== 'all' ? category : null,
         search: searchQuery.trim() || null,
         timeframe: timeframe !== 'all' ? timeframe : null,
         sort: sortBy !== 'newest' ? sortBy : null
-      },
-      timestamp: new Date().toISOString()
+      }
     }), {
       headers: { 
         ...corsHeaders, 
         'Content-Type': 'application/json',
-        ...CACHE_CONFIG.CACHE_HEADERS
+        'Cache-Control': isPreload ? 'private, max-age=300' : 'public, max-age=60',
+        ...CACHE_HEADERS
       }
     })
   } catch (error) {
@@ -858,8 +924,49 @@ async function handleConfig(request, env) {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
+      
+      case 'news-sources': {
+        const newsSourceService = new NewsSourceService()
+        const sourceProfiles = newsSourceService.getAllSourceProfiles()
+        return new Response(JSON.stringify({
+          success: true,
+          sources: sourceProfiles,
+          count: Object.keys(sourceProfiles).length
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+      
+      case 'source-logo': {
+        const url = new URL(request.url)
+        const sourceName = url.searchParams.get('source')
+        if (!sourceName) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Source name parameter required'
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+        
+        const newsSourceService = new NewsSourceService()
+        const logoUrl = await newsSourceService.getSourceLogo(sourceName)
+        const profile = newsSourceService.getSourceProfile(sourceName)
+        
+        return new Response(JSON.stringify({
+          success: true,
+          source: sourceName,
+          logo: logoUrl,
+          profile,
+          fallback: profile.initials
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
 
-      case 'keywords': {
+      case 'keywords':
+      case 'category-keywords': {
         const keywords = await configService.getCategoryKeywords()
         return new Response(JSON.stringify({
           success: true,
@@ -870,11 +977,28 @@ async function handleConfig(request, env) {
         })
       }
 
+      case 'pagination': {
+        // Mobile-first pagination configuration
+        const paginationConfig = await configService.getPaginationConfig()
+        return new Response(JSON.stringify({
+          success: true,
+          config: paginationConfig,
+          timestamp: new Date().toISOString()
+        }), {
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
+          }
+        })
+      }
+
       case 'all': {
-        const [allSources, allCategories, allKeywords] = await Promise.all([
+        const [allSources, allCategories, allKeywords, paginationConfig] = await Promise.all([
           configService.getRSSources(),
           configService.getCategories(),
-          configService.getCategoryKeywords()
+          configService.getCategoryKeywords(),
+          configService.getPaginationConfig()
         ])
         
         return new Response(JSON.stringify({
@@ -882,7 +1006,8 @@ async function handleConfig(request, env) {
           config: {
             sources: allSources,
             categories: allCategories,
-            keywords: allKeywords
+            keywords: allKeywords,
+            pagination: paginationConfig
           },
           counts: {
             sources: allSources.length,
@@ -899,8 +1024,9 @@ async function handleConfig(request, env) {
           error: 'Config endpoint not found',
           available_config_endpoints: [
             '/api/config/sources',
-            '/api/config/categories',
+            '/api/config/categories', 
             '/api/config/keywords',
+            '/api/config/pagination',
             '/api/config/all'
           ],
           path: configPath
@@ -1583,6 +1709,341 @@ async function _handleUser(_request, _env) {
     return new Response(JSON.stringify({
       success: false,
       error: error.message
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+// TikTok-style direct sync endpoint - Adaptive network-aware responses
+async function handleDirectSync(request, env, ctx) {
+  const startTime = Date.now()
+  
+  try {
+    // TikTok-style network condition detection
+    const cacheStrategy = request.headers.get('X-Cache-Strategy')
+    const networkCondition = request.headers.get('X-Network-Condition') || '4g'
+    const userAgent = request.headers.get('User-Agent') || ''
+    const isMobile = /Mobile|Android|iPhone/.test(userAgent)
+    
+    Logger.info(`TikTok-style sync: ${networkCondition} network, mobile=${isMobile}, strategy=${cacheStrategy}`)
+    
+    const { cacheService, configService } = initializeServices(env)
+    
+    // Adaptive configuration based on network condition like TikTok
+    const networkConfig = {
+      'wifi': { 
+        articles: 100, 
+        imageQuality: 'high', 
+        preloadExtra: true,
+        compressionLevel: 'low'
+      },
+      '4g': { 
+        articles: 50, 
+        imageQuality: 'medium', 
+        preloadExtra: true,
+        compressionLevel: 'medium'
+      },
+      '3g': { 
+        articles: 30, 
+        imageQuality: 'low', 
+        preloadExtra: false,
+        compressionLevel: 'high'
+      },
+      'slow': { 
+        articles: 15, 
+        imageQuality: 'minimal', 
+        preloadExtra: false,
+        compressionLevel: 'maximum'
+      }
+    }
+    
+    const config = networkConfig[networkCondition] || networkConfig['4g']
+    
+    // Get all data with network-adaptive optimization
+    const [articles, systemConfig] = await Promise.all([
+      cacheService.getCachedArticles(),
+      configService.getSystemConfig()
+    ])
+    
+    const paginationConfig = systemConfig.pagination
+    
+    // TikTok-style background refresh trigger
+    if (!articles || articles.length === 0) {
+      ctx.waitUntil(
+        (async () => {
+          try {
+            const { rssService } = initializeServices(env)
+            const workerConfig = await getConfig(configService, env)
+            
+            const freshArticles = await rssService.fetchAllFeedsBackground(
+              workerConfig.maxArticlesPerSource,
+              workerConfig.maxTotalArticles
+            )
+            
+            if (freshArticles && freshArticles.length > 0) {
+              await cacheService.setCachedArticles(freshArticles)
+              Logger.info(`TikTok-style background sync: ${freshArticles.length} articles`)
+            }
+          } catch (error) {
+            Logger.error('TikTok-style background fetch failed', error)
+          }
+        })()
+      )
+      
+      // TikTok-style empty state response
+      return new Response(JSON.stringify({
+        success: true,
+        articles: [],
+        config: { 
+          pagination: paginationConfig,
+          network: config,
+          adaptiveLoading: true
+        },
+        message: 'Loading content in background...',
+        retryAfter: networkCondition === 'slow' ? 30 : 15,
+        responseTime: Date.now() - startTime,
+        tikTokStyle: {
+          networkCondition,
+          isMobile,
+          backgroundLoading: true
+        }
+      }), {
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': networkCondition === 'slow' ? '30' : '15',
+          'X-Network-Optimized': 'true'
+        }
+      })
+    }
+    
+    // TikTok-style article optimization based on network
+    let optimizedArticles = articles || []
+    
+    // Limit articles based on network condition
+    optimizedArticles = optimizedArticles.slice(0, config.articles)
+    
+    // Apply TikTok-style content optimization
+    if (isMobile || networkCondition !== 'wifi') {
+      optimizedArticles = optimizedArticles.map(article => {
+        let optimizedArticle = { ...article }
+        
+        // Content compression for mobile/slow networks
+        if (config.compressionLevel === 'high' || config.compressionLevel === 'maximum') {
+          optimizedArticle.content = article.content ? 
+            article.content.substring(0, config.compressionLevel === 'maximum' ? 100 : 200) + '...' :
+            article.content
+        }
+        
+        // Image optimization flags
+        optimizedArticle.imageQuality = config.imageQuality
+        optimizedArticle.loadImages = networkCondition === 'wifi' || networkCondition === '4g'
+        optimizedArticle.lazyLoad = networkCondition !== 'wifi'
+        
+        // TikTok-style metadata
+        optimizedArticle.networkOptimized = true
+        optimizedArticle.compressionLevel = config.compressionLevel
+        
+        return optimizedArticle
+      })
+    }
+    
+    const duration = Date.now() - startTime
+    
+    // TikTok-style performance logging
+    Logger.info(`TikTok-style sync completed: ${optimizedArticles.length}/${articles.length} articles, ${duration}ms, ${networkCondition}`)
+    
+    // Enhanced response with TikTok-style metadata
+    const response = {
+      success: true,
+      articles: optimizedArticles,
+      total: articles.length,
+      config: {
+        pagination: paginationConfig,
+        network: config,
+        adaptiveLoading: true
+      },
+      meta: {
+        articlesCount: optimizedArticles.length,
+        totalAvailable: articles.length,
+        responseTime: duration,
+        tikTokStyle: true,
+        networkOptimization: {
+          condition: networkCondition,
+          isMobile,
+          strategy: cacheStrategy || 'auto',
+          compressionLevel: config.compressionLevel,
+          imageQuality: config.imageQuality
+        },
+        timestamp: new Date().toISOString()
+      },
+      performance: {
+        loadTime: duration,
+        cacheHit: true,
+        networkLatency: 'optimal'
+      }
+    }
+    
+    // TikTok-style adaptive caching headers
+    const cacheControl = networkCondition === 'wifi' ? 
+      'private, max-age=300' : // 5 minutes on WiFi
+      networkCondition === '4g' ? 
+        'private, max-age=600' : // 10 minutes on 4G
+        'private, max-age=1200' // 20 minutes on slow networks
+    
+    return new Response(JSON.stringify(response), {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json',
+        'Cache-Control': cacheControl,
+        'X-Network-Optimized': 'true',
+        'X-TikTok-Style': 'enabled',
+        'X-Articles-Optimized': optimizedArticles.length.toString(),
+        'X-Response-Time': duration.toString()
+      }
+    })
+    
+  } catch (error) {
+    Logger.error('TikTok-style sync failed', error)
+    
+    // TikTok-style error response with fallback
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message,
+      articles: [],
+      config: { pagination: {}, network: { fallback: true } },
+      meta: {
+        tikTokStyle: true,
+        fallbackMode: true,
+        timestamp: new Date().toISOString()
+      }
+    }), {
+      status: 500,
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json',
+        'X-Fallback-Mode': 'true'
+      }
+    })
+  }
+}
+
+// Track view endpoint - Fire and forget analytics
+async function handleTrackView(request, env) {
+  try {
+    if (request.method !== 'POST') {
+      return new Response('', { status: 204, headers: corsHeaders })
+    }
+    
+    const { slug, timestamp } = await request.json()
+    
+    if (slug) {
+      // Fire and forget - update view count in background
+      const { articleService } = initializeServices(env)
+      
+      articleService.trackArticleView(slug, {
+        timestamp,
+        userAgent: request.headers.get('User-Agent'),
+        ipAddress: request.headers.get('CF-Connecting-IP')
+      }).catch(() => {})
+    }
+    
+    return new Response('', { status: 204, headers: corsHeaders })
+    
+  } catch (error) {
+    return new Response('', { status: 204, headers: corsHeaders })
+  }
+}
+
+// Articles endpoint - Article content enhancement and management
+async function handleArticles(request, env, ctx) {
+  try {
+    const url = new URL(request.url)
+    const articlesPath = url.pathname.replace('/api/articles/', '')
+    const method = request.method
+    
+    Logger.debug('Articles request', { method, path: articlesPath })
+
+    switch (articlesPath) {
+      case 'enhance': {
+        if (method !== 'POST') {
+          return new Response(JSON.stringify({
+            error: 'Method not allowed. Use POST to enhance articles.',
+            method
+          }), {
+            status: 405,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        try {
+          const requestData = await request.json()
+          const { articles, maxConcurrent = 3 } = requestData
+
+          if (!articles || !Array.isArray(articles)) {
+            return new Response(JSON.stringify({
+              success: false,
+              error: 'Articles array is required',
+              expected: { articles: '[array of article objects]', maxConcurrent: 3 }
+            }), {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+          }
+
+          Logger.info(`Enhancing ${articles.length} articles`)
+          
+          // Initialize article service without database for pure scraping
+          const articleService = new ArticleService(null)
+          
+          // Enhance articles with scraped content
+          const enhancedArticles = await articleService.enhanceArticles(articles, maxConcurrent)
+          
+          const enhancedCount = enhancedArticles.filter(article => article.enhanced).length
+          const errorCount = enhancedArticles.filter(article => article.enhancementError).length
+          
+          return new Response(JSON.stringify({
+            success: true,
+            message: `Enhanced ${enhancedCount}/${articles.length} articles`,
+            enhancedCount,
+            errorCount,
+            totalArticles: articles.length,
+            articles: enhancedArticles
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+          
+        } catch (enhanceError) {
+          Logger.error('Article enhancement error', enhanceError)
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Failed to enhance articles',
+            details: enhanceError.message
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+      }
+
+      default:
+        return new Response(JSON.stringify({
+          error: 'Articles endpoint not found',
+          available_articles_endpoints: [
+            '/api/articles/enhance (POST)'
+          ],
+          path: articlesPath
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+    }
+  } catch (error) {
+    Logger.error('Articles endpoint error', error)
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Internal server error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

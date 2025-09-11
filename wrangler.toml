@@ -1,4 +1,4 @@
-name = "mukoko"
+name = "harare-metro"
 compatibility_date = "2025-05-01"
 main = "./worker/index.js"
 
@@ -12,48 +12,51 @@ binding = "__STATIC_CONTENT"
 NODE_ENV = "production"
 USE_FALLBACK_CONFIG = "false"
 LOG_LEVEL = "info"
-MAX_CACHE_SIZE = "100MB"
-CACHE_TTL = "3600"
-RSS_TIMEOUT = "10000"
-MAX_ARTICLES_PER_SOURCE = "100"
-ANALYTICS_ENABLED = "true"
-CLOUDFLARE_IMAGES_ENABLED = "true"
-ADMIN_KEY = "mukoko-admin-2025-secure-key"
 # Supabase Configuration
-VITE_SUPABASE_URL = "https://huilmzajhiqcuzonbaps.supabase.co"
-VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1aWxtemFqaGlxY3V6b25iYXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNzAyMjIsImV4cCI6MjA3MDc0NjIyMn0.G5C9Swbb1tXEjyhkI98PlQxZ_2OUXI1vD0Eh8Q81KZU"
+VITE_SUPABASE_URL = "https://oybatvdffsbaxwuxfetz.supabase.co"
+VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95YmF0dmRmZnNiYXh3dXhmZXR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1OTA2MjgsImV4cCI6MjA3MzE2NjYyOH0.tLr6-BXM9LvrpmR99ZPcDP_8I0p5EfNvnpX0QAl6plo"
 # Role-based access configuration
 ROLES_ENABLED = "true"
 DEFAULT_ROLE = "creator"
 ADMIN_ROLES = "admin,super_admin,moderator"
 CREATOR_ROLES = "creator,business-creator,author"
 
-# Production KV Namespaces
+# Production KV Namespaces - Multi-tier storage architecture
+# System configuration (app settings, limits)
 [[kv_namespaces]]
-binding = "CONFIG_STORAGE"
-id = "73d709fa9f6a414fbea359cda40ec7db"
-preview_id = "f11d764e7d824243a4193d74aff9107f"
+binding = "HM_CONFIGURATIONS"
+id = "02c8cf6e4a6447518dd592782cfe0f63"
+preview_id = "02c8cf6e4a6447518dd592782cfe0f63"
 
+# Cache storage (articles cache)
 [[kv_namespaces]]
-binding = "CACHE_STORAGE"
-id = "3933ee4aaa8246fd933b61eb1111528f"
-preview_id = "8b7a8a0285a74250910e917ba83a18bf"
+binding = "HM_CACHE_STORAGE"
+id = "bc0a8ad20f054043a9f68032276048ba"
+preview_id = "bc0a8ad20f054043a9f68032276048ba"
 
+# News content storage (feeds, categories, keywords, tags)
 [[kv_namespaces]]
-binding = "USER_STORAGE"
-id = "494ec8445cd842ae8a7c50b5245fcc42"
-preview_id = "59985587dd834c75b9ab393e31f2cf17"
+binding = "HM_NEWS_STORAGE"
+id = "465b7b0df847411098cc369619a690c5"
+preview_id = "465b7b0df847411098cc369619a690c5"
 
+# Cache configuration (cache settings, TTL, strategies)  
 [[kv_namespaces]]
-binding = "NEWS_STORAGE" 
-id = "472195d9dcb948b7a73c10b2716375ca"
-preview_id = "8c7b7c28e9fa4abc971935876cf9ca26"
+binding = "HM_CACHE_CONFIG"
+id = "ec38f5bde010400e9bdd5927cb7a9910"
+preview_id = "ec38f5bde010400e9bdd5927cb7a9910"
 
-# Production D1 Database
+# Fast retrieval storage (likes, bookmarks, saves)
+[[kv_namespaces]]
+binding = "HM_USER_STORAGE"
+id = "28448bdb9dd041dcaaefe292a7651c8a"
+preview_id = "28448bdb9dd041dcaaefe292a7651c8a"
+
+# Production D1 Database - Articles with slugs and content
 [[d1_databases]]
-binding = "USER_DB"
-database_name = "mukoko_users"
-database_id = "b6204614-2cf1-47ed-b9e4-1fbbeb09fe01"
+binding = "ARTICLES_DB" 
+database_name = "hararemetro_articles"
+database_id = "70d94fe9-4a78-4926-927b-e88e37141a54"
 
 # Production Analytics Engine - THE CORRECT 3 DATASETS
 [[analytics_engine_datasets]]
@@ -78,65 +81,78 @@ mode = "smart"
 
 # Production Routes
 [[routes]]
-pattern = "app.mukoko.com/*"
-zone_name = "mukoko.com"
+pattern = "www.hararemetro.co.zw/*"
+zone_name = "hararemetro.co.zw"
 
 [[routes]]
-pattern = "www.mukoko.com/*"
-zone_name = "mukoko.com"
+pattern = "hararemetro.co.zw/*"
+zone_name = "hararemetro.co.zw"
 
 # Preview Environment (for local development)
 [env.preview]
-name = "mukoko-preview"
+name = "harare-metro-preview"
 
 [env.preview.vars]
 NODE_ENV = "development"
 USE_FALLBACK_CONFIG = "true"
 LOG_LEVEL = "debug"
-ANALYTICS_ENABLED = "false"
-CLOUDFLARE_IMAGES_ENABLED = "true"
-MAX_CACHE_SIZE = "25MB"
-CACHE_TTL = "900"
-RSS_TIMEOUT = "8000"
-MAX_ARTICLES_PER_SOURCE = "50"
 CLOUDFLARE_IMAGES_ACCOUNT_ID = "125a2dfbc21f76a25c980609609e8218"
 CLOUDFLARE_IMAGES_TOKEN = "pVe0DAJWrCvXIcm7BzAymwR0vW4-oBF9VGiODLJN"
-ADMIN_KEY = "preview-admin-key"
 # Supabase Configuration
-VITE_SUPABASE_URL = "https://huilmzajhiqcuzonbaps.supabase.co"
-VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1aWxtemFqaGlxY3V6b25iYXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNzAyMjIsImV4cCI6MjA3MDc0NjIyMn0.G5C9Swbb1tXEjyhkI98PlQxZ_2OUXI1vD0Eh8Q81KZU"
+VITE_SUPABASE_URL = "https://oybatvdffsbaxwuxfetz.supabase.co"
+VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95YmF0dmRmZnNiYXh3dXhmZXR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1OTA2MjgsImV4cCI6MjA3MzE2NjYyOH0.tLr6-BXM9LvrpmR99ZPcDP_8I0p5EfNvnpX0QAl6plo"
 # Role-based access configuration
 ROLES_ENABLED = "true"
 DEFAULT_ROLE = "creator"
 ADMIN_ROLES = "admin,super_admin,moderator"
 CREATOR_ROLES = "creator,business-creator,author"
 
-# Preview KV Namespaces (use preview_id for local development)
+# Preview KV Namespaces - Multi-tier storage architecture (same as prod)
+# System configuration (app settings, limits)
 [[env.preview.kv_namespaces]]
-binding = "CONFIG_STORAGE"
-id = "73d709fa9f6a414fbea359cda40ec7db"
-preview_id = "f11d764e7d824243a4193d74aff9107f"
+binding = "HM_CONFIGURATIONS"
+id = "02c8cf6e4a6447518dd592782cfe0f63"
+preview_id = "02c8cf6e4a6447518dd592782cfe0f63"
 
+# Cache storage (articles cache)
 [[env.preview.kv_namespaces]]
-binding = "CACHE_STORAGE"
-id = "3933ee4aaa8246fd933b61eb1111528f"
-preview_id = "8b7a8a0285a74250910e917ba83a18bf"
+binding = "HM_CACHE_STORAGE"
+id = "bc0a8ad20f054043a9f68032276048ba"
+preview_id = "bc0a8ad20f054043a9f68032276048ba"
 
+# News content storage (feeds, categories, keywords, tags)
 [[env.preview.kv_namespaces]]
-binding = "USER_STORAGE"
-id = "494ec8445cd842ae8a7c50b5245fcc42"
-preview_id = "59985587dd834c75b9ab393e31f2cf17"
+binding = "HM_NEWS_STORAGE"
+id = "465b7b0df847411098cc369619a690c5"
+preview_id = "465b7b0df847411098cc369619a690c5"
 
+# Cache configuration (cache settings, TTL, strategies)  
 [[env.preview.kv_namespaces]]
-binding = "NEWS_STORAGE" 
-id = "472195d9dcb948b7a73c10b2716375ca"
-preview_id = "8c7b7c28e9fa4abc971935876cf9ca26"
+binding = "HM_CACHE_CONFIG"
+id = "ec38f5bde010400e9bdd5927cb7a9910"
+preview_id = "ec38f5bde010400e9bdd5927cb7a9910"
 
-# Preview D1 Database
+# Fast retrieval storage (likes, bookmarks, saves)
+[[env.preview.kv_namespaces]]
+binding = "HM_USER_STORAGE"
+id = "28448bdb9dd041dcaaefe292a7651c8a"
+preview_id = "28448bdb9dd041dcaaefe292a7651c8a"
+
+# Preview D1 Database - Articles with slugs and content
 [[env.preview.d1_databases]]
-binding = "USER_DB"
-database_name = "mukoko_users"
-database_id = "b6204614-2cf1-47ed-b9e4-1fbbeb09fe01"
+binding = "ARTICLES_DB"
+database_name = "hararemetro_articles"
+database_id = "70d94fe9-4a78-4926-927b-e88e37141a54"
 
-# Preview Analytics Engine - NO DATASETS FOR LOCAL DEV
-# Analytics datasets are disabled in preview environment
+# Preview Analytics Engine - Same as production for consistency
+[[env.preview.analytics_engine_datasets]]
+binding = "CATEGORY_CLICKS"
+dataset = "category_clicks"
+
+[[env.preview.analytics_engine_datasets]]
+binding = "NEWS_INTERACTIONS"
+dataset = "news_interactions"
+
+[[env.preview.analytics_engine_datasets]]
+binding = "SEARCH_QUERIES"
+dataset = "search_queries"

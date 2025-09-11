@@ -1,10 +1,20 @@
 // worker/services/ConfigService.js
 export class ConfigService {
   constructor(kvStorage) {
-    // IMPORTANT: This should be CONFIG_STORAGE binding, not main storage
-    this.kv = kvStorage // Make sure this is env.CONFIG_STORAGE
+    // IMPORTANT: This should be HM_CONFIGURATIONS binding, not main storage
+    this.kv = kvStorage // Make sure this is env.HM_CONFIGURATIONS
     this.fallbackConfig = this.initializeFallbackConfig()
     // Configs are static - no auto-refresh timers
+  }
+
+  // Central configuration keys
+  static CONFIG_KEYS = {
+    SYSTEM: 'hm:system',
+    RSS_SOURCES: 'hm:rss_sources', 
+    CATEGORIES: 'hm:categories',
+    CATEGORY_KEYWORDS: 'hm:category_keywords',
+    PRIORITY_KEYWORDS: 'hm:priority_keywords',
+    TRUSTED_DOMAINS: 'hm:trusted_domains'
   }
 
   // Initialize comprehensive fallback configuration with ALL sources from old worker
@@ -181,101 +191,276 @@ export class ConfigService {
         }
       ],
       categories: [
-        { id: 'general', name: 'General', emoji: '📰' },
-        { id: 'politics', name: 'Politics', emoji: '🏛️' },
-        { id: 'economy', name: 'Economy', emoji: '💰' },
-        { id: 'business', name: 'Business', emoji: '🏢' },
-        { id: 'sports', name: 'Sports', emoji: '⚽' },
-        { id: 'harare', name: 'Harare', emoji: '🏙️' },
-        { id: 'agriculture', name: 'Agriculture', emoji: '🌾' },
-        { id: 'technology', name: 'Technology', emoji: '💻' },
-        { id: 'health', name: 'Health', emoji: '🏥' },
-        { id: 'education', name: 'Education', emoji: '🎓' },
-        { id: 'entertainment', name: 'Entertainment', emoji: '🎭' },
-        { id: 'environment', name: 'Environment', emoji: '🌍' },
-        { id: 'crime', name: 'Crime', emoji: '🚔' },
-        { id: 'international', name: 'International', emoji: '🌐' },
-        { id: 'lifestyle', name: 'Lifestyle', emoji: '💫' },
-        { id: 'finance', name: 'Finance', emoji: '💳' }
+        // Entertainment & Media
+        { id: 'movies_cinema', name: 'Movies & Cinema', emoji: '🎬', color: '#ff6b6b' },
+        { id: 'music_audio', name: 'Music & Audio', emoji: '🎵', color: '#4ecdc4' },
+        { id: 'gaming_esports', name: 'Gaming & Esports', emoji: '🎮', color: '#45b7d1' },
+        { id: 'books_literature', name: 'Books & Literature', emoji: '📚', color: '#96ceb4' },
+        
+        // Lifestyle & Culture
+        { id: 'fashion_style', name: 'Fashion & Style', emoji: '👗', color: '#ffa726' },
+        { id: 'food_culinary', name: 'Food & Culinary', emoji: '🍳', color: '#ef5350' },
+        { id: 'travel_adventure', name: 'Travel & Adventure', emoji: '✈️', color: '#42a5f5' },
+        { id: 'fitness_wellness', name: 'Fitness & Wellness', emoji: '💪', color: '#66bb6a' },
+        
+        // Technology & Innovation
+        { id: 'tech_gadgets', name: 'Technology & Gadgets', emoji: '📱', color: '#7e57c2' },
+        { id: 'ai_future', name: 'AI & Future Tech', emoji: '🤖', color: '#5c6bc0' },
+        { id: 'crypto_blockchain', name: 'Crypto & Blockchain', emoji: '₿', color: '#ff9800' },
+        
+        // Social & Community
+        { id: 'local_community', name: 'Local Community', emoji: '🏘️', color: '#8bc34a' },
+        { id: 'social_activism', name: 'Social & Activism', emoji: '✊', color: '#e91e63' },
+        { id: 'relationships_dating', name: 'Relationships & Dating', emoji: '💕', color: '#f06292' },
+        
+        // Business & Career
+        { id: 'entrepreneurship', name: 'Entrepreneurship', emoji: '🚀', color: '#ff7043' },
+        { id: 'career_professional', name: 'Career & Professional', emoji: '💼', color: '#546e7a' },
+        { id: 'finance_investing', name: 'Finance & Investing', emoji: '💰', color: '#4caf50' },
+        
+        // Arts & Creativity
+        { id: 'visual_arts', name: 'Visual Arts', emoji: '🎨', color: '#ab47bc' },
+        { id: 'photography', name: 'Photography', emoji: '📸', color: '#26c6da' },
+        { id: 'design_creative', name: 'Design & Creative', emoji: '✨', color: '#ffee58' },
+        
+        // Education & Learning
+        { id: 'science_research', name: 'Science & Research', emoji: '🔬', color: '#29b6f6' },
+        { id: 'history_culture', name: 'History & Culture', emoji: '🏛️', color: '#a1887f' },
+        { id: 'languages_learning', name: 'Languages & Learning', emoji: '🗣️', color: '#9ccc65' },
+        
+        // Sports & Recreation
+        { id: 'sports_athletics', name: 'Sports & Athletics', emoji: '⚽', color: '#ff8a65' },
+        { id: 'outdoor_nature', name: 'Outdoor & Nature', emoji: '🌲', color: '#81c784' },
+        { id: 'hobbies_crafts', name: 'Hobbies & Crafts', emoji: '🧶', color: '#ba68c8' },
+        
+        // News & Current Events
+        { id: 'politics_governance', name: 'Politics & Governance', emoji: '🏛️', color: '#78909c' },
+        { id: 'world_news', name: 'World News', emoji: '🌍', color: '#42a5f5' },
+        { id: 'local_news', name: 'Local News', emoji: '📰', color: '#66bb6a' },
+        
+        // Spirituality & Philosophy
+        { id: 'spirituality_religion', name: 'Spirituality & Religion', emoji: '🙏', color: '#ce93d8' },
+        { id: 'philosophy_thought', name: 'Philosophy & Thought', emoji: '🤔', color: '#90a4ae' },
+        { id: 'personal_development', name: 'Personal Development', emoji: '🌱', color: '#a5d6a7' },
+
+        // Legacy Zimbabwe-specific categories (keep for RSS feeds)
+        { id: 'general', name: 'General', emoji: '📰', color: '#66bb6a' },
+        { id: 'harare', name: 'Harare', emoji: '🏙️', color: '#8bc34a' },
+        { id: 'agriculture', name: 'Agriculture', emoji: '🌾', color: '#81c784' },
+        { id: 'health', name: 'Health', emoji: '🏥', color: '#66bb6a' },
+        { id: 'education', name: 'Education', emoji: '🎓', color: '#9ccc65' },
+        { id: 'crime', name: 'Crime', emoji: '🚔', color: '#e57373' },
+        { id: 'environment', name: 'Environment', emoji: '🌍', color: '#81c784' }
       ],
       category_keywords: {
-        politics: [
-          'parliament', 'government', 'election', 'party', 'minister', 'president', 'policy', 
-          'zanu', 'mdc', 'opposition', 'mnangagwa', 'chamisa', 'cabinet', 'senate', 'mp', 
-          'constituency', 'voter', 'ballot', 'democracy', 'governance', 'corruption',
-          'sanctions', 'diplomatic', 'ambassador'
+        // Entertainment & Media
+        movies_cinema: [
+          'movie', 'film', 'cinema', 'hollywood', 'bollywood', 'nollywood', 'actor', 'actress',
+          'director', 'producer', 'box office', 'premiere', 'trailer', 'soundtrack', 'oscar',
+          'award', 'festival', 'screening', 'review', 'blockbuster', 'documentary', 'indie'
         ],
-        economy: [
-          'economy', 'economic', 'inflation', 'currency', 'budget', 'finance', 'bank', 
-          'investment', 'gdp', 'trade', 'bond', 'rtgs', 'usd', 'forex', 'revenue',
-          'tax', 'fiscal', 'monetary', 'debt', 'loan', 'imf', 'world bank', 'stock exchange',
-          'zse', 'commodity', 'export', 'import', 'manufacturing'
+        music_audio: [
+          'music', 'song', 'album', 'artist', 'musician', 'band', 'concert', 'performance',
+          'spotify', 'streaming', 'playlist', 'guitar', 'piano', 'vocals', 'lyrics', 'genre',
+          'hip hop', 'jazz', 'rock', 'pop', 'classical', 'electronic', 'afrobeat', 'gospel'
         ],
-        business: [
-          'business', 'company', 'entrepreneur', 'startup', 'market', 'industry', 
-          'corporate', 'commerce', 'mining', 'tobacco', 'retail', 'wholesale',
-          'sme', 'tender', 'procurement', 'partnership', 'merger', 'acquisition',
-          'ceo', 'director', 'shareholder', 'profit', 'revenue', 'growth'
+        gaming_esports: [
+          'gaming', 'esports', 'video game', 'console', 'pc gaming', 'mobile gaming', 'tournament',
+          'streamer', 'twitch', 'youtube gaming', 'ps5', 'xbox', 'nintendo', 'steam', 'valorant',
+          'fortnite', 'league of legends', 'call of duty', 'fifa', 'minecraft'
         ],
-        sports: [
-          'sport', 'football', 'soccer', 'cricket', 'rugby', 'warriors', 'dynamos', 
-          'caps united', 'highlanders', 'afcon', 'fifa', 'world cup', 'olympics',
-          'athletics', 'boxing', 'tennis', 'golf', 'swimming', 'basketball',
-          'volleyball', 'netball', 'hockey', 'cycling', 'marathon'
+        books_literature: [
+          'book', 'novel', 'author', 'writer', 'literature', 'poetry', 'publishing', 'bestseller',
+          'reading', 'library', 'kindle', 'ebook', 'fiction', 'non-fiction', 'biography', 'memoir',
+          'review', 'book club', 'literary', 'manuscript', 'publisher', 'amazon books'
+        ],
+
+        // Lifestyle & Culture
+        fashion_style: [
+          'fashion', 'style', 'clothing', 'designer', 'runway', 'model', 'brand', 'trend',
+          'outfit', 'wardrobe', 'shopping', 'boutique', 'couture', 'streetwear', 'luxury',
+          'accessories', 'shoes', 'jewelry', 'makeup', 'beauty', 'cosmetics'
+        ],
+        food_culinary: [
+          'food', 'recipe', 'cooking', 'chef', 'restaurant', 'cuisine', 'meal', 'dish',
+          'ingredients', 'kitchen', 'culinary', 'dining', 'menu', 'taste', 'flavor',
+          'foodie', 'gastronomy', 'bakery', 'cafe', 'wine', 'beer', 'cocktail'
+        ],
+        travel_adventure: [
+          'travel', 'tourism', 'vacation', 'holiday', 'adventure', 'destination', 'hotel',
+          'flight', 'airline', 'backpacking', 'safari', 'beach', 'mountain', 'city break',
+          'culture trip', 'expedition', 'journey', 'explore', 'discover', 'wanderlust'
+        ],
+        fitness_wellness: [
+          'fitness', 'workout', 'exercise', 'gym', 'health', 'wellness', 'nutrition', 'diet',
+          'yoga', 'meditation', 'mindfulness', 'mental health', 'therapy', 'running', 'cycling',
+          'strength training', 'cardio', 'weight loss', 'muscle building', 'supplements'
+        ],
+
+        // Technology & Innovation
+        tech_gadgets: [
+          'technology', 'tech', 'gadget', 'smartphone', 'iphone', 'android', 'laptop', 'computer',
+          'tablet', 'smart watch', 'headphones', 'camera', 'innovation', 'startup', 'app',
+          'software', 'hardware', 'device', 'apple', 'google', 'microsoft', 'samsung'
+        ],
+        ai_future: [
+          'artificial intelligence', 'ai', 'machine learning', 'deep learning', 'neural network',
+          'automation', 'robot', 'robotics', 'future', 'innovation', 'chatgpt', 'openai',
+          'algorithm', 'data science', 'big data', 'quantum computing', 'virtual reality',
+          'augmented reality', 'metaverse', 'blockchain', 'iot', 'internet of things'
+        ],
+        crypto_blockchain: [
+          'cryptocurrency', 'crypto', 'bitcoin', 'ethereum', 'blockchain', 'nft', 'defi',
+          'web3', 'trading', 'mining', 'wallet', 'exchange', 'coinbase', 'binance',
+          'altcoin', 'token', 'smart contract', 'decentralized', 'digital currency'
+        ],
+
+        // Social & Community
+        local_community: [
+          'community', 'local', 'neighborhood', 'resident', 'civic', 'volunteer', 'charity',
+          'fundraising', 'event', 'meeting', 'council', 'municipal', 'town', 'city',
+          'harare', 'bulawayo', 'zimbabwe', 'africa', 'development', 'infrastructure'
+        ],
+        social_activism: [
+          'activism', 'protest', 'social justice', 'human rights', 'equality', 'diversity',
+          'inclusion', 'movement', 'campaign', 'advocacy', 'change', 'reform', 'awareness',
+          'demonstration', 'march', 'petition', 'civil rights', 'feminism', 'environment'
+        ],
+        relationships_dating: [
+          'relationship', 'dating', 'love', 'romance', 'marriage', 'wedding', 'couple',
+          'family', 'friendship', 'dating app', 'tinder', 'bumble', 'advice', 'therapy',
+          'counseling', 'partnership', 'commitment', 'breakup', 'divorce'
+        ],
+
+        // Business & Career
+        entrepreneurship: [
+          'entrepreneur', 'startup', 'business', 'innovation', 'funding', 'investment',
+          'venture capital', 'angel investor', 'pitch', 'business plan', 'scale', 'growth',
+          'founder', 'ceo', 'company', 'enterprise', 'small business', 'side hustle'
+        ],
+        career_professional: [
+          'career', 'job', 'employment', 'professional', 'work', 'workplace', 'office',
+          'hiring', 'recruitment', 'interview', 'resume', 'cv', 'linkedin', 'networking',
+          'promotion', 'salary', 'skills', 'training', 'development', 'leadership'
+        ],
+        finance_investing: [
+          'finance', 'investment', 'money', 'stock market', 'trading', 'portfolio', 'savings',
+          'bank', 'loan', 'credit', 'debt', 'budget', 'financial planning', 'retirement',
+          'pension', 'insurance', 'real estate', 'property', 'wealth', 'economy'
+        ],
+
+        // Arts & Creativity
+        visual_arts: [
+          'art', 'painting', 'sculpture', 'gallery', 'museum', 'artist', 'exhibition', 'canvas',
+          'creativity', 'visual', 'contemporary art', 'abstract', 'portrait', 'landscape',
+          'installation', 'curator', 'collector', 'auction', 'masterpiece'
+        ],
+        photography: [
+          'photography', 'photographer', 'camera', 'photo', 'portrait', 'landscape', 'wedding',
+          'studio', 'lens', 'editing', 'photoshop', 'lightroom', 'instagram', 'digital',
+          'film', 'street photography', 'nature photography', 'fashion photography'
+        ],
+        design_creative: [
+          'design', 'graphic design', 'web design', 'ui', 'ux', 'creative', 'branding',
+          'logo', 'typography', 'color', 'layout', 'adobe', 'photoshop', 'illustrator',
+          'figma', 'sketch', 'architecture', 'interior design', 'product design'
+        ],
+
+        // Education & Learning
+        science_research: [
+          'science', 'research', 'study', 'university', 'academic', 'scientist', 'discovery',
+          'experiment', 'laboratory', 'peer review', 'publication', 'thesis', 'phd',
+          'biology', 'chemistry', 'physics', 'medicine', 'engineering', 'climate'
+        ],
+        history_culture: [
+          'history', 'culture', 'heritage', 'tradition', 'ancient', 'civilization', 'museum',
+          'archaeology', 'anthropology', 'historical', 'cultural', 'artifact', 'monument',
+          'preservation', 'folklore', 'customs', 'ritual', 'celebration', 'festival'
+        ],
+        languages_learning: [
+          'language', 'learning', 'education', 'english', 'shona', 'ndebele', 'french',
+          'spanish', 'chinese', 'translation', 'interpreter', 'fluent', 'bilingual',
+          'grammar', 'vocabulary', 'pronunciation', 'course', 'teacher', 'student'
+        ],
+
+        // Sports & Recreation
+        sports_athletics: [
+          'sports', 'football', 'soccer', 'cricket', 'rugby', 'basketball', 'tennis', 'golf',
+          'athletics', 'marathon', 'olympics', 'world cup', 'championship', 'tournament',
+          'athlete', 'coach', 'team', 'league', 'match', 'game', 'competition'
+        ],
+        outdoor_nature: [
+          'outdoor', 'nature', 'hiking', 'camping', 'wildlife', 'safari', 'conservation',
+          'environment', 'national park', 'forest', 'mountain', 'river', 'lake',
+          'adventure', 'eco-tourism', 'bird watching', 'fishing', 'hunting'
+        ],
+        hobbies_crafts: [
+          'hobby', 'craft', 'diy', 'handmade', 'knitting', 'sewing', 'woodworking',
+          'gardening', 'collecting', 'painting', 'drawing', 'pottery', 'jewelry making',
+          'scrapbooking', 'model building', 'puzzle', 'board game', 'creative'
+        ],
+
+        // News & Current Events
+        politics_governance: [
+          'politics', 'government', 'parliament', 'election', 'party', 'minister', 'president',
+          'policy', 'zanu', 'mdc', 'opposition', 'mnangagwa', 'chamisa', 'cabinet', 'senate',
+          'mp', 'constituency', 'voter', 'ballot', 'democracy', 'governance', 'corruption'
+        ],
+        world_news: [
+          'world', 'international', 'global', 'country', 'nation', 'foreign', 'diplomatic',
+          'united nations', 'africa', 'europe', 'america', 'asia', 'summit', 'treaty',
+          'ambassador', 'embassy', 'conflict', 'peace', 'war', 'crisis'
+        ],
+        local_news: [
+          'local', 'zimbabwe', 'harare', 'bulawayo', 'mutare', 'gweru', 'masvingo',
+          'chitungwiza', 'kwekwe', 'kadoma', 'municipal', 'council', 'mayor',
+          'community', 'residents', 'development', 'infrastructure', 'services'
+        ],
+
+        // Spirituality & Philosophy
+        spirituality_religion: [
+          'spirituality', 'religion', 'faith', 'church', 'christian', 'islam', 'hinduism',
+          'buddhism', 'traditional religion', 'prayer', 'worship', 'meditation', 'bible',
+          'quran', 'scripture', 'pastor', 'priest', 'imam', 'prophet', 'divine'
+        ],
+        philosophy_thought: [
+          'philosophy', 'philosopher', 'ethics', 'morality', 'wisdom', 'consciousness',
+          'existence', 'meaning', 'truth', 'knowledge', 'logic', 'reasoning', 'debate',
+          'theory', 'concept', 'idea', 'thought', 'reflection', 'intellectual'
+        ],
+        personal_development: [
+          'personal development', 'self improvement', 'growth', 'motivation', 'inspiration',
+          'success', 'goal setting', 'productivity', 'mindset', 'coaching', 'mentoring',
+          'leadership', 'confidence', 'communication', 'habits', 'discipline', 'focus'
+        ],
+
+        // Legacy categories (existing Zimbabwe-specific)
+        general: [
+          'news', 'zimbabwe', 'africa', 'breaking', 'latest', 'update', 'report', 'story'
         ],
         harare: [
-          'harare', 'capital', 'city council', 'mayor', 'cbd', 'avondale', 'borrowdale', 
-          'chitungwiza', 'municipality', 'ward', 'councillor', 'rates', 'water', 'sewer',
-          'traffic', 'kombi', 'transport', 'housing', 'residential', 'suburbs'
+          'harare', 'capital', 'city', 'urban', 'metropolitan', 'avondale', 'borrowdale',
+          'eastlea', 'highlands', 'kopje', 'mbare', 'waterfalls', 'westgate'
         ],
         agriculture: [
-          'agriculture', 'farming', 'tobacco', 'maize', 'cotton', 'wheat', 'soya',
-          'irrigation', 'crop', 'harvest', 'season', 'drought', 'rainfall',
-          'fertilizer', 'seed', 'land reform', 'farmer', 'commercial', 'communal'
-        ],
-        technology: [
-          'technology', 'tech', 'digital', 'internet', 'mobile', 'app', 'software',
-          'innovation', 'startup', 'fintech', 'blockchain', 'ai', 'data',
-          'cybersecurity', 'telecoms', 'econet', 'netone', 'telecel'
+          'agriculture', 'farming', 'crop', 'livestock', 'tobacco', 'maize', 'cotton',
+          'farmer', 'harvest', 'irrigation', 'land', 'rural', 'commercial farming'
         ],
         health: [
           'health', 'hospital', 'medical', 'doctor', 'patient', 'medicine', 'treatment',
-          'disease', 'covid', 'vaccination', 'clinic', 'healthcare', 'pharmacy',
-          'outbreak', 'epidemic', 'maternal', 'child health', 'malaria', 'hiv', 'aids'
+          'disease', 'covid', 'vaccination', 'clinic', 'healthcare', 'wellness'
         ],
         education: [
-          'education', 'school', 'student', 'teacher', 'university', 'college',
-          'examination', 'zimsec', 'results', 'fees', 'scholarship', 'learning',
-          'curriculum', 'graduation', 'degree', 'diploma', 'research'
-        ],
-        entertainment: [
-          'entertainment', 'music', 'artist', 'movie', 'film', 'celebrity', 'culture',
-          'festival', 'concert', 'award', 'album', 'song', 'dance', 'theatre',
-          'comedy', 'fashion', 'beauty', 'lifestyle'
-        ],
-        environment: [
-          'environment', 'climate', 'weather', 'conservation', 'wildlife', 'forest',
-          'pollution', 'green', 'renewable', 'solar', 'clean', 'nature',
-          'endangered', 'national park', 'tourism', 'safari'
+          'education', 'school', 'university', 'student', 'teacher', 'learning', 'examination',
+          'zimsec', 'ministry of education', 'tertiary', 'primary', 'secondary'
         ],
         crime: [
-          'crime', 'police', 'arrest', 'court', 'trial', 'judge', 'sentence', 'prison',
-          'theft', 'robbery', 'murder', 'investigation', 'security', 'violence',
-          'corruption', 'fraud', 'smuggling', 'drugs'
+          'crime', 'police', 'arrest', 'court', 'justice', 'theft', 'murder', 'robbery',
+          'investigation', 'criminal', 'law enforcement', 'prison', 'sentence'
         ],
-        international: [
-          'international', 'world', 'global', 'foreign', 'embassy', 'visa', 'travel',
-          'tourism', 'export', 'import', 'trade', 'relations', 'diplomatic',
-          'african union', 'sadc', 'united nations', 'brexit', 'china', 'uk', 'usa'
-        ],
-        lifestyle: [
-          'lifestyle', 'fashion', 'food', 'recipe', 'home', 'family', 'relationship',
-          'wedding', 'travel', 'vacation', 'hobby', 'fitness', 'diet', 'beauty'
-        ],
-        finance: [
-          'finance', 'financial', 'money', 'cash', 'loan', 'credit', 'savings',
-          'insurance', 'pension', 'investment', 'portfolio', 'shares', 'dividend',
-          'interest', 'mortgage', 'banking', 'microfinance'
+        environment: [
+          'environment', 'climate', 'conservation', 'pollution', 'wildlife', 'deforestation',
+          'recycling', 'renewable energy', 'sustainability', 'ecosystem', 'biodiversity'
         ]
       },
       priority_keywords: [
@@ -342,16 +527,136 @@ export class ConfigService {
         'photobucket.com', 'flickr.com', 'staticflickr.com',
         'wikimedia.org', 'upload.wikimedia.org'
       ],
-      site: {
+      // Centralized system configuration - ALL limits in ONE place
+      system: {
         siteName: 'Harare Metro',
-        maxArticles: 20000,        // Increased from 10000
-        itemsPerSource: 100,       // Increased from 50
-        refreshIntervalMinutes: 60,
-        minLimit: 100,             // New minimum limit
-        maxLimit: 1000,            // New maximum limit
-        unlimitedContent: true     // Enable unlimited content extraction
+        
+        // Article limits
+        maxTotalArticles: 40000,    // Total articles to cache
+        maxArticlesPerSource: 500,  // Articles per RSS source  
+        articleContentLimit: 1000000,  // Unlimited character limit per article (1 million chars = full content)
+        
+        // Mobile-first pagination (data-conscious for Africa)
+        pagination: {
+          initialLoad: 24,         // First load: 24 articles (lightweight)
+          pageSize: 12,           // Subsequent pages: 12 articles each  
+          preloadNextPage: true,  // Preload next page in background
+          cachePages: 3,          // Keep 3 pages cached (72 articles max)
+          imageCompression: true, // Compress images for mobile
+          previewTextLimit: 400   // Show 400 chars preview initially (better reading experience)
+        },
+        
+        // API limits  
+        apiMinLimit: 12,           // Min articles per request (reduced)
+        apiMaxLimit: 24,           // Max articles per request (mobile-friendly)
+        
+        // Smart caching for mobile
+        cacheStrategy: {
+          articlesTtl: 14 * 24 * 60 * 60, // 2 weeks in seconds
+          refreshInterval: 60,     // Background refresh every 60 minutes
+          maxCacheSize: '100MB',   // Production cache size
+          mobileMaxCache: '25MB',  // Mobile-specific cache limit
+          preloadCache: 24,        // Always keep 24 articles ready
+          backgroundRefresh: true  // Refresh in background, don't interrupt user
+        },
+        
+        // RSS fetching
+        rssTimeout: 10000,         // RSS fetch timeout (ms)
+        refreshIntervalMinutes: 60, // How often to refresh feeds
+        
+        // Data-conscious settings for African users
+        dataOptimization: {
+          compressImages: true,    // Always compress images
+          lazyLoadImages: true,    // Load images only when needed
+          prefetchLimit: 3,        // Only prefetch 3 next articles
+          lowDataMode: false,      // Can be enabled by user
+          textFirst: true,         // Load text before images
+          backgroundUpdates: true  // Update content in background
+        },
+        
+        // Content processing  
+        unlimitedContent: true,    // Enable unlimited content extraction
+        enableAnalytics: true,     // Enable analytics tracking
+        enableCloudflareImages: true, // Enable image optimization
+        
+        // Security
+        adminKey: 'hararemetro-admin-2025-secure-key',
+        
+        // Role configuration
+        rolesEnabled: true,
+        defaultRole: 'creator',
+        adminRoles: ['admin', 'super_admin', 'moderator'],
+        creatorRoles: ['creator', 'business-creator', 'author'],
+        
+        // Environment-specific overrides (mobile-optimized)
+        preview: {
+          maxArticlesPerSource: 200,  // Lower for preview
+          maxCacheSize: '15MB',       // Even smaller cache for dev
+          rssTimeout: 8000,          // Shorter timeout
+          enableAnalytics: false,    // No analytics in preview
+          pagination: {
+            initialLoad: 12,         // Smaller initial load for dev
+            pageSize: 6,            // Smaller pages for testing
+            preloadNextPage: false  // No preload in dev
+          }
+        }
       }
     }
+  }
+
+  // Get system configuration with environment override support
+  async getSystemConfig(isPreview = false) {
+    try {
+      const systemConfig = await this.get(ConfigService.CONFIG_KEYS.SYSTEM, this.fallbackConfig.system)
+      
+      // Apply preview overrides if in preview environment
+      if (isPreview && systemConfig.preview) {
+        return {
+          ...systemConfig,
+          ...systemConfig.preview
+        }
+      }
+      
+      return systemConfig
+    } catch (error) {
+      console.error('[CONFIG] Error getting system config:', error)
+      return this.fallbackConfig.system
+    }
+  }
+
+  // Convenience methods for commonly used system settings
+  async getMaxArticlesPerSource(isPreview = false) {
+    const config = await this.getSystemConfig(isPreview)
+    return config.maxArticlesPerSource
+  }
+
+  async getMaxTotalArticles(isPreview = false) {
+    const config = await this.getSystemConfig(isPreview)  
+    return config.maxTotalArticles
+  }
+
+  async getArticleContentLimit(isPreview = false) {
+    const config = await this.getSystemConfig(isPreview)
+    return config.articleContentLimit
+  }
+
+  async getCacheSettings(isPreview = false) {
+    const config = await this.getSystemConfig(isPreview)
+    return {
+      articlesTtl: config.cacheArticlesTtl,
+      refreshInterval: config.cacheRefreshInterval * 60 * 1000, // Convert to ms
+      maxSize: config.maxCacheSize
+    }
+  }
+
+  async getRssTimeout(isPreview = false) {
+    const config = await this.getSystemConfig(isPreview)
+    return config.rssTimeout
+  }
+
+  async getPaginationConfig(isPreview = false) {
+    const config = await this.getSystemConfig(isPreview)
+    return config.pagination
   }
 
   // Get config WITHOUT auto-refresh - configs are static
@@ -676,6 +981,11 @@ export class ConfigService {
     }
 
     return detectedCategory
+  }
+
+  // Check if KV storage is available and functional
+  isKVAvailable() {
+    return !!(this.kv && typeof this.kv.get === 'function')
   }
 }
 

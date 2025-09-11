@@ -1,6 +1,6 @@
-# 🚀 Local Development Guide for Mukoko
+# 🚀 Local Development Guide for Harare Metro
 
-This guide will help you set up and test the Mukoko application locally without deploying to Cloudflare.
+This guide will help you set up and test the Harare Metro application locally without deploying to Cloudflare.
 
 ## 📋 Prerequisites
 
@@ -25,7 +25,7 @@ cp .env.example .env.local
 
 Edit `.env.local` and add your Supabase project details:
 ```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_URL=https://oybatvdffsbaxwuxfetz.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
@@ -150,7 +150,7 @@ VITE_LOG_LEVEL=debug
 ## 📁 Project Structure
 
 ```
-mukoko/
+harare-metro/
 ├── src/
 │   ├── components/          # React components
 │   │   ├── auth/           # Authentication components

@@ -1,6 +1,6 @@
-# Mukoko Deployment Guide
+# Harare Metro Deployment Guide
 
-This guide covers the complete deployment process for Mukoko, including domain configuration, Supabase setup, and Cloudflare Workers deployment.
+This guide covers the complete deployment process for Harare Metro, including domain configuration, Supabase setup, and Cloudflare Workers deployment.
 
 ## 🚀 Prerequisites
 
@@ -8,7 +8,7 @@ Before deploying, ensure you have:
 
 - [ ] Cloudflare account with Workers enabled
 - [ ] Supabase account and project created
-- [ ] Domain names registered (mukoko.com)
+- [ ] Domain names registered (hararemetro.co.zw)
 - [ ] Node.js 18+ and npm installed
 - [ ] Wrangler CLI installed: `npm install -g wrangler`
 
@@ -23,10 +23,9 @@ Before deploying, ensure you have:
 
 #### Configure Authentication
 1. Go to Authentication > Settings
-2. Configure your site URL: `https://app.mukoko.com`
+2. Configure your site URL: `https://www.hararemetro.co.zw`
 3. Add redirect URLs:
-   - `https://app.mukoko.com/auth/callback`
-   - `https://www.mukoko.com/auth/callback`
+   - `https://www.hararemetro.co.zw/auth/callback`
    - `http://localhost:5173/auth/callback` (for development)
 
 #### Set up OAuth Providers (Optional)
@@ -46,31 +45,27 @@ Run the SQL commands from the README in your Supabase SQL editor to create all n
 #### Create Environment Files
 Create `.env.local` for development:
 ```env
-VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_URL=https://oybatvdffsbaxwuxfetz.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 #### Update Wrangler Configuration
 Update `wrangler.toml` with your specific values:
 ```toml
-name = "mukoko"
+name = "harare-metro"
 compatibility_date = "2025-05-01"
 
 # Production Environment Variables
 [vars]
 NODE_ENV = "production"
-SUPABASE_URL = "your_supabase_project_url"
+SUPABASE_URL = "https://oybatvdffsbaxwuxfetz.supabase.co"
 SUPABASE_ANON_KEY = "your_supabase_anon_key"
 ADMIN_KEY = "your-secure-admin-key"
 
 # Production Routes
 [[routes]]
-pattern = "app.mukoko.com/*"
-zone_name = "mukoko.com"
-
-[[routes]]
-pattern = "www.mukoko.com/*"
-zone_name = "mukoko.com"
+pattern = "www.hararemetro.co.zw/*"
+zone_name = "hararemetro.co.zw"
 ```
 
 ### 3. Cloudflare Configuration
@@ -93,10 +88,10 @@ wrangler kv:namespace create "CONFIG_STORAGE" --preview
 #### Create D1 Database
 ```bash
 # Create production database
-wrangler d1 create mukoko-db
+wrangler d1 create harare-metro-db
 
 # Create preview database
-wrangler d1 create mukoko-db --preview
+wrangler d1 create harare-metro-db --preview
 ```
 
 #### Create Analytics Engine Datasets
@@ -110,7 +105,7 @@ wrangler analytics-engine create search_queries
 ### 4. Domain Configuration
 
 #### DNS Setup
-1. Go to your domain registrar (where you purchased mukoko.com)
+1. Go to your domain registrar (where you purchased hararemetro.co.zw)
 2. Update nameservers to Cloudflare:
    ```
    ns1.cloudflare.com
@@ -168,7 +163,7 @@ npm run deploy:preview
 ### 6. Post-Deployment Verification
 
 #### Test Core Functionality
-1. Visit `https://app.mukoko.com`
+1. Visit `https://www.hararemetro.co.zw`
 2. Test user registration and login
 3. Verify news aggregation is working
 4. Test bookmarks and likes functionality
@@ -185,7 +180,7 @@ wrangler tail --env preview
 
 #### Health Check
 ```bash
-curl https://app.mukoko.com/api/health
+curl https://www.hararemetro.co.zw/api/health
 ```
 
 ## 🔧 Configuration Management
@@ -379,4 +374,4 @@ Set up GitHub repository secrets:
 
 ---
 
-This deployment guide ensures a robust, scalable, and secure deployment of Mukoko. Follow each step carefully and test thoroughly before going live.
+This deployment guide ensures a robust, scalable, and secure deployment of Harare Metro. Follow each step carefully and test thoroughly before going live.

@@ -1,7 +1,7 @@
 {
-  "name": "Mukoko - News Aggregator",
-  "short_name": "Mukoko",
-  "description": "Stay informed with the latest news from trusted sources. Modern news aggregation platform.",
+  "name": "Harare Metro - Zimbabwe News",
+  "short_name": "Harare Metro",
+  "description": "Zimbabwe's premier news aggregator - Latest news from trusted local sources"
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#000000",

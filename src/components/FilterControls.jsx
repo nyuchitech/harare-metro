@@ -1,6 +1,6 @@
-// src/components/FilterControls.jsx - Simplified version
+// src/components/FilterControls.jsx - Enhanced version with Lucide icons
 import React, { useState } from 'react'
-import { LayoutGrid, List } from 'lucide-react'
+import { LayoutGrid, List, Filter, ChevronDown, Clock, ArrowUpDown } from 'lucide-react'
 import { IconGroup } from './ui/icon-group'
 import { IconButton } from './ui/icon-button'
 
@@ -48,9 +48,7 @@ const FilterControls = ({
           `}
         >
           {/* Filter Icon */}
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
-          </svg>
+          <Filter className="w-4 h-4" />
           <span className="hidden sm:inline">Filter</span>
           {hasActiveFilters && (
             <span className="bg-white/20 text-xs px-1.5 py-0.5 rounded-full font-bold">
@@ -58,9 +56,7 @@ const FilterControls = ({
             </span>
           )}
           {/* Chevron */}
-          <svg className={`w-4 h-4 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <ChevronDown className={`w-4 h-4 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {/* Dropdown Menu */}
@@ -79,9 +75,7 @@ const FilterControls = ({
                 {/* Timeframe Section */}
                 <div className="mb-6">
                   <div className="flex items-center gap-2 px-2 py-2 border-b border-gray-200 dark:border-gray-700 mb-3">
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <Clock className="w-4 h-4 text-gray-500" />
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                       Timeframe
                     </span>
@@ -117,9 +111,7 @@ const FilterControls = ({
                 {/* Sort Section */}
                 <div>
                   <div className="flex items-center gap-2 px-2 py-2 border-b border-gray-200 dark:border-gray-700 mb-3">
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                    </svg>
+                    <ArrowUpDown className="w-4 h-4 text-gray-500" />
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                       Sort By
                     </span>

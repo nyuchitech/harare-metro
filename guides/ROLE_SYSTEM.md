@@ -1,7 +1,7 @@
 # User Roles and Authentication System
 
 ## Overview
-The Mukoko social news app now implements a comprehensive role-based authentication system using Supabase. Authentication is only required for specific protected pages and features.
+The Harare Metro social news app now implements a comprehensive role-based authentication system using Supabase. Authentication is only required for specific protected pages and features.
 
 ## User Roles
 

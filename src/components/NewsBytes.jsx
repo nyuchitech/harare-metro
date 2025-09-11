@@ -1,26 +1,15 @@
-// src/components/NewsBytes.jsx - Updated to work with consolidated useFeeds hook
+// Pure vertical scroll news experience with snap scrolling
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { cn } from '../lib/utils'
 import {
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
   Share,
   Bookmark,
   Heart,
-  MessageCircle,
-  MoreVertical,
-  X,
-  ChevronDown,
-  Maximize2,
   Globe,
-  User,
-  SkipBack,
-  SkipForward,
-  RotateCcw
+  RefreshCw,
+  ArrowUp
 } from 'lucide-react'
 import ArticleModal from './ArticleModal'
 import ShareModal from './ShareModal'
@@ -29,48 +18,32 @@ import { useAnalytics } from '../hooks/useAnalytics'
 const NewsBytes = ({ 
   currentColors, 
   articles = [], 
-  viewMode = 'grid',
-  // Updated props to match new useFeeds hook
-  likedArticles = new Set(),
-  bookmarkedArticles = [],
-  onLikeArticle,
-  onBookmarkArticle,
+  isLiked,
+  isBookmarked,
+  toggleLike,
+  toggleBookmark,
   onShare,
-  onArticleView,
-  // Legacy props for backward compatibility
-  savedArticles = [],
-  onToggleSave
+  forceRefresh
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [isMuted, setIsMuted] = useState(true)
-  const [showShareModal, setShowShareModal] = useState(false)
   const [showArticleModal, setShowArticleModal] = useState(false)
-  const [expandedContent, setExpandedContent] = useState(false)
-  const [showPlayPause, setShowPlayPause] = useState(false)
-  const [showControls, setShowControls] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showBackToTop, setShowBackToTop] = useState(false)
+  
   const containerRef = useRef(null)
-  const touchStartRef = useRef({ y: 0, time: 0, moved: false })
-  const autoplayTimerRef = useRef(null)
+  const articlesRef = useRef([])
+  const touchStartRef = useRef({ y: 0, time: 0 })
+  const isScrollingRef = useRef(false)
+  const scrollTimeoutRef = useRef(null)
 
   // Analytics hooks
-  const {
-    trackArticleClick,
-    trackArticleView,
-    trackUserInteraction,
-    trackPageView,
-    trackScroll
-  } = useAnalytics()
+  const { trackArticleView, trackUserInteraction } = useAnalytics()
 
-  // Filter articles that have images
+  // Filter articles that have images for visual news bytes
   const validArticles = articles.filter(article => 
-    article.optimizedImageUrl || article.imageUrl || article.image
+    article.optimizedImageUrl || article.imageUrl || article.image_url
   )
-
-  // Track page view when component mounts
-  useEffect(() => {
-    trackPageView('news_bytes', document.referrer)
-  }, [trackPageView])
 
   // Track article view when current article changes
   useEffect(() => {
@@ -79,41 +52,177 @@ const NewsBytes = ({
     }
   }, [currentIndex, validArticles, trackArticleView])
 
-  // Auto-advance to next article with better timer management
-  useEffect(() => {
-    if (!isPlaying || validArticles.length === 0) {
-      if (autoplayTimerRef.current) {
-        clearInterval(autoplayTimerRef.current)
-        autoplayTimerRef.current = null
-      }
-      return
-    }
-
-    autoplayTimerRef.current = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % validArticles.length)
-    }, 10000) // 10 seconds per article
-
-    return () => {
-      if (autoplayTimerRef.current) {
-        clearInterval(autoplayTimerRef.current)
-        autoplayTimerRef.current = null
-      }
-    }
-  }, [isPlaying, validArticles.length])
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (autoplayTimerRef.current) {
-        clearInterval(autoplayTimerRef.current)
-      }
+  // Smooth snap scrolling to specific article
+  const scrollToArticle = useCallback((index) => {
+    const articleElement = articlesRef.current[index]
+    if (articleElement && containerRef.current) {
+      articleElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      })
+      setCurrentIndex(index)
+      
+      // Show back to top if not at first article
+      setShowBackToTop(index > 0)
     }
   }, [])
+
+  // Handle scroll events with snap behavior
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    let isScrolling = false
+
+    const handleScroll = () => {
+      if (isScrolling) return
+      
+      const containerRect = container.getBoundingClientRect()
+      const containerHeight = containerRect.height
+      
+      // Find which article is currently most visible
+      let mostVisibleIndex = 0
+      let maxVisibleHeight = 0
+      
+      articlesRef.current.forEach((articleEl, index) => {
+        if (!articleEl) return
+        
+        const articleRect = articleEl.getBoundingClientRect()
+        const visibleHeight = Math.min(articleRect.bottom, containerRect.bottom) - 
+                             Math.max(articleRect.top, containerRect.top)
+        
+        if (visibleHeight > maxVisibleHeight && visibleHeight > 0) {
+          maxVisibleHeight = visibleHeight
+          mostVisibleIndex = index
+        }
+      })
+      
+      if (mostVisibleIndex !== currentIndex) {
+        setCurrentIndex(mostVisibleIndex)
+        setShowBackToTop(mostVisibleIndex > 0)
+      }
+    }
+
+    // Snap to nearest article when scrolling stops
+    const handleScrollEnd = () => {
+      clearTimeout(scrollTimeoutRef.current)
+      scrollTimeoutRef.current = setTimeout(() => {
+        isScrolling = false
+        
+        // Find the article closest to the center of the viewport
+        const containerRect = container.getBoundingClientRect()
+        const viewportCenter = containerRect.top + containerRect.height / 2
+        
+        let closestIndex = 0
+        let minDistance = Infinity
+        
+        articlesRef.current.forEach((articleEl, index) => {
+          if (!articleEl) return
+          
+          const articleRect = articleEl.getBoundingClientRect()
+          const articleCenter = articleRect.top + articleRect.height / 2
+          const distance = Math.abs(viewportCenter - articleCenter)
+          
+          if (distance < minDistance) {
+            minDistance = distance
+            closestIndex = index
+          }
+        })
+        
+        // Snap to closest article if it's not already centered
+        if (closestIndex !== currentIndex) {
+          scrollToArticle(closestIndex)
+        }
+      }, 150) // Wait 150ms after scroll stops
+      
+      isScrolling = true
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    container.addEventListener('scroll', handleScrollEnd, { passive: true })
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+      container.removeEventListener('scroll', handleScrollEnd)
+      clearTimeout(scrollTimeoutRef.current)
+    }
+  }, [currentIndex, scrollToArticle])
+
+  // Touch and wheel navigation
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleTouchStart = (e) => {
+      touchStartRef.current = {
+        y: e.touches[0].clientY,
+        time: Date.now()
+      }
+    }
+
+    const handleTouchEnd = (e) => {
+      const endTouch = e.changedTouches[0]
+      const startTouch = touchStartRef.current
+      const deltaY = startTouch.y - endTouch.clientY
+      const deltaTime = Date.now() - startTouch.time
+      
+      // Quick swipe detection
+      if (Math.abs(deltaY) > 50 && deltaTime < 300) {
+        e.preventDefault()
+        
+        if (deltaY > 0 && currentIndex < validArticles.length - 1) {
+          // Swipe up - next article
+          scrollToArticle(currentIndex + 1)
+        } else if (deltaY < 0 && currentIndex > 0) {
+          // Swipe down - previous article  
+          scrollToArticle(currentIndex - 1)
+        } else if (deltaY < 0 && currentIndex === 0) {
+          // Swipe down on first article - force refresh
+          handleForceRefresh()
+        }
+      }
+    }
+
+    const handleWheel = (e) => {
+      // Debounce wheel events
+      if (isScrollingRef.current) return
+      
+      isScrollingRef.current = true
+      setTimeout(() => {
+        isScrollingRef.current = false
+      }, 100)
+
+      const delta = e.deltaY
+      
+      if (delta > 0 && currentIndex < validArticles.length - 1) {
+        // Scroll down - next article
+        e.preventDefault()
+        scrollToArticle(currentIndex + 1)
+      } else if (delta < 0 && currentIndex > 0) {
+        // Scroll up - previous article
+        e.preventDefault()  
+        scrollToArticle(currentIndex - 1)
+      } else if (delta < 0 && currentIndex === 0) {
+        // Scroll up on first article - force refresh
+        e.preventDefault()
+        handleForceRefresh()
+      }
+    }
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true })
+    container.addEventListener('touchend', handleTouchEnd, { passive: false })
+    container.addEventListener('wheel', handleWheel, { passive: false })
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart)
+      container.removeEventListener('touchend', handleTouchEnd)  
+      container.removeEventListener('wheel', handleWheel)
+    }
+  }, [currentIndex, validArticles.length, scrollToArticle])
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e) => {
-      // Don't handle keyboard events when modals are open
       if (showShareModal || showArticleModal) {
         if (e.key === 'Escape') {
           setShowShareModal(false)
@@ -124,29 +233,22 @@ const NewsBytes = ({
 
       switch (e.key) {
         case 'ArrowUp':
-        case 'ArrowLeft':
           e.preventDefault()
-          handlePreviousArticle()
+          if (currentIndex > 0) {
+            scrollToArticle(currentIndex - 1)
+          } else {
+            handleForceRefresh()
+          }
           break
         case 'ArrowDown':
-        case 'ArrowRight':
           e.preventDefault()
-          handleNextArticle()
-          break
-        case ' ':
-          e.preventDefault()
-          togglePlayPause()
+          if (currentIndex < validArticles.length - 1) {
+            scrollToArticle(currentIndex + 1)
+          }
           break
         case 'Enter':
           e.preventDefault()
-          handleOpenArticleModal()
-          break
-        case 'Escape':
-          e.preventDefault()
-          if (showShareModal || showArticleModal) {
-            setShowShareModal(false)
-            setShowArticleModal(false)
-          }
+          setShowArticleModal(true)
           break
         case 'l':
           e.preventDefault()
@@ -156,199 +258,71 @@ const NewsBytes = ({
           e.preventDefault()
           handleBookmark()
           break
+        case 'r':
+          e.preventDefault()
+          handleForceRefresh()
+          break
       }
     }
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [validArticles.length, showShareModal, showArticleModal, currentIndex])
+  }, [currentIndex, validArticles.length, showShareModal, showArticleModal, scrollToArticle])
 
-  // Enhanced touch navigation with better gesture recognition
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const handleTouchStart = (e) => {
-      touchStartRef.current = {
-        y: e.touches[0].clientY,
-        time: Date.now(),
-        moved: false
-      }
-    }
-
-    const handleTouchMove = (e) => {
-      const touch = e.touches[0]
-      const startTouch = touchStartRef.current
-      const deltaY = Math.abs(touch.clientY - startTouch.y)
-      
-      if (deltaY > 10) {
-        touchStartRef.current.moved = true
-        e.preventDefault() // Prevent default scrolling
-      }
-    }
-
-    const handleTouchEnd = (e) => {
-      const endTouch = e.changedTouches[0]
-      const startTouch = touchStartRef.current
-      const deltaY = startTouch.y - endTouch.clientY
-      const deltaTime = Date.now() - startTouch.time
-      
-      // Only process swipes if there was movement and it was intentional
-      if (touchStartRef.current.moved && Math.abs(deltaY) > 50) {
-        if (deltaY > 0) {
-          // Swipe up - next article
-          handleNextArticle()
-        } else {
-          // Swipe down - previous article
-          handlePreviousArticle()
-        }
-      } else if (!touchStartRef.current.moved && deltaTime < 300) {
-        // Quick tap without movement - toggle play/pause or show controls
-        const containerRect = container.getBoundingClientRect()
-        const tapX = endTouch.clientX - containerRect.left
-        const containerWidth = containerRect.width
-        
-        // Check if tap is in the center 70% of the screen (avoiding side buttons)
-        if (tapX > containerWidth * 0.15 && tapX < containerWidth * 0.85) {
-          togglePlayPause()
-          showPlayPauseFeedback()
-        }
-      }
-    }
-
-    const handleWheel = (e) => {
-      e.preventDefault()
-      // Add debouncing for wheel events
-      const now = Date.now()
-      if (handleWheel.lastCall && now - handleWheel.lastCall < 100) return
-      handleWheel.lastCall = now
-      
-      if (e.deltaY > 0) {
-        handleNextArticle()
-      } else {
-        handlePreviousArticle()
+  // Force refresh handler
+  const handleForceRefresh = useCallback(async () => {
+    if (isRefreshing) return
+    
+    setIsRefreshing(true)
+    
+    try {
+      if (forceRefresh) {
+        await forceRefresh()
       }
       
-      // Track scroll events
-      trackScroll(e.deltaY > 0 ? 'down' : 'up', currentIndex)
+      // Reset to first article after refresh
+      setTimeout(() => {
+        scrollToArticle(0)
+      }, 500)
+      
+    } catch (error) {
+      console.error('Force refresh failed:', error)
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false)
+      }, 1000)
     }
+  }, [isRefreshing, forceRefresh, scrollToArticle])
 
-    // Use passive: false for better control
-    container.addEventListener('touchstart', handleTouchStart, { passive: false })
-    container.addEventListener('touchmove', handleTouchMove, { passive: false })
-    container.addEventListener('touchend', handleTouchEnd, { passive: false })
-    container.addEventListener('wheel', handleWheel, { passive: false })
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart)
-      container.removeEventListener('touchmove', handleTouchMove)
-      container.removeEventListener('touchend', handleTouchEnd)
-      container.removeEventListener('wheel', handleWheel)
-    }
-  }, [validArticles.length, currentIndex, trackScroll])
-
-  // Navigation functions
-  const handleNextArticle = useCallback(() => {
-    setCurrentIndex(prev => (prev + 1) % validArticles.length)
-  }, [validArticles.length])
-
-  const handlePreviousArticle = useCallback(() => {
-    setCurrentIndex(prev => prev > 0 ? prev - 1 : validArticles.length - 1)
-  }, [validArticles.length])
-
-  const togglePlayPause = useCallback(() => {
-    setIsPlaying(prev => !prev)
-  }, [])
-
-  // Function to show brief play/pause feedback
-  const showPlayPauseFeedback = useCallback(() => {
-    setShowPlayPause(true)
-    setTimeout(() => {
-      setShowPlayPause(false)
-    }, 1000) // Show for 1 second
-  }, [])
-
-  // Enhanced interaction handlers with analytics tracking
+  // Interaction handlers
   const handleLike = useCallback(async () => {
     const article = validArticles[currentIndex]
-    if (!article) return
+    if (!article || !toggleLike) return
 
     try {
-      let newLikeState = false
-      if (onLikeArticle) {
-        newLikeState = await onLikeArticle(article)
-      }
-      
-      // Track the interaction
-      trackUserInteraction('like', article, newLikeState)
-      
-      // Show brief feedback
-      showPlayPauseFeedback()
+      const newState = await toggleLike(article)
+      trackUserInteraction('like', article, newState)
     } catch (error) {
-      console.log('Error liking article:', error)
+      console.error('Error liking article:', error)
     }
-  }, [currentIndex, validArticles, onLikeArticle, trackUserInteraction, showPlayPauseFeedback])
+  }, [currentIndex, validArticles, toggleLike, trackUserInteraction])
 
   const handleBookmark = useCallback(async () => {
     const article = validArticles[currentIndex]
-    if (!article) return
+    if (!article || !toggleBookmark) return
 
     try {
-      let newBookmarkState = false
-      if (onBookmarkArticle) {
-        newBookmarkState = await onBookmarkArticle(article)
-      } else if (onToggleSave) {
-        // Fallback to legacy prop
-        newBookmarkState = await onToggleSave(article)
-      }
-      
-      // Track the interaction
-      trackUserInteraction('bookmark', article, newBookmarkState)
-      
-      // Show brief feedback
-      showPlayPauseFeedback()
+      const newState = await toggleBookmark(article)
+      trackUserInteraction('bookmark', article, newState)
     } catch (error) {
-      console.log('Error bookmarking article:', error)
+      console.error('Error bookmarking article:', error)
     }
-  }, [currentIndex, validArticles, onBookmarkArticle, onToggleSave, trackUserInteraction, showPlayPauseFeedback])
-
-  const formatTimeAgo = useCallback((dateString) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60))
-    
-    if (diffInHours < 1) return 'Just now'
-    if (diffInHours < 24) return `${diffInHours}h ago`
-    const diffInDays = Math.floor(diffInHours / 24)
-    if (diffInDays < 7) return `${diffInDays}d ago`
-    return date.toLocaleDateString()
-  }, [])
-
-  const handleOpenArticleModal = useCallback(() => {
-    const article = validArticles[currentIndex]
-    if (!article) return
-
-    setShowArticleModal(true)
-    setIsPlaying(false) // Pause playback when opening modal
-    
-    // Track article click and view
-    trackArticleClick(article)
-    
-    // Track article view
-    if (onArticleView && article) {
-      onArticleView(article)
-    }
-  }, [currentIndex, validArticles, onArticleView, trackArticleClick])
-
-  const handleCloseArticleModal = useCallback(() => {
-    setShowArticleModal(false)
-  }, [])
+  }, [currentIndex, validArticles, toggleBookmark, trackUserInteraction])
 
   const handleShare = useCallback(() => {
     const article = validArticles[currentIndex]
     if (!article) return
 
-    // Track share interaction
     trackUserInteraction('share', article, true)
 
     if (onShare) {
@@ -358,58 +332,39 @@ const NewsBytes = ({
     }
   }, [currentIndex, validArticles, onShare, trackUserInteraction])
 
-  const handleReadOriginal = useCallback(() => {
-    const article = validArticles[currentIndex]
-    if (!article) return
+  const formatTimeAgo = useCallback((dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60))
+    
+    if (diffInHours < 1) return 'now'
+    if (diffInHours < 24) return `${diffInHours}h`
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays < 7) return `${diffInDays}d`
+    return date.toLocaleDateString()
+  }, [])
 
-    // Track external link click
-    trackUserInteraction('external_link', article, true)
-    window.open(article.link, '_blank')
-  }, [currentIndex, validArticles, trackUserInteraction])
-
-  // Check if article is liked (support both new and legacy formats)
-  const isArticleLiked = useCallback((article) => {
-    if (likedArticles && typeof likedArticles.has === 'function') {
-      return likedArticles.has(article.link || article.id)
-    }
-    return false
-  }, [likedArticles])
-
-  // Check if article is bookmarked (support both new and legacy formats)
-  const isArticleBookmarked = useCallback((article) => {
-    // Check new format (array)
-    if (Array.isArray(bookmarkedArticles)) {
-      return bookmarkedArticles.some(saved => 
-        (saved.link || saved.id) === (article.link || article.id)
-      )
-    }
-    // Check legacy format (array)
-    if (Array.isArray(savedArticles)) {
-      return savedArticles.some(saved => 
-        (saved.link || saved.id) === (article.link || article.id)
-      )
-    }
-    return false
-  }, [bookmarkedArticles, savedArticles])
+  const scrollToTop = useCallback(() => {
+    scrollToArticle(0)
+  }, [scrollToArticle])
 
   // Loading state
   if (validArticles.length === 0) {
     return (
-      <div className={`h-screen flex items-center justify-center ${currentColors.bg}`}>
-        <div className="text-center space-y-4">
-          <div className="text-6xl">📸</div>
-          <h3 className={`text-xl font-semibold ${currentColors.text}`}>
-            No Visual Stories Available
-          </h3>
-          <p className={`${currentColors.textMuted} max-w-md`}>
-            We're working on bringing you more visual content soon!
+      <div className="h-screen flex items-center justify-center bg-black">
+        <div className="text-center space-y-4 text-white">
+          <div className="text-6xl">📱</div>
+          <h3 className="text-xl font-semibold">No Stories Available</h3>
+          <p className="text-white/70 max-w-md">
+            Pull down to refresh or try again later
           </p>
           <Button 
             variant="outline" 
-            onClick={() => window.location.reload()}
-            className={currentColors.border}
+            onClick={handleForceRefresh}
+            disabled={isRefreshing}
+            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
           >
-            <RotateCcw className="h-4 w-4 mr-2" />
+            <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
             Refresh
           </Button>
         </div>
@@ -417,256 +372,184 @@ const NewsBytes = ({
     )
   }
 
-  const currentArticle = validArticles[currentIndex]
-
   return (
-    <div 
-      ref={containerRef}
-      className="relative h-screen overflow-hidden bg-black select-none"
-      onMouseEnter={() => setShowControls(true)}
-      onMouseLeave={() => setShowControls(false)}
-    >
-      {/* Background Image */}
-      <div className="absolute inset-0">
-        <img
-          src={currentArticle.optimizedImageUrl || currentArticle.imageUrl || currentArticle.image}
-          alt={currentArticle.title}
-          className="w-full h-full object-cover"
-          loading="lazy"
-          draggable="false"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/50" />
-      </div>
-
-      {/* Progress Indicators */}
-      <div className="absolute top-2 left-4 right-4 z-20 pt-safe">
-        <div className="flex space-x-1">
-          {validArticles.map((_, index) => (
-            <div
-              key={index}
-              className={cn(
-                "h-0.5 flex-1 rounded-full transition-all duration-300",
-                index === currentIndex 
-                  ? "bg-white" 
-                  : index < currentIndex 
-                    ? "bg-white/60" 
-                    : "bg-white/20"
-              )}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Desktop Controls (hover to show) */}
-      {showControls && (
-        <div className="absolute top-4 right-4 z-30 hidden lg:flex items-center space-x-2">
-          <Button
-            variant="icon"
-            size="icon"
-            onClick={handlePreviousArticle}
-            className="h-10 w-10 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70"
-          >
-            <SkipBack className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="icon"
-            size="icon"
-            onClick={togglePlayPause}
-            className="h-10 w-10 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70"
-          >
-            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-          </Button>
-          <Button
-            variant="icon"
-            size="icon"
-            onClick={handleNextArticle}
-            className="h-10 w-10 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70"
-          >
-            <SkipForward className="h-5 w-5" />
-          </Button>
+    <div className="relative">
+      {/* Refresh indicator */}
+      {isRefreshing && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-black/90 text-white p-4 text-center">
+          <div className="flex items-center justify-center space-x-2">
+            <RefreshCw className="h-5 w-5 animate-spin" />
+            <span>Refreshing stories...</span>
+          </div>
         </div>
       )}
 
-      {/* Main Content Area - Optimized Layout */}
-      <div className="absolute inset-0 flex">
-        {/* Left side - Content (85%) */}
-        <div className="flex-1 flex items-end pb-32 lg:pb-8 px-3">
-          <div className="w-full max-w-[90%] space-y-3">
-            {/* Source Avatar */}
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-0.5">
-                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  <span className="text-xs font-bold text-gray-800">
-                    {currentArticle.source?.charAt(0).toUpperCase() || 'N'}
-                  </span>
+      {/* Scroll container */}
+      <div
+        ref={containerRef}
+        className="h-screen overflow-y-auto snap-y snap-mandatory scrollbar-hide"
+        style={{ scrollBehavior: 'smooth' }}
+      >
+        {validArticles.map((article, index) => (
+          <div
+            key={`${article.link || article.id}-${index}`}
+            ref={(el) => (articlesRef.current[index] = el)}
+            className="h-screen w-full snap-start snap-always flex-shrink-0 relative overflow-hidden bg-black"
+          >
+            {/* Background Image */}
+            <div className="absolute inset-0">
+              <img
+                src={article.optimizedImageUrl || article.imageUrl || article.image_url}
+                alt={article.title}
+                className="w-full h-full object-cover"
+                loading={index <= 2 ? 'eager' : 'lazy'}
+                draggable="false"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+            </div>
+
+            {/* Content overlay */}
+            <div className="absolute inset-0 flex flex-col justify-between p-4 pt-safe pb-safe">
+              {/* Top indicators */}
+              <div className="flex justify-between items-start">
+                <div className="text-white/60 text-sm">
+                  {index + 1} / {validArticles.length}
+                </div>
+                {index === 0 && (
+                  <div className="text-white/60 text-xs text-center">
+                    <div>Pull down to refresh</div>
+                    <div className="mt-1">↓</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom content */}
+              <div className="flex justify-between items-end">
+                {/* Left side - Content */}
+                <div className="flex-1 max-w-[calc(100%-80px)] space-y-3">
+                  {/* Source */}
+                  <div className="flex items-center space-x-2">
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">
+                        {article.source?.charAt(0).toUpperCase() || 'N'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-medium">
+                        {article.source || 'News'}
+                      </p>
+                    </div>
+                    <span className="text-white/60 text-xs">
+                      {formatTimeAgo(article.publishedAt || article.pubDate || article.published_at)}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h2 className="text-white text-lg font-bold leading-tight line-clamp-3">
+                    {article.title}
+                  </h2>
+                  
+                  {/* Category */}
+                  {article.category && (
+                    <Badge 
+                      variant="secondary" 
+                      className="bg-white/10 text-white border-white/20 text-xs"
+                    >
+                      {article.category}
+                    </Badge>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setShowArticleModal(true)}
+                      className="bg-white/90 text-black hover:bg-white text-xs"
+                    >
+                      Read
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(article.link, '_blank')}
+                      className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-xs"
+                    >
+                      <Globe className="w-3 h-3 mr-1" />
+                      Source
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Right side - Interaction buttons */}
+                <div className="flex flex-col space-y-4 items-center">
+                  {/* Like */}
+                  <button
+                    onClick={handleLike}
+                    className="p-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all"
+                  >
+                    <Heart 
+                      className={cn(
+                        "h-6 w-6 transition-colors",
+                        isLiked && isLiked(article.id || article.slug || article.link)
+                          ? "fill-red-500 text-red-500" 
+                          : "text-white"
+                      )}
+                    />
+                  </button>
+
+                  {/* Share */}
+                  <button
+                    onClick={handleShare}
+                    className="p-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all"
+                  >
+                    <Share className="h-6 w-6 text-white" />
+                  </button>
+
+                  {/* Bookmark */}
+                  <button
+                    onClick={handleBookmark}
+                    className="p-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all"
+                  >
+                    <Bookmark 
+                      className={cn(
+                        "h-6 w-6 transition-colors",
+                        isBookmarked && isBookmarked(article.id || article.slug || article.link)
+                          ? "fill-yellow-500 text-yellow-500" 
+                          : "text-white"
+                      )}
+                    />
+                  </button>
                 </div>
               </div>
-              <div>
-                <p className="text-white font-medium text-sm">
-                  {currentArticle.source || 'Unknown Source'}
-                </p>
-                <p className="text-white/70 text-xs">
-                  {formatTimeAgo(currentArticle.publishedAt || currentArticle.pubDate || currentArticle.published)}
-                </p>
-              </div>
-            </div>
-
-            {/* Title */}
-            <h2 className="text-white text-lg font-bold leading-tight">
-              {currentArticle.title}
-            </h2>
-            
-            {/* Description */}
-            {currentArticle.description && (
-              <p className="text-white/90 text-sm leading-relaxed line-clamp-3">
-                {currentArticle.description}
-              </p>
-            )}
-
-            {/* Category Badge */}
-            {currentArticle.category && (
-              <div>
-                <Badge 
-                  variant="secondary" 
-                  className="bg-white/20 text-white border-white/30 hover:bg-white/30"
-                >
-                  #{currentArticle.category}
-                </Badge>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-2">
-              {/* Read More Button */}
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleOpenArticleModal}
-                className="bg-white text-black hover:bg-gray-100"
-              >
-                <Maximize2 className="w-4 h-4 mr-2" />
-                Read More
-              </Button>
-
-              {/* Read Original Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleReadOriginal}
-                className="bg-white/20 text-white border-white/30 hover:bg-white/30"
-              >
-                <Globe className="w-4 h-4 mr-2" />
-                Original
-              </Button>
-            </div>
-
-            {/* Article Progress */}
-            <div className="text-white/60 text-xs">
-              {currentIndex + 1} of {validArticles.length} stories
             </div>
           </div>
-        </div>
-
-        {/* Right side - Action Buttons (15%) */}
-        <div className="w-16 flex flex-col justify-end pb-32 lg:pb-6 items-center space-y-4 px-1">
-          {/* Like Button */}
-          <div className="flex flex-col items-center space-y-1">
-            <Button
-              variant="icon"
-              size="icon"
-              onClick={handleLike}
-              className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-white transition-all duration-200 hover:scale-110"
-            >
-              <Heart 
-                className={cn(
-                  "h-6 w-6 transition-colors",
-                  isArticleLiked(currentArticle)
-                    ? "fill-red-500 text-red-500" 
-                    : "text-white"
-                )}
-              />
-            </Button>
-            <span className="text-white text-[10px] font-medium">
-              {Math.floor(Math.random() * 999) + 1}
-            </span>
-          </div>
-
-          {/* Share Button */}
-          <div className="flex flex-col items-center space-y-1">
-            <Button
-              variant="icon"
-              size="icon"
-              onClick={handleShare}
-              className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-white transition-all duration-200 hover:scale-110"
-            >
-              <Share className="h-6 w-6" />
-            </Button>
-            <span className="text-white text-[10px] font-medium">Share</span>
-          </div>
-
-          {/* Bookmark Button */}
-          <div className="flex flex-col items-center space-y-1">
-            <Button
-              variant="icon"
-              size="icon"
-              onClick={handleBookmark}
-              className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-white transition-all duration-200 hover:scale-110"
-            >
-              <Bookmark 
-                className={cn(
-                  "h-6 w-6 transition-colors",
-                  isArticleBookmarked(currentArticle)
-                    ? "fill-yellow-500 text-yellow-500" 
-                    : "text-white"
-                )}
-              />
-            </Button>
-            <span className="text-white text-[10px] font-medium">Save</span>
-          </div>
-
-          {/* More Options */}
-          <div className="flex flex-col items-center space-y-1">
-            <Button
-              variant="icon"
-              size="icon"
-              className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-white transition-all duration-200 hover:scale-110"
-            >
-              <MoreVertical className="h-6 w-6" />
-            </Button>
-            <span className="text-white text-[10px] font-medium">More</span>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Brief Play/Pause Feedback */}
-      {showPlayPause && (
-        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-          <div className="bg-black/70 backdrop-blur-sm rounded-full p-6 border border-white/30 animate-in fade-in zoom-in duration-200">
-            {isPlaying ? (
-              <Pause className="h-12 w-12 text-white" />
-            ) : (
-              <Play className="h-12 w-12 text-white" />
-            )}
-          </div>
-        </div>
+      {/* Back to top button */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white transition-all"
+        >
+          <ArrowUp className="h-5 w-5 text-black" />
+        </button>
       )}
 
       {/* Article Modal */}
-      {showArticleModal && currentArticle && (
+      {showArticleModal && (
         <ArticleModal
-          article={currentArticle}
-          onClose={handleCloseArticleModal}
+          article={validArticles[currentIndex]}
+          onClose={() => setShowArticleModal(false)}
           currentColors={currentColors}
           onShare={onShare}
-          savedArticles={bookmarkedArticles || savedArticles}
-          onToggleSave={onBookmarkArticle || onToggleSave}
         />
       )}
 
       {/* Share Modal */}
-      {showShareModal && !onShare && currentArticle && (
+      {showShareModal && (
         <ShareModal
-          article={currentArticle}
+          article={validArticles[currentIndex]}
           isOpen={showShareModal}
           onClose={() => setShowShareModal(false)}
           currentColors={currentColors}

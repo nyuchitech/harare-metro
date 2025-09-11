@@ -1,52 +1,35 @@
 // src/components/HeaderNavigation.jsx
 import React from 'react'
-import { Button } from '@/components/ui/button'
-import { IconButton } from '@/components/ui/icon-button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { 
-  MagnifyingGlassIcon,
-  SunIcon,
-  MoonIcon,
-  UserCircleIcon,
-  Squares2X2Icon,
-  ArrowRightOnRectangleIcon
-} from '@heroicons/react/24/outline'
-import {
-  SunIcon as _SunSolidIcon,
-  MoonIcon as _MoonSolidIcon,
-  UserCircleIcon as _UserCircleSolidIcon,
-  MagnifyingGlassIcon as MagnifyingGlassSolidIcon,
-  Squares2X2Icon as Squares2X2SolidIcon,
-} from '@heroicons/react/24/solid'
+  Search,
+  Sun,
+  Moon,
+  User,
+  LayoutGrid
+} from 'lucide-react'
 import Logo from './Logo'
 
 const HeaderNavigation = ({ 
   theme, 
   setTheme, 
   onSearchClick, 
-  onBytesClick: _onBytesClick,
+  onBytesClick,
   onProfileClick,
+  onAuthClick,
   onLogout,
   currentView,
   setCurrentView,
-  viewMode: _viewMode,
-  setViewMode: _setViewMode,
-  title: _title = "Mukoko",
+  viewMode,
+  setViewMode,
+  title = "Harare Metro",
   isAuthenticated = false,
   user = null,
   profile = null
 }) => {
   const navigation = [
-    { id: 'home', name: 'Feed', icon: Squares2X2Icon, iconSolid: Squares2X2SolidIcon },
-    { id: 'search', name: 'Search', icon: MagnifyingGlassIcon, iconSolid: MagnifyingGlassSolidIcon }
+    { id: 'home', name: 'Feed', icon: LayoutGrid },
+    { id: 'search', name: 'Search', icon: Search }
   ]
 
   const handleNavClick = (navId) => {
@@ -86,146 +69,137 @@ const HeaderNavigation = ({
           <div className="flex items-center lg:flex-none">
             {/* Mobile: Spacer + Centered Logo */}
             <div className="lg:hidden flex-1 flex justify-center">
-              <Logo 
-                variant="compact"
-                theme={theme}
-                size="sm"
-                className="flex-shrink-0"
-              />
+              <div
+                onClick={() => handleNavClick('home')}
+                className="flex-shrink-0 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleNavClick('home')
+                  }
+                }}
+                aria-label="Go to home page"
+              >
+                <Logo 
+                  variant="compact"
+                  theme={theme}
+                  size="sm"
+                  className="flex-shrink-0"
+                />
+              </div>
             </div>
             
             {/* Desktop: Horizontal Logo */}
             <div className="hidden lg:block">
-              <Logo 
-                variant="horizontal"
-                theme={theme}
-                size="md"
-                className="flex-shrink-0"
-              />
+              <div
+                onClick={() => handleNavClick('home')}
+                className="flex-shrink-0 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleNavClick('home')
+                  }
+                }}
+                aria-label="Go to home page"
+              >
+                <Logo 
+                  variant="horizontal"
+                  theme={theme}
+                  size="md"
+                  className="flex-shrink-0"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Desktop: Center Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
-            {navigation.map((item) => {
-              const Icon = currentView === item.id ? item.iconSolid : item.icon
-              return (
-                <Button
-                  key={item.id}
-                  variant={currentView === item.id ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => handleNavClick(item.id)}
-                  className="flex items-center space-x-2"
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.name}</span>
-                </Button>
-              )
-            })}
-          </div>
-
-          {/* Desktop: Right Actions */}
-          <div className="hidden lg:flex items-center space-x-2">
-            {/* Theme Toggle */}
-            <IconButton
-              variant="ghost"
-              size="sm"
-              onClick={handleThemeToggle}
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? (
-                <SunIcon className="h-4 w-4" />
-              ) : (
-                <MoonIcon className="h-4 w-4" />
-              )}
-            </IconButton>
-
-            {/* User Profile / Auth */}
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center space-x-2"
+          {/* Right: Actions */}
+          <div className="flex items-center space-x-3 lg:flex-none">
+            
+            {/* Desktop Navigation - Direct Lucide icons with invisible wrappers */}
+            <nav className="hidden lg:flex items-center space-x-2">
+              {navigation.map((item) => {
+                const isActive = currentView === item.id
+                const IconComponent = item.icon
+                
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={cn(
+                      "p-2 cursor-pointer transition-all duration-200 rounded-full hover:bg-black/5 dark:hover:bg-white/5",
+                      isActive && "text-black dark:text-white",
+                      !isActive && "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
+                    )}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleNavClick(item.id)
+                      }
+                    }}
+                    aria-label={item.name}
                   >
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
-                      <AvatarFallback className="text-xs">
-                        {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden sm:inline">
-                      {profile?.full_name || user?.email?.split('@')[0] || 'User'}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleNavClick('profile')}>
-                    <UserCircleIcon className="h-4 w-4 mr-2" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onLogout}>
-                    <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleNavClick('profile')}
-                className="flex items-center space-x-2"
-              >
-                <UserCircleIcon className="h-4 w-4" />
-                <span>Sign In</span>
-              </Button>
-            )}
-          </div>
+                    <IconComponent className="h-5 w-5" />
+                  </div>
+                )
+              })}
+            </nav>
 
-          {/* Mobile: Right Actions */}
-          <div className="flex items-center lg:hidden space-x-2">
-            {/* Theme Toggle */}
-            <IconButton
-              variant="ghost"
-              size="sm"
+            {/* Theme Toggle - Direct Lucide icon with invisible wrapper */}
+            <div
               onClick={handleThemeToggle}
-              aria-label="Toggle theme"
+              className="p-2 cursor-pointer text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-all duration-200 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleThemeToggle()
+                }
+              }}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? (
-                <SunIcon className="h-4 w-4" />
+                <Sun className="h-5 w-5" />
               ) : (
-                <MoonIcon className="h-4 w-4" />
+                <Moon className="h-5 w-5" />
               )}
-            </IconButton>
+            </div>
 
-            {/* User Profile / Auth */}
-            {isAuthenticated ? (
-              <IconButton
-                variant="ghost"
-                size="sm"
-                onClick={() => handleNavClick('profile')}
-                aria-label="Profile"
-              >
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
-                  <AvatarFallback className="text-xs">
-                    {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </IconButton>
-            ) : (
-              <IconButton
-                variant="ghost"
-                size="sm"
-                onClick={() => handleNavClick('profile')}
-                aria-label="Sign in"
-              >
-                <UserCircleIcon className="h-4 w-4" />
-              </IconButton>
-            )}
+            {/* Profile/Auth Icon - Show user state */}
+            <div
+              onClick={() => handleNavClick('profile')}
+              className={cn(
+                "hidden lg:block p-2 cursor-pointer transition-all duration-200 rounded-full hover:bg-black/5 dark:hover:bg-white/5",
+                currentView === 'profile' && "text-black dark:text-white",
+                currentView !== 'profile' && "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
+              )}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleNavClick('profile')
+                }
+              }}
+              aria-label={isAuthenticated ? "View Profile" : "Sign In"}
+              title={isAuthenticated ? `Profile: ${profile?.username || user?.email?.split('@')[0] || 'User'}` : "Sign In"}
+            >
+              {isAuthenticated ? (
+                <div className="relative">
+                  <User className="h-5 w-5" />
+                  {/* Online indicator */}
+                  <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white dark:border-black"></div>
+                </div>
+              ) : (
+                <User className="h-5 w-5" />
+              )}
+            </div>
           </div>
         </div>
       </div>

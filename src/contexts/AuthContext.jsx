@@ -1,9 +1,18 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import { auth, supabase, isSupabaseConfigured } from '../lib/supabase'
 import { AuthContext } from './contexts'
 
 // Re-export AuthContext for convenience
 export { AuthContext }
+
+// useAuth hook for accessing AuthContext
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
 
 // User roles for social app (defined outside component to avoid dependency issues)
 const userRoles = {
@@ -74,11 +83,13 @@ export const AuthProvider = ({ children }) => {
               // Use profile data from Supabase
               setProfile(profileData)
             } else {
-              // Create basic profile from user metadata with default role
+              // Profile doesn't exist yet - the trigger will create it automatically
+              // Create a basic local profile for immediate use
               const basicProfile = {
                 id: session.user.id,
                 email: session.user.email,
-                full_name: session.user.user_metadata?.full_name || session.user.email,
+                username: session.user.email?.split('@')[0] || 'user',
+                full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
                 avatar_url: session.user.user_metadata?.avatar_url,
                 role: userRoles.creator, // Default role for new users
                 created_at: session.user.created_at,
@@ -86,12 +97,8 @@ export const AuthProvider = ({ children }) => {
               }
               setProfile(basicProfile)
               
-              // Optionally try to create profile in Supabase (don't fail if it doesn't work)
-              try {
-                await supabase.from('profiles').insert([basicProfile])
-              } catch {
-                // Continue without saving to database
-              }
+              // The database trigger will handle creating the actual profile
+              // No manual insertion needed
             }
           } catch {
             // Continue without profile data
@@ -123,8 +130,10 @@ export const AuthProvider = ({ children }) => {
             setProfile({
               id: session.user.id,
               email: session.user.email,
-              full_name: session.user.user_metadata?.full_name || session.user.email,
+              username: session.user.email?.split('@')[0] || 'user',
+              full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
               avatar_url: session.user.user_metadata?.avatar_url,
+              role: userRoles.creator,
               created_at: session.user.created_at,
               updated_at: session.user.updated_at
             })

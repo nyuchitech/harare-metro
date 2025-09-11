@@ -1,21 +1,21 @@
 {
-  "name": "mukoko",
+  "name": "harare-metro",
   "private": true,
   "version": "0.2.0",
   "type": "module",
-  "description": "Mukoko - Modern news aggregation platform built with React and Cloudflare Workers",
+  "description": "Harare Metro - Zimbabwe's premier news aggregation platform built with React and Cloudflare Workers",
   "keywords": [
-    "mukoko",
+    "harare-metro",
+    "zimbabwe",
     "news",
     "aggregator",
     "react",
     "cloudflare-workers",
     "supabase",
-    "enterprise",
     "pwa",
     "progressive-web-app"
   ],
-  "author": "Mukoko Team",
+  "author": "Harare Metro Team",
   "license": "MIT",
   "scripts": {
     "dev": "wrangler dev --env preview",
@@ -28,9 +28,9 @@
     "build:frontend": "vite build",
     "build:worker": "echo 'Worker files ready'",
     "preview": "vite preview --port 5173",
-    "worker:refresh-config": "curl \"https://app.mukoko.com/api/admin/refresh-config\"",
-    "worker:clear-cache": "curl \"https://app.mukoko.com/api/admin/clear-cache\"",
-    "worker:health": "curl \"https://app.mukoko.com/api/health\"",
+    "worker:refresh-config": "curl \"https://www.hararemetro.co.zw/api/admin/refresh-config\"",
+    "worker:clear-cache": "curl \"https://www.hararemetro.co.zw/api/admin/clear-cache\"",
+    "worker:health": "curl \"https://www.hararemetro.co.zw/api/health\"",
     "start:local": "./scripts/dev-local.sh",
     "setup:local": "cp .env.example .env.local && echo '✅ Local environment created. Please update .env.local with your Supabase credentials.'",
     "analyze:bundle": "npx vite build --analyze",
@@ -69,6 +69,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-query": "^3.39.3",
+    "react-router-dom": "^7.8.2",
     "recharts": "^2.15.3",
     "sonner": "^1.4.3",
     "tailwind-merge": "^2.6.0",
@@ -93,6 +94,7 @@
     "postcss": "^8.5.1",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.13",
+    "supabase": "^2.40.7",
     "typescript": "^5.7.2",
     "vite": "^6.3.5",
     "vitest": "^3.2.4",
@@ -117,10 +119,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nyuchitech/mukoko.git"
+    "url": "https://github.com/nyuchitech/harare-metro.git"
   },
   "bugs": {
-    "url": "https://github.com/nyuchitech/mukoko/issues"
+    "url": "https://github.com/nyuchitech/harare-metro/issues"
   },
-  "homepage": "https://app.mukoko.com"
+  "homepage": "https://www.hararemetro.co.zw"
 }

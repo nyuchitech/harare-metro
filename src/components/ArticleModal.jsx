@@ -1,20 +1,21 @@
-// src/components/ArticleModal.jsx - Full-screen optimized article modal
+// src/components/ArticleModal.jsx - Modern Harare Metro article modal with source branding
 import React, { useState, useEffect, useRef } from 'react'
 import { 
-  XMarkIcon, 
-  ShareIcon, 
-  HeartIcon,
-  GlobeAltIcon,
-  ClockIcon,
-  BookmarkIcon,
-  ArrowsPointingOutIcon,
-  ArrowsPointingInIcon,
-  ChevronDownIcon,
-  ChevronUpIcon
-} from '@heroicons/react/24/outline'
-import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid'
+  X,
+  Share2, 
+  Heart,
+  Globe,
+  Clock,
+  Bookmark,
+  Maximize2,
+  Minimize2,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink
+} from 'lucide-react'
 import { cn } from '../lib/utils'
 import ShareModal from './ShareModal'
+import { useNewsSource } from '../hooks/useNewsSource'
 
 const ArticleModal = ({ 
   article, 
@@ -40,6 +41,9 @@ const ArticleModal = ({
   const [fontSize, setFontSize] = useState(16)
   const [expandedContent, setExpandedContent] = useState(false)
   const [showHeader, setShowHeader] = useState(true)
+
+  // News source information
+  const { profile: sourceProfile, logo: sourceLogo } = useNewsSource(article?.source)
   
   const modalRef = useRef(null)
   const contentRef = useRef(null)
@@ -194,9 +198,9 @@ const ArticleModal = ({
           className="relative w-full h-full flex flex-col"
         >
           {/* Reading Progress Bar */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gray-800 z-30">
+          <div className="absolute top-0 left-0 w-full h-1 bg-black/20 backdrop-blur-sm z-30">
             <div 
-              className="h-full bg-purple-500 transition-all duration-300"
+              className="h-full bg-gradient-to-r from-zw-green via-zw-yellow to-zw-red transition-all duration-300"
               style={{ width: `${readingProgress}%` }}
             />
           </div>
@@ -206,24 +210,57 @@ const ArticleModal = ({
             "absolute top-0 left-0 right-0 z-30 transition-all duration-300",
             showHeader ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
           )}>
-            <div className="bg-black/80 backdrop-blur-sm border-b border-gray-800 px-4 py-3">
+            <div className="bg-black/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 p-0.5">
-                    <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                      <span className="text-xs font-bold text-white">
-                        {article.source?.charAt(0).toUpperCase() || 'N'}
-                      </span>
+                  {/* Source Logo/Avatar */}
+                  <div className="relative">
+                    {sourceLogo ? (
+                      <img
+                        src={sourceLogo}
+                        alt={`${article.source} logo`}
+                        className="w-10 h-10 rounded-full object-cover bg-white p-0.5"
+                        onError={(e) => {
+                          // Fallback to initials on error
+                          e.target.style.display = 'none'
+                          e.target.nextSibling.style.display = 'flex'
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm",
+                        sourceLogo ? "absolute inset-0 hidden" : "flex",
+                        "bg-gradient-to-br from-zw-green via-zw-yellow to-zw-red"
+                      )}
+                    >
+                      {sourceProfile?.initials || article.source?.charAt(0).toUpperCase() || 'N'}
                     </div>
                   </div>
+                  
                   <div>
-                    <p className="font-medium text-sm text-white">{article.source || 'Unknown Source'}</p>
-                    <p className="text-gray-400 text-xs">
-                      {formatTimeAgo(article.publishedAt || article.pubDate || article.published)}
-                    </p>
+                    <p className="font-medium text-sm text-white">{sourceProfile?.name || article.source || 'Unknown Source'}</p>
+                    <div className="flex items-center space-x-2 text-xs text-gray-400">
+                      <span>{formatTimeAgo(article.publishedAt || article.pubDate || article.published)}</span>
+                      {sourceProfile?.credibility && (
+                        <>
+                          <span>•</span>
+                          <span className={cn(
+                            "px-1.5 py-0.5 rounded text-xs font-medium",
+                            sourceProfile.credibility === 'high' && "bg-green-500/20 text-green-300",
+                            sourceProfile.credibility === 'medium' && "bg-yellow-500/20 text-yellow-300",
+                            sourceProfile.credibility === 'low' && "bg-red-500/20 text-red-300",
+                            sourceProfile.credibility === 'unknown' && "bg-gray-500/20 text-gray-300"
+                          )}>
+                            {sourceProfile.credibility} trust
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
+                  
                   <div className="flex items-center space-x-2 text-sm text-gray-400">
-                    <ClockIcon className="h-4 w-4" />
+                    <Clock className="h-4 w-4" />
                     <span>{estimatedReadTime} min read</span>
                   </div>
                 </div>
@@ -253,9 +290,9 @@ const ArticleModal = ({
                     title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
                   >
                     {isFullscreen ? (
-                      <ArrowsPointingInIcon className="h-5 w-5" />
+                      <Minimize2 className="h-5 w-5" />
                     ) : (
-                      <ArrowsPointingOutIcon className="h-5 w-5" />
+                      <Maximize2 className="h-5 w-5" />
                     )}
                   </button>
 
@@ -265,7 +302,7 @@ const ArticleModal = ({
                     className="p-2 rounded-full hover:bg-white/10 text-white transition-colors touch-manipulation"
                     title="Close (Esc)"
                   >
-                    <XMarkIcon className="h-5 w-5" />
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
               </div>
@@ -298,7 +335,7 @@ const ArticleModal = ({
                 {/* Category */}
                 {article.category && (
                   <div className="mb-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-600/20 text-purple-300 border border-purple-500/30">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-zw-green/20 text-zw-green border border-zw-green/30">
                       #{article.category}
                     </span>
                   </div>
@@ -325,7 +362,7 @@ const ArticleModal = ({
                     </time>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <ClockIcon className="h-4 w-4" />
+                    <Clock className="h-4 w-4" />
                     <span>{estimatedReadTime} min read</span>
                   </div>
                 </div>
@@ -362,12 +399,12 @@ const ArticleModal = ({
                           {expandedContent ? (
                             <>
                               <span>Show Less</span>
-                              <ChevronUpIcon className="ml-1 h-4 w-4" />
+                              <ChevronUp className="ml-1 h-4 w-4" />
                             </>
                           ) : (
                             <>
                               <span>Show More</span>
-                              <ChevronDownIcon className="ml-1 h-4 w-4" />
+                              <ChevronDown className="ml-1 h-4 w-4" />
                             </>
                           )}
                         </button>
@@ -406,8 +443,9 @@ const ArticleModal = ({
                         href={article.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center px-2.5 py-1 rounded-full text-sm font-medium bg-white/20 text-white backdrop-blur-sm border border-white/30"
+                        className="flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-zw-green/20 text-zw-green backdrop-blur-sm border border-zw-green/30 hover:bg-zw-green/30 transition-colors"
                       >
+                        <ExternalLink className="h-4 w-4 mr-2" />
                         <span>Visit Original Article</span>
                       </a>
                     </div>
@@ -435,11 +473,8 @@ const ArticleModal = ({
                     )}
                     title={isBookmarked ? "Remove from saved" : "Save article"}
                   >
-                    {isBookmarked ? (
-                      <BookmarkSolidIcon className="h-6 w-6" />
-                    ) : (
-                      <BookmarkIcon className="h-6 w-6" />
-                    )}
+                    <Bookmark className={cn("h-6 w-6", isBookmarked && "fill-current")} />
+                  
                   </button>
 
                   <button
@@ -452,11 +487,7 @@ const ArticleModal = ({
                     )}
                     title={isLiked ? "Unlike" : "Like article"}
                   >
-                    {isLiked ? (
-                      <HeartSolidIcon className="h-6 w-6" />
-                    ) : (
-                      <HeartIcon className="h-6 w-6" />
-                    )}
+                    <Heart className={cn("h-6 w-6", isLiked && "fill-current")} />
                   </button>
 
                   <button
@@ -464,7 +495,7 @@ const ArticleModal = ({
                     className="p-3 rounded-full text-gray-400 hover:text-gray-300 transition-all duration-200 hover:scale-110 touch-manipulation"
                     title="Share article"
                   >
-                    <ShareIcon className="h-6 w-6" />
+                    <Share2 className="h-6 w-6" />
                   </button>
                 </div>
 

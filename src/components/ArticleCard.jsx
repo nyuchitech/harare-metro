@@ -151,8 +151,8 @@ function ArticleCard({
             {/* Description */}
             {article.description && (
               <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                {article.description.length > 120 
-                  ? `${article.description.substring(0, 120)}...`
+                {article.description.length > 400 
+                  ? `${article.description.substring(0, 400)}...`
                   : article.description
                 }
               </p>
@@ -300,8 +300,8 @@ function ArticleCard({
           {/* Description */}
           {article.description && (
             <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-              {article.description.length > 200 
-                ? `${article.description.substring(0, 200)}...`
+              {article.description.length > 400 
+                ? `${article.description.substring(0, 400)}...`
                 : article.description
               }
             </p>

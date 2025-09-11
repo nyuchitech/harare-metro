@@ -33,13 +33,13 @@ const PersonalInsights = ({ currentColors, allFeeds, lastUpdated }) => {
 
   // Get user's interaction data from localStorage
   const getUserData = () => {
-    const readArticles = JSON.parse(localStorage.getItem('mukoko_read_articles') || '[]')
-    const likedArticles = JSON.parse(localStorage.getItem('mukoko_liked_articles') || '[]')
-    const bookmarkedArticles = JSON.parse(localStorage.getItem('mukoko_bookmarks') || '[]')
-    const searchHistory = JSON.parse(localStorage.getItem('mukoko_search_history') || '[]')
-    const categoryClicks = JSON.parse(localStorage.getItem('mukoko_category_clicks') || '{}')
-    const readingTime = JSON.parse(localStorage.getItem('mukoko_reading_time') || '{}')
-    const visitHistory = JSON.parse(localStorage.getItem('mukoko_visit_history') || '[]')
+    const readArticles = JSON.parse(localStorage.getItem('harare-metro_read_articles') || '[]')
+    const likedArticles = JSON.parse(localStorage.getItem('harare-metro_liked_articles') || '[]')
+    const bookmarkedArticles = JSON.parse(localStorage.getItem('harare-metro_bookmarks') || '[]')
+    const searchHistory = JSON.parse(localStorage.getItem('harare-metro_search_history') || '[]')
+    const categoryClicks = JSON.parse(localStorage.getItem('harare-metro_category_clicks') || '{}')
+    const readingTime = JSON.parse(localStorage.getItem('harare-metro_reading_time') || '{}')
+    const visitHistory = JSON.parse(localStorage.getItem('harare-metro_visit_history') || '[]')
     
     return {
       readArticles,

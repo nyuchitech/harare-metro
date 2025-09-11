@@ -1,8 +1,9 @@
 // worker/services/CacheService.js
 export class CacheService {
-  constructor(newsStorageKV, contentCacheKV) {
+  constructor(newsStorageKV, contentCacheKV, articleService = null) {
     this.newsStorage = newsStorageKV     // For articles and news-related cache
     this.contentCache = contentCacheKV   // For search results and other non-news content
+    this.articleService = articleService // Optional D1 database service for article persistence
     
     this.TTL = {
       ARTICLES: 14 * 24 * 60 * 60,        // 2 weeks
@@ -65,7 +66,7 @@ export class CacheService {
 
       const sortedArticles = articles
         .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
-        .slice(0, 20000) // Max articles limit
+        .slice(0, 40000) // Max articles limit - TODO: Make configurable
 
       // Store articles in NEWS_STORAGE
       await this.newsStorage.put(
@@ -87,7 +88,46 @@ export class CacheService {
         { expirationTtl: this.TTL.ARTICLES }
       )
 
-      console.log(`✅ Cached ${sortedArticles.length} articles in NEWS_STORAGE`)
+      // Store articles in D1 database if ArticleService is available
+      let d1SavedCount = 0
+      if (this.articleService) {
+        console.log(`💾 Saving ${sortedArticles.length} articles to D1 database...`)
+        
+        for (const article of sortedArticles) {
+          try {
+            // Map RSS article format to D1 article format
+            const articleData = {
+              title: article.title,
+              description: article.description || article.contentSnippet || '',
+              content: article.fullContent || article.content || article.contentSnippet || '',
+              author: article.author || article.creator || '',
+              source: article.source || 'Unknown',
+              source_url: article.sourceUrl || '',
+              category: article.category || 'general',
+              tags: Array.isArray(article.keywords) ? article.keywords.join(', ') : (article.tags || ''),
+              published_at: article.pubDate || article.publishedAt || new Date().toISOString(),
+              image_url: article.imageUrl || article.image_url || '',
+              optimized_image_url: article.optimizedImageUrl || '',
+              original_url: article.link || article.url || '',
+              rss_guid: typeof article.guid === 'object' ? (article.guid['#text'] || JSON.stringify(article.guid)) : (article.id || article.guid || ''),
+              status: 'published',
+              priority: typeof article.priority === 'boolean' ? (article.priority ? 1 : 0) : (article.priority || 0)
+            }
+            
+            const result = await this.articleService.upsertArticle(articleData)
+            if (result) {
+              d1SavedCount++
+            }
+          } catch (articleError) {
+            console.warn(`⚠️ Failed to save article "${article.title}" to D1:`, articleError.message)
+            // Continue with other articles even if one fails
+          }
+        }
+        
+        console.log(`💾 Saved ${d1SavedCount}/${sortedArticles.length} articles to D1 database`)
+      }
+
+      console.log(`✅ Cached ${sortedArticles.length} articles in NEWS_STORAGE${this.articleService ? ` and ${d1SavedCount} in D1` : ''}`)
       return sortedArticles
     } catch (error) {
       console.log('❌ Error caching articles:', error)

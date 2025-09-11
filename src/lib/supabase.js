@@ -44,7 +44,8 @@ export const auth = {
         email,
         password,
         options: {
-          data: metadata
+          data: metadata,
+          emailRedirectTo: `${window.location.origin}/auth/confirm`
         }
       })
       return { data, error }
@@ -80,7 +81,7 @@ export const auth = {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/confirm`
         }
       })
       return { data, error }
@@ -139,7 +140,7 @@ export const auth = {
     
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`
+        redirectTo: `${window.location.origin}/auth/confirm`
       })
       return { data, error }
     } catch (err) {

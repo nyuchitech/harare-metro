@@ -3,11 +3,11 @@ import { useCallback, useMemo } from 'react'
 
 // User ID management
 function generateUserId() {
-  const stored = localStorage.getItem('mukoko_user_id')
+  const stored = localStorage.getItem('harare-metro_user_id')
   if (stored) return stored
   
   const newId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2)
-  localStorage.setItem('mukoko_user_id', newId)
+  localStorage.setItem('harare-metro_user_id', newId)
   return newId
 }
 
@@ -47,9 +47,9 @@ export function useAnalytics() {
       
       // Fallback to localStorage
       try {
-        const events = JSON.parse(localStorage.getItem('mukoko_analytics') || '[]')
+        const events = JSON.parse(localStorage.getItem('harare_metro_analytics') || '[]')
         events.push({ eventType, data, timestamp: Date.now(), userId })
-        localStorage.setItem('mukoko_analytics', JSON.stringify(events.slice(-100)))
+        localStorage.setItem('harare_metro_analytics', JSON.stringify(events.slice(-100)))
       } catch (e) {
         // Silent failure
       }
@@ -164,7 +164,7 @@ export function useAnalytics() {
   // Batch send localStorage events
   const syncLocalAnalytics = useCallback(async () => {
     try {
-      const events = JSON.parse(localStorage.getItem('mukoko_analytics') || '[]')
+      const events = JSON.parse(localStorage.getItem('harare_metro_analytics') || '[]')
       if (events.length === 0) return
 
       // Send events one by one (to avoid overwhelming the server)
@@ -181,7 +181,7 @@ export function useAnalytics() {
       // Remove successfully sent events
       if (successCount > 0) {
         const remainingEvents = events.slice(successCount)
-        localStorage.setItem('mukoko_analytics', JSON.stringify(remainingEvents))
+        localStorage.setItem('harare_metro_analytics', JSON.stringify(remainingEvents))
         console.log(`📊 Synced ${successCount} analytics events`)
       }
     } catch (error) {

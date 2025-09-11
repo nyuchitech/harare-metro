@@ -129,7 +129,7 @@ export class RSSFeedService {
   }
 
   // Function to clean HTML content (UNLIMITED for full content)
-  cleanHtml(html, unlimited = false) {
+  async cleanHtml(html, unlimited = false) {
     if (!html) return ''
     
     let cleaned = this.decodeHtmlEntities(html)
@@ -139,9 +139,11 @@ export class RSSFeedService {
       .replace(/\s+/g, ' ')
       .trim()
     
-    // Only limit if not unlimited
+    // Only limit if not unlimited - get limit from config
     if (!unlimited) {
-      cleaned = cleaned.substring(0, 300)
+      // Use configurable limit or fallback to 3000
+      const limit = this.configService ? await this.configService.getArticleContentLimit() : 3000
+      cleaned = cleaned.substring(0, limit)
     }
       
     return cleaned
@@ -379,7 +381,7 @@ export class RSSFeedService {
     const priorityKeywords = await this.configService.getPriorityKeywords()
     
     const title = this.cleanText(item.title?.text || item.title || '')
-    const description = this.cleanHtml(
+    const description = await this.cleanHtml(
       item.description?.text || 
       item.description || 
       item.summary?.text || 
@@ -453,7 +455,7 @@ export class RSSFeedService {
       }
 
       // Clean the content - UNLIMITED for full content
-      const cleanedFull = this.cleanHtml(fullContent, true) // unlimited = true
+      const cleanedFull = await this.cleanHtml(fullContent, true) // unlimited = true
       const cleanedExcerpt = cleanedFull.substring(0, 300)
       
       return {

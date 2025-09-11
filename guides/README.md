@@ -1,6 +1,6 @@
-# Mukoko Documentation Guides
+# Harare Metro Documentation Guides
 
-This folder contains all the documentation and guides for the Mukoko social news application.
+This folder contains all the documentation and guides for the Harare Metro social news application.
 
 ## 📚 Available Guides
 

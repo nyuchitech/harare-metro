@@ -1,5 +1,6 @@
-// src/components/CategoryFilter.jsx - Simplified version
+// src/components/CategoryFilter.jsx - Enhanced version with Lucide icons
 import React from 'react'
+import { X } from 'lucide-react'
 
 const CategoryFilter = ({ 
   selectedCategory, 
@@ -35,7 +36,7 @@ const CategoryFilter = ({
   const getCategoryCount = (categoryId) => {
     if (categoryId === 'all') return feeds.length
     return feeds.filter(article => 
-      article.category?.toLowerCase() === categoryId.toLowerCase()
+      article.category && article.category.toLowerCase() === categoryId.toLowerCase()
     ).length
   }
 
@@ -105,9 +106,7 @@ const CategoryFilter = ({
               className="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100 p-1"
               aria-label="Clear filter"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

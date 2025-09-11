@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Local Development Startup Script for Mukoko
-echo "🚀 Starting Mukoko Local Development..."
+# Local Development Startup Script for Harare Metro
+echo "🚀 Starting Harare Metro Local Development..."
 
 # Check if .env.local exists
 if [ ! -f ".env.local" ]; then
