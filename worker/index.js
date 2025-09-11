@@ -503,9 +503,10 @@ function getBasicHTML() {
 }
 
 // Enhanced fallback HTML with server-side rendered articles and error diagnostics
+// This function is ONLY called when the React app assets fail to load
 async function getEnhancedFallbackHTML(env, debugInfo = {}) {
   try {
-    // Initialize services to get articles
+    // Initialize services to get articles for the fallback page
     const { cacheService } = initializeServices(env)
     
     // Get latest 12 articles from cache, with D1 fallback
@@ -967,12 +968,9 @@ export default {
             if (kvError.message.includes('RPC receiver') || kvError.message.includes('does not implement') || kvError.message.includes('method "get"')) {
               console.log('KV RPC issue detected, serving SPA fallback instead of retrying')
               
-              // For critical SPA assets, redirect to SPA fallback
-              if (url.pathname === '/index.html' || url.pathname === '/' || 
-                  url.pathname.startsWith('/assets/') || 
-                  url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
-                
-                // Instead of failing, serve the React app entry point
+              // For index.html specifically, serve fallback HTML when KV fails
+              if (url.pathname === '/index.html' || url.pathname === '/') {
+                console.log('Serving enhanced fallback for index.html due to KV RPC issues')
                 const fallbackHTML = await getEnhancedFallbackHTML(env, {
                   reason: `KV RPC issues detected, serving enhanced fallback`,
                   hasStaticContent: true,
@@ -986,7 +984,8 @@ export default {
                 })
               }
               
-              // For other assets, return 404
+              // For other assets (JS, CSS, etc.), return 404 so browser handles the failure properly
+              console.log(`Asset ${url.pathname} not available due to KV issues, returning 404`)
               return new Response('Asset not available due to KV issues', { 
                 status: 404,
                 headers: { 'Content-Type': 'text/plain' }

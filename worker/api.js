@@ -688,8 +688,28 @@ async function handleFeeds(request, env, ctx) {
       category, searchQuery, timeframe, sortBy, limit, offset, mobileOptimized, previewLimit, isPreload 
     })
     
-    // Get cached articles using CacheService
-    let articles = await cacheService.getCachedArticles()
+    // Get cached articles using CacheService, with D1 fallback
+    let articles, source = 'cache'
+    try {
+      articles = await cacheService.getCachedArticles()
+    } catch (cacheError) {
+      Logger.warn('Cache failed, falling back to D1 database', cacheError.message)
+      // Fallback to D1 database when cache fails
+      try {
+        const { articleService } = initializeServices(env)
+        const dbResult = await articleService.getArticles({ 
+          limit: Math.max(limit * 3, 100), // Get more from DB to allow for filtering
+          orderBy: 'published_at', 
+          orderDirection: 'DESC' 
+        })
+        articles = dbResult.articles || []
+        source = 'database'
+        Logger.info(`Loaded ${articles.length} articles from D1 database as fallback`)
+      } catch (dbError) {
+        Logger.error('Both cache and database failed', dbError.message)
+        articles = []
+      }
+    }
     
     // AUTO-INITIALIZE if no articles are cached
     if (!articles || articles.length === 0) {
