@@ -6,6 +6,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import multiTierCacheManager from '../services/MultiTierCacheManager.js'
 import directDataService from '../services/DirectDataService.js'
+import clientCache from '../services/ClientCacheService.js'
 import { useSupabaseAuth } from './useSupabaseAuth'
 import useUserInterests from './useUserInterests'
 
@@ -72,6 +73,26 @@ export function useOptimizedFeeds({
 
   // User ID from Supabase auth
   const userId = useMemo(() => supabaseAuth.user?.id || 'anonymous', [supabaseAuth.user])
+
+  // Initialize client cache on mount
+  useEffect(() => {
+    const initializeClientCache = async () => {
+      try {
+        console.log('💾 Initializing client cache...')
+        await clientCache.initialize()
+        
+        // Optional: preload cache if needed
+        const needsRefresh = await clientCache.preloadCache()
+        if (needsRefresh) {
+          console.log('💾 Client cache needs refresh - will fetch fresh data')
+        }
+      } catch (error) {
+        console.warn('💾 Client cache initialization failed:', error.message)
+      }
+    }
+    
+    initializeClientCache()
+  }, []) // Run once on mount
 
   // Load categories and keywords for interest-based prioritization
   useEffect(() => {
@@ -173,7 +194,7 @@ export function useOptimizedFeeds({
     })
   }, [feeds, calculateRelevanceScore, hasSetupInterests, interests])
   
-  // HYBRID fetch function: DirectDataService for speed + MultiTierCacheManager for features
+  // CLIENT-CACHE-FIRST fetch function: localStorage -> Server -> Fallback
   const fetchFeeds = useCallback(async (append = false) => {
     const startTime = performance.now()
     
@@ -188,51 +209,125 @@ export function useOptimizedFeeds({
       const offset = append ? feeds.length : 0
       const limit = append ? 12 : 24 // Mobile-optimized: 24 initial, 12 per page
       
-      console.log(`🎯 HYBRID fetch: offset=${offset}, limit=${limit}, append=${append}`)
+      console.log(`🎯 CLIENT-CACHE-FIRST fetch: offset=${offset}, limit=${limit}, append=${append}`)
       
-      // HYBRID STRATEGY:
-      // 1. For initial load - use DirectDataService (fastest, single server call)
-      // 2. For pagination - use DirectDataService (local processing, no server calls)
-      // 3. MultiTierCacheManager handles optimistic updates and advanced features
+      // CLIENT-CACHE-FIRST STRATEGY:
+      // 1. Check client cache first (fastest - 0ms)
+      // 2. If stale or missing, fetch from server and cache
+      // 3. Background refresh for fresh data
       
       let result
+      let cacheHit = false
       
       if (!append && offset === 0) {
-        // INITIAL LOAD: Use DirectDataService for fastest response
-        console.log('📱 Using DirectDataService for fast initial load...')
+        // INITIAL LOAD: Try client cache first
+        console.log('💾 Checking client cache first...')
+        const cachedArticles = await clientCache.getCachedArticles(selectedCategory)
+        const cacheInfo = await clientCache.getCacheInfo(selectedCategory)
+        
+        if (cachedArticles && cachedArticles.length > 0 && !cacheInfo?.isStale) {
+          // CACHE HIT: Use cached data immediately
+          console.log(`⚡ CACHE HIT: ${cachedArticles.length} articles from client cache`)
+          result = {
+            articles: cachedArticles.slice(0, limit),
+            total: cachedArticles.length,
+            hasMore: cachedArticles.length > limit,
+            source: 'client-cache'
+          }
+          cacheHit = true
+          
+          // Background refresh if cache is getting old (but still valid)
+          if (cacheInfo && cacheInfo.age > 15 * 60 * 1000) { // 15 minutes
+            console.log('🔄 Background refresh triggered for stale cache')
+            setTimeout(() => fetchFreshDataAndCache(), 100)
+          }
+          
+        } else {
+          // CACHE MISS: Fetch from server and cache
+          result = await fetchFreshDataAndCache()
+        }
+        
+      } else if (append) {
+        // PAGINATION: Check if we have more cached data
+        console.log('📄 Pagination - checking cached data...')
+        const cachedArticles = await clientCache.getCachedArticles(selectedCategory)
+        
+        if (cachedArticles && cachedArticles.length > offset) {
+          // Use cached data for pagination
+          const paginatedArticles = cachedArticles.slice(offset, offset + limit)
+          result = {
+            articles: paginatedArticles,
+            total: cachedArticles.length,
+            hasMore: cachedArticles.length > offset + limit,
+            source: 'client-cache-pagination'
+          }
+          cacheHit = true
+          console.log(`📄 Paginated from cache: ${paginatedArticles.length} articles`)
+        } else {
+          // Need to fetch more from server
+          result = await directDataService.getMoreArticles({
+            limit,
+            offset,
+            category: selectedCategory !== 'all' ? selectedCategory : null,
+            search: searchQuery?.trim() || null,
+            sortBy
+          })
+        }
+        
+      } else {
+        // FALLBACK: Use existing services
         result = await directDataService.getInitialArticles({
           limit,
           category: selectedCategory !== 'all' ? selectedCategory : null,
           search: searchQuery?.trim() || null,
           sortBy
         })
+      }
+      
+      // Helper function to fetch fresh data and cache it
+      async function fetchFreshDataAndCache() {
+        console.log('🌐 Fetching fresh data from server...')
         
-        // Seed MultiTierCacheManager with initial data for advanced features
-        if (result.articles?.length > 0) {
-          multiTierCacheManager.seedWithArticles(result.articles)
+        try {
+          // Try DirectDataService first (fastest server call)
+          const serverResult = await directDataService.getInitialArticles({
+            limit: Math.max(limit, 50), // Fetch more to populate cache
+            category: selectedCategory !== 'all' ? selectedCategory : null,
+            search: searchQuery?.trim() || null,
+            sortBy
+          })
+          
+          // Cache the fresh data
+          if (serverResult.articles && serverResult.articles.length > 0) {
+            await clientCache.cacheArticles(serverResult.articles, selectedCategory)
+            console.log(`💾 Cached ${serverResult.articles.length} articles locally`)
+            
+            // Seed MultiTierCacheManager for advanced features
+            multiTierCacheManager.seedWithArticles(serverResult.articles)
+          }
+          
+          return {
+            ...serverResult,
+            source: 'server-cached'
+          }
+          
+        } catch (serverError) {
+          console.warn('🌐 Server fetch failed, trying fallback...', serverError.message)
+          
+          // Fallback to MultiTierCacheManager
+          const fallbackResult = await multiTierCacheManager.getArticles({
+            limit,
+            offset: 0,
+            category: selectedCategory !== 'all' ? selectedCategory : null,
+            search: searchQuery?.trim() || null,
+            sortBy
+          })
+          
+          return {
+            ...fallbackResult,
+            source: 'fallback-server'
+          }
         }
-        
-      } else if (append) {
-        // PAGINATION: Use DirectDataService for instant local processing
-        console.log('📄 Using DirectDataService for instant pagination...')
-        result = await directDataService.getMoreArticles({
-          limit,
-          offset,
-          category: selectedCategory !== 'all' ? selectedCategory : null,
-          search: searchQuery?.trim() || null,
-          sortBy
-        })
-        
-      } else {
-        // FALLBACK: Use MultiTierCacheManager for advanced scenarios
-        console.log('🔧 Using MultiTierCacheManager for advanced processing...')
-        result = await multiTierCacheManager.getArticles({
-          limit,
-          offset,
-          category: selectedCategory !== 'all' ? selectedCategory : null,
-          search: searchQuery?.trim() || null,
-          sortBy
-        })
       }
       
       const loadTime = performance.now() - startTime
@@ -257,13 +352,22 @@ export function useOptimizedFeeds({
         setHasMore(result.hasMore !== false)
         
         const source = result.source || 'unknown'
-        console.log(`✅ HYBRID fetch completed: ${result.articles.length} articles in ${loadTime.toFixed(0)}ms (${source})`)
+        const cacheStatus = cacheHit ? 'CACHE HIT' : 'CACHE MISS'
+        console.log(`✅ CLIENT-CACHE-FIRST fetch completed: ${result.articles.length} articles in ${loadTime.toFixed(0)}ms (${source}) - ${cacheStatus}`)
         
-        // Log performance difference for monitoring
-        if (source.includes('direct')) {
-          console.log('⚡ Fast path used: DirectDataService')
+        // Update cache hit rate metrics
+        setPerformanceMetrics(prev => ({
+          ...prev,
+          cacheHitRate: cacheHit ? Math.min(prev.cacheHitRate + 10, 100) : Math.max(prev.cacheHitRate - 2, 0)
+        }))
+        
+        // Log performance insights
+        if (source.includes('client-cache')) {
+          console.log('⚡ INSTANT: Client cache used - 0ms network time')
+        } else if (source.includes('server')) {
+          console.log('🌐 NETWORK: Server fetch required')
         } else {
-          console.log('🔧 Advanced path used: MultiTierCacheManager')
+          console.log('🔧 FALLBACK: Advanced processing used')
         }
       }
       
@@ -546,27 +650,30 @@ export function useOptimizedFeeds({
     return originalCount + optimisticCount
   }, [optimisticViews])
 
-  // HYBRID force refresh with both cache clearing
+  // CLIENT-CACHE-FIRST force refresh with all cache clearing
   const forceRefresh = useCallback(async () => {
-    console.log('🚀 HYBRID force refresh - clearing both caches...')
+    console.log('🚀 CLIENT-CACHE-FIRST force refresh - clearing all caches...')
     
     setLoading(true)
     setError(null)
     
     try {
-      // Clear both cache systems
+      // Clear all cache systems - CLIENT CACHE FIRST
+      await clientCache.clearCache('articles', selectedCategory)
       multiTierCacheManager.clearCache()
       directDataService.clearCache()
+      
+      console.log('💾 All caches cleared (client + server)')
       
       // Reset optimistic state
       setOptimisticLikes(new Map())
       setOptimisticBookmarks(new Map()) 
       setOptimisticViews(new Map())
       
-      // Fetch fresh data
+      // Fetch fresh data (will be cached immediately)
       await fetchFeeds(false)
       
-      console.log('✅ Force refresh completed')
+      console.log('✅ Force refresh completed with fresh cache')
       return { success: true }
       
     } catch (error) {
@@ -576,7 +683,7 @@ export function useOptimizedFeeds({
     } finally {
       setLoading(false)
     }
-  }, [fetchFeeds])
+  }, [fetchFeeds, selectedCategory])
 
   // Scroll to top functionality
   const scrollToTop = useCallback(() => {
