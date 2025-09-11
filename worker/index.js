@@ -495,12 +495,19 @@ function getBasicHTML() {
     <div id="root"></div>
     
     <script>
-        // Auto-refresh after 5 seconds if still showing fallback
-        setTimeout(() => {
-            if (document.getElementById('root').innerHTML === '') {
-                window.location.reload();
-            }
-        }, 5000);
+        // Manual refresh button instead of auto-reload
+        function refreshPage() {
+            window.location.reload();
+        }
+        
+        // Add refresh button to page
+        document.addEventListener('DOMContentLoaded', function() {
+            const refreshBtn = document.createElement('button');
+            refreshBtn.textContent = '🔄 Refresh';
+            refreshBtn.onclick = refreshPage;
+            refreshBtn.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 10px 15px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 1000; font-size: 14px;';
+            document.body.appendChild(refreshBtn);
+        });
     </script>
 </body>
 </html>`
@@ -791,12 +798,14 @@ async function getEnhancedFallbackHTML(env, debugInfo = {}) {
     <div id="root"></div>
     
     <script>
-        // Auto-refresh after 3 seconds to try loading the React app
-        setTimeout(() => {
-            if (document.getElementById('root').innerHTML === '') {
-                window.location.reload();
-            }
-        }, 3000);
+        // Add manual refresh option instead of auto-reload
+        document.addEventListener('DOMContentLoaded', function() {
+            const refreshBtn = document.createElement('button');
+            refreshBtn.textContent = '🔄 Refresh to Load App';
+            refreshBtn.onclick = () => window.location.reload();
+            refreshBtn.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 12px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; z-index: 1000; font-size: 16px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
+            document.body.appendChild(refreshBtn);
+        });
     </script>
 </body>
 </html>`
@@ -968,21 +977,9 @@ export default {
                 })
                 console.log('Retry successful for:', url.pathname)
               } catch (retryError) {
-                console.warn('Retry also failed, serving basic response for:', url.pathname)
-                // If retry fails, don't throw error, just serve basic response
-                if (url.pathname.endsWith('.js')) {
-                  return new Response('console.log("Dev mode: asset loading issue");', { 
-                    status: 200,
-                    headers: { 'Content-Type': 'application/javascript' }
-                  })
-                }
-                if (url.pathname.endsWith('.css')) {
-                  return new Response('/* Dev mode: asset loading issue */', { 
-                    status: 200,
-                    headers: { 'Content-Type': 'text/css' }
-                  })
-                }
-                return new Response('Not found', { status: 404 })
+                console.warn('Retry also failed for:', url.pathname)
+                // In production, throw the original error so we don't serve broken assets
+                throw kvError
               }
             } else {
               // If it's not an RPC issue, still provide fallback for critical assets
