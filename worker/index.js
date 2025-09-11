@@ -560,7 +560,7 @@ async function getEnhancedFallbackHTML(env, debugInfo = {}) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Harare Metro - Zimbabwe News</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🇿🇼</text></svg>">
+    <link rel="icon" type="image/png" href="/logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -750,7 +750,7 @@ async function getEnhancedFallbackHTML(env, debugInfo = {}) {
     <div class="container">
         <header class="header">
             <div class="logo">
-                <span style="font-size: 2rem;">🇿🇼</span>
+                <span style="font-size: 2rem; font-weight: bold; background: linear-gradient(45deg, #22c55e, #facc15, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; border: 2px solid; border-image: linear-gradient(45deg, #22c55e, #facc15, #ef4444) 1;">HM</span>
                 <h1 class="logo-text">Harare Metro</h1>
             </div>
             <p class="tagline">Zimbabwe's Premier News Aggregator</p>
