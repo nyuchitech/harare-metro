@@ -943,27 +943,34 @@ export default {
           } catch (kvError) {
             console.warn('KV Asset Handler failed:', kvError.message)
             
-            // If KV fails due to RPC issues, retry once (in both dev and production)
+            // For persistent RPC issues, bypass KV entirely and serve fallback for SPA routes
             if (kvError.message.includes('RPC receiver') || kvError.message.includes('does not implement') || kvError.message.includes('method "get"')) {
-              console.log('KV RPC issue detected, attempting retry...')
+              console.log('KV RPC issue detected, serving SPA fallback instead of retrying')
               
-              // Try again with a small delay
-              await new Promise(resolve => setTimeout(resolve, 100))
-              
-              try {
-                response = await getAssetFromKV({
-                  request,
-                  waitUntil: ctx.waitUntil.bind(ctx),
-                }, {
-                  ASSET_NAMESPACE: env.__STATIC_CONTENT,
-                  ASSET_MANIFEST: assetManifest,
+              // For critical SPA assets, redirect to SPA fallback
+              if (url.pathname === '/index.html' || url.pathname === '/' || 
+                  url.pathname.startsWith('/assets/') || 
+                  url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+                
+                // Instead of failing, serve the React app entry point
+                const fallbackHTML = await getEnhancedFallbackHTML(env, {
+                  reason: `KV RPC issues detected, serving enhanced fallback`,
+                  hasStaticContent: true,
+                  path: request.url
                 })
-                console.log('Retry successful for:', url.pathname)
-              } catch (retryError) {
-                console.warn('Retry also failed for:', url.pathname)
-                // In production, throw the original error so we don't serve broken assets
-                throw kvError
+                return new Response(fallbackHTML, {
+                  headers: { 
+                    'Content-Type': 'text/html;charset=UTF-8',
+                    'Cache-Control': 'no-cache'
+                  }
+                })
               }
+              
+              // For other assets, return 404
+              return new Response('Asset not available due to KV issues', { 
+                status: 404,
+                headers: { 'Content-Type': 'text/plain' }
+              })
             } else {
               // If it's not an RPC issue, still provide fallback for critical assets
               if (url.pathname === '/index.html' || url.pathname === '/') {
