@@ -36,6 +36,7 @@
     "analyze:bundle": "npx vite build --analyze",
     "build:analytics": "echo \"Analytics build complete\"",
     "test:analytics": "echo \"Testing analytics components\"",
+    "test": "echo \"No tests configured yet\"",
     "deploy:analytics": "npm run build && npm run deploy"
   },
   "dependencies": {
