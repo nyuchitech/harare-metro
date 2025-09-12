@@ -144,7 +144,7 @@ export class D1Service {
       return result.results.map(row => ({
         ...row,
         enabled: Boolean(row.enabled),
-        keywords: row.keywords ? JSON.parse(row.keywords) : []
+        keywords: row.keywords ? row.keywords.split(',').map(k => k.trim()) : []
       }))
     } catch (error) {
       console.error('[D1] Error getting categories:', error)

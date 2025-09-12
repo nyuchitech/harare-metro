@@ -9,6 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { AuthProvider } from "./contexts/AuthContext";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -36,18 +37,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="min-h-screen bg-black text-white font-sans antialiased">
-        {/* Zimbabwe Flag Strip */}
-        <div 
-          className="fixed top-0 left-0 w-2 h-full z-50"
-          style={{
-            background: "linear-gradient(to bottom, #00A651 0% 20%, #FDD116 20% 40%, #EF3340 40% 60%, #000000 60% 80%, #FFFFFF 80% 100%)"
-          }}
-        />
-        
-        <div className="pl-3">
-          {children}
-        </div>
+      <body className="min-h-screen bg-background text-foreground font-sans antialiased">
+        {children}
         
         <ScrollRestoration />
         <Scripts />
@@ -57,7 +48,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <Outlet />
+    </AuthProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

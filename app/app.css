@@ -4,13 +4,295 @@
   --font-sans:
     "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-serif:
+    Georgia, "Times New Roman", serif;
 }
 
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
+@layer base {
+  /* Zimbabwe Brand Colors - Mobile-First Theme System */
+  :root {
+    /* Zimbabwe Flag Colors */
+    --zw-green: 140 100% 32%; /* #00A651 - Growth, prosperity, agriculture */
+    --zw-yellow: 48 98% 54%; /* #FDD116 - Mineral wealth, sunshine */
+    --zw-red: 354 85% 57%; /* #EF3340 - Heritage, struggle, passion */
+    --zw-black: 0 0% 0%; /* #000000 - African heritage, strength */
+    --zw-white: 0 0% 100%; /* #FFFFFF - Peace, unity, progress */
+    
+    /* 16 Zimbabwe Mineral-Inspired Colors - Neutral light tones */
+    --mineral-gold: 45 85% 75%; /* Inspired by Zimbabwe's gold deposits */
+    --mineral-chrome: 130 15% 70%; /* From Zimbabwe's chromium */
+    --mineral-platinum: 240 10% 80%; /* From platinum group metals */
+    --mineral-diamond: 200 20% 85%; /* From diamond mines */
+    --mineral-coal: 0 0% 25%; /* From coal deposits */
+    --mineral-iron: 15 25% 65%; /* From iron ore */
+    --mineral-copper: 25 60% 70%; /* From copper mining */
+    --mineral-nickel: 180 15% 75%; /* From nickel deposits */
+    --mineral-tin: 220 20% 78%; /* From tin mining */
+    --mineral-lithium: 300 30% 82%; /* From lithium reserves */
+    --mineral-tantalite: 270 15% 60%; /* From tantalite ore */
+    --mineral-emerald: 155 40% 75%; /* From emerald mines */
+    --mineral-aquamarine: 195 35% 80%; /* From aquamarine gems */
+    --mineral-amethyst: 270 40% 78%; /* From amethyst deposits */
+    --mineral-granite: 0 5% 70%; /* From granite quarries */
+    --mineral-marble: 60 15% 90%; /* From marble deposits */
+    
+    /* Light theme - Clean #f4f4f4 background */
+    --background: 0 0% 95.7%; /* #f4f4f4 */
+    --foreground: 0 0% 10%; /* Dark charcoal text */
+    --card: 0 0% 100%; /* Pure white cards */
+    --card-foreground: 0 0% 10%; /* Dark charcoal text */
+    --popover: 0 0% 100%; /* White popover */
+    --popover-foreground: 0 0% 10%; /* Dark charcoal text */
+    --primary: var(--zw-green); /* Zimbabwe green for primary actions */
+    --primary-foreground: var(--zw-white); /* White text on green */
+    --secondary: 0 0% 92%; /* Light gray */
+    --secondary-foreground: 0 0% 15%; /* Dark gray text */
+    --muted: 0 0% 88%; /* Slightly darker light gray */
+    --muted-foreground: 0 0% 40%; /* Readable muted text */
+    --accent: var(--zw-yellow); /* Zimbabwe yellow for highlights */
+    --accent-foreground: 0 0% 15%; /* Dark text on yellow */
+    --destructive: var(--zw-red); /* Zimbabwe red for errors */
+    --destructive-foreground: var(--zw-white); /* White text on red */
+    --border: 0 0% 85%; /* Light borders */
+    --input: 0 0% 100%; /* White input backgrounds */
+    --ring: var(--zw-green); /* Green focus rings */
+    --success: var(--zw-green); /* Success states */
+    --success-foreground: var(--zw-white);
+    --warning: var(--zw-yellow); /* Warning states */
+    --warning-foreground: 0 0% 15%;
+    --radius: 0.75rem; /* Modern rounded corners */
+  }
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
+  .dark {
+    /* Dark theme - dark charcoal background */
+    --background: 0 0% 12%; /* Dark charcoal, not bluish */
+    --foreground: var(--zw-white); /* Pure white text */
+    --card: 0 0% 15%; /* Slightly lighter charcoal cards */
+    --card-foreground: var(--zw-white); /* Pure white text */
+    --popover: 0 0% 15%; /* Match card */
+    --popover-foreground: var(--zw-white); /* Pure white text */
+    --primary: var(--zw-green); /* Zimbabwe green primary */
+    --primary-foreground: var(--zw-white); /* White text on green */
+    --secondary: 0 0% 20%; /* Dark secondary */
+    --secondary-foreground: 0 0% 85%; /* Light gray text */
+    --muted: 0 0% 18%; /* Dark muted backgrounds */
+    --muted-foreground: 0 0% 60%; /* Readable muted text */
+    --accent: var(--zw-yellow); /* Zimbabwe yellow for highlights */
+    --accent-foreground: 0 0% 15%; /* Dark text on yellow */
+    --destructive: var(--zw-red); /* Zimbabwe red for errors */
+    --destructive-foreground: var(--zw-white); /* White text on red */
+    --border: 0 0% 25%; /* Visible borders */
+    --input: 0 0% 18%; /* Dark input backgrounds */
+    --ring: var(--zw-green); /* Green focus rings */
+    --success: var(--zw-green); /* Success states */
+    --success-foreground: var(--zw-white);
+    --warning: var(--zw-yellow); /* Warning states */
+    --warning-foreground: 0 0% 15%;
+  }
+
+  /* Import fonts - Logo font (Georgia/serif) for headings, Inter for body */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  /* Body uses Inter for maximum readability */
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-display: swap;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-weight: 400;
+    font-size: 16px;
+  }
+
+  /* Headings use serif font to match logo - elegant and authoritative */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.75em;
+    color: hsl(var(--foreground));
+  }
+
+  /* Make h1 and h2 extra bold for hierarchy */
+  h1, h2 {
+    font-weight: 800;
+  }
+
+  /* Body text uses Inter for maximum readability */
+  p, span, div {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    color: hsl(var(--foreground));
+  }
+
+  /* Better button typography with Inter */
+  button {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Input typography with Inter */
+  input, textarea {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segue UI', 'Roboto', sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+}
+
+@layer utilities {
+  /* Font utilities */
+  .font-sans {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+  
+  .font-serif {
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+  
+  /* Zimbabwe brand utility classes */
+  .bg-zw-green { background-color: hsl(var(--zw-green)); }
+  .bg-zw-yellow { background-color: hsl(var(--zw-yellow)); }
+  .bg-zw-red { background-color: hsl(var(--zw-red)); }
+  .bg-zw-black { background-color: hsl(var(--zw-black)); }
+  .bg-zw-white { background-color: hsl(var(--zw-white)); }
+
+  .text-zw-green { color: hsl(var(--zw-green)); }
+  .text-zw-yellow { color: hsl(var(--zw-yellow)); }
+  .text-zw-red { color: hsl(var(--zw-red)); }
+  .text-zw-black { color: hsl(var(--zw-black)); }
+  .text-zw-white { color: hsl(var(--zw-white)); }
+
+  .border-zw-green { border-color: hsl(var(--zw-green)); }
+  .border-zw-yellow { border-color: hsl(var(--zw-yellow)); }
+  .border-zw-red { border-color: hsl(var(--zw-red)); }
+  .border-zw-black { border-color: hsl(var(--zw-black)); }
+  .border-zw-white { border-color: hsl(var(--zw-white)); }
+
+  /* Zimbabwe mineral colors for categories */
+  .bg-mineral-gold { background-color: hsl(var(--mineral-gold)); }
+  .bg-mineral-chrome { background-color: hsl(var(--mineral-chrome)); }
+  .bg-mineral-platinum { background-color: hsl(var(--mineral-platinum)); }
+  .bg-mineral-diamond { background-color: hsl(var(--mineral-diamond)); }
+  .bg-mineral-coal { background-color: hsl(var(--mineral-coal)); }
+  .bg-mineral-iron { background-color: hsl(var(--mineral-iron)); }
+  .bg-mineral-copper { background-color: hsl(var(--mineral-copper)); }
+  .bg-mineral-nickel { background-color: hsl(var(--mineral-nickel)); }
+  .bg-mineral-tin { background-color: hsl(var(--mineral-tin)); }
+  .bg-mineral-lithium { background-color: hsl(var(--mineral-lithium)); }
+  .bg-mineral-tantalite { background-color: hsl(var(--mineral-tantalite)); }
+  .bg-mineral-emerald { background-color: hsl(var(--mineral-emerald)); }
+  .bg-mineral-aquamarine { background-color: hsl(var(--mineral-aquamarine)); }
+  .bg-mineral-amethyst { background-color: hsl(var(--mineral-amethyst)); }
+  
+  /* Border color utilities for mineral colors */
+  .border-mineral-gold { border-color: hsl(var(--mineral-gold)); }
+  .border-mineral-chrome { border-color: hsl(var(--mineral-chrome)); }
+  .border-mineral-platinum { border-color: hsl(var(--mineral-platinum)); }
+  .border-mineral-diamond { border-color: hsl(var(--mineral-diamond)); }
+  .border-mineral-coal { border-color: hsl(var(--mineral-coal)); }
+  .border-mineral-iron { border-color: hsl(var(--mineral-iron)); }
+  .border-mineral-copper { border-color: hsl(var(--mineral-copper)); }
+  .border-mineral-nickel { border-color: hsl(var(--mineral-nickel)); }
+  .border-mineral-tin { border-color: hsl(var(--mineral-tin)); }
+  .border-mineral-lithium { border-color: hsl(var(--mineral-lithium)); }
+  .border-mineral-tantalite { border-color: hsl(var(--mineral-tantalite)); }
+  .border-mineral-emerald { border-color: hsl(var(--mineral-emerald)); }
+  .border-mineral-aquamarine { border-color: hsl(var(--mineral-aquamarine)); }
+  .border-mineral-amethyst { border-color: hsl(var(--mineral-amethyst)); }
+  .border-mineral-granite { border-color: hsl(var(--mineral-granite)); }
+  .border-mineral-marble { border-color: hsl(var(--mineral-marble)); }
+  
+  .bg-mineral-granite { background-color: hsl(var(--mineral-granite)); }
+  .bg-mineral-marble { background-color: hsl(var(--mineral-marble)); }
+
+  /* Mobile-first touch targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Safe area support for mobile */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Line clamp utilities */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Zimbabwe flag strip - brand element */
+  .zimbabwe-flag-strip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 100vh;
+    z-index: 1000;
+    background: linear-gradient(to bottom,
+      hsl(var(--zw-green)) 0% 20%,
+      hsl(var(--zw-yellow)) 20% 40%, 
+      hsl(var(--zw-red)) 40% 60%,
+      hsl(var(--zw-black)) 60% 80%,
+      hsl(var(--zw-white)) 80% 100%
+    );
+  }
+
+  /* Glass morphism effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .glass {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Hide scrollbars */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
