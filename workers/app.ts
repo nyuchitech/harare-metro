@@ -176,6 +176,30 @@ app.get("/api/admin/stats", async (c) => {
   }
 });
 
+// Manual RSS refresh endpoint for testing
+app.post("/api/admin/refresh-rss", async (c) => {
+  try {
+    // TODO: Port RSS fetching logic from temp-harare-backup/worker/services/RSSFeedService.js
+    // This is a manual endpoint for now - will be replaced by automated cron job
+    
+    console.log("[RSS] Manual RSS refresh triggered");
+    
+    // Placeholder response - actual RSS fetching logic needs to be ported
+    return c.json({
+      message: "RSS refresh initiated (placeholder implementation)",
+      status: "pending_implementation",
+      note: "RSS fetching logic needs to be ported from RSSFeedService.js",
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return c.json({
+      error: "RSS refresh failed", 
+      message: error.message,
+      timestamp: new Date().toISOString()
+    }, 500);
+  }
+});
+
 // Scheduled function for RSS refresh (called by Cron trigger)
 export async function scheduled(
   controller: ScheduledController,
@@ -185,9 +209,9 @@ export async function scheduled(
   console.log("[CRON] Scheduled RSS refresh triggered");
   
   try {
-    // For now, this is a placeholder - RSS refresh logic would go here
-    // We'd need to port the RSS fetching logic from the old worker
-    console.log("[CRON] RSS refresh completed (placeholder)");
+    // TODO: Port RSS fetching logic from temp-harare-backup/worker/services/RSSFeedService.js
+    // For now, this is a placeholder
+    console.log("[CRON] RSS refresh completed (placeholder - needs RSS service port)");
   } catch (error) {
     console.error("[CRON] RSS refresh failed:", error);
   }
