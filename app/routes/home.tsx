@@ -65,9 +65,33 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               </div>
             </div>
             
-            <div className="text-right">
-              <div className="text-sm text-green-400 font-medium">{total} Articles</div>
-              <div className="text-xs text-gray-500">React Router + D1</div>
+            {/* Search Bar - Hidden on mobile, shown on larger screens */}
+            <div className="hidden md:flex flex-1 max-w-md mx-8">
+              <form method="GET" action="/search" className="relative w-full">
+                <input
+                  type="text"
+                  name="q"
+                  placeholder="Search news..."
+                  className="w-full h-10 pl-10 pr-4 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+                <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                </svg>
+              </form>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              {/* Mobile search button */}
+              <a href="/search" className="md:hidden p-2 text-gray-400 hover:text-white">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                </svg>
+              </a>
+
+              <div className="text-right">
+                <div className="text-sm text-green-400 font-medium">{total} Articles</div>
+                <div className="text-xs text-gray-500">Live Updates</div>
+              </div>
             </div>
           </div>
         </div>
