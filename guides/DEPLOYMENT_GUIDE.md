@@ -2,6 +2,20 @@
 
 This guide covers the complete deployment process for Harare Metro, including domain configuration, Supabase setup, and Cloudflare Workers deployment.
 
+## ⚠️ Critical KV Storage Fix
+
+**IMPORTANT**: Previous deployments may have failed due to static assets not being uploaded to the `__STATIC_CONTENT` KV namespace, causing "RPC receiver does not implement the method 'get'" errors.
+
+### The Issue
+- Deployments using `wrangler deploy` without `--assets dist` flag
+- Static assets (HTML, JS, CSS) not uploaded to KV storage
+- React app fails to load, showing fallback HTML instead
+
+### The Solution
+- Always use `npm run deploy` or `./scripts/deploy.sh` for deployment
+- These scripts ensure static assets are properly uploaded with `--assets dist` flag
+- Verify deployment logs show "29 files from the assets directory" uploaded
+
 ## 🚀 Prerequisites
 
 Before deploying, ensure you have:
