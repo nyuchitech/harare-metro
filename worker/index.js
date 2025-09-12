@@ -8,6 +8,7 @@ import RSSFeedService from './services/RSSFeedService.js'
 import { CacheService } from './services/CacheService.js'
 import { handleApiRequest } from './api.js'
 import { CloudflareImagesService } from './services/CloudflareImagesService.js'
+import { logger } from './utils/logger.js'
 
 // Cache headers - static configuration
 const CACHE_HEADERS = {
@@ -518,12 +519,12 @@ async function getEnhancedFallbackHTML(env, debugInfo = {}) {
       const cachedArticles = await cacheService.getCachedArticles()
       articles = cachedArticles.slice(0, 12) // Get latest 12
     } catch (cacheError) {
-      console.warn('Failed to load articles from cache for fallback HTML:', cacheError)
+      logger.warn('Failed to load articles from cache for fallback HTML:', cacheError)
       articlesError = cacheError.message
       
       // Fallback to D1 database when cache fails
       try {
-        console.log('Attempting to load articles from D1 database as fallback...')
+        logger.debug('Attempting to load articles from D1 database as fallback...')
         const { articleService } = initializeServices(env)
         const dbResult = await articleService.getArticles({ 
           limit: 12, 
@@ -533,9 +534,9 @@ async function getEnhancedFallbackHTML(env, debugInfo = {}) {
         articles = dbResult.articles || []
         source = 'database'
         articlesError = null // Clear cache error since D1 worked
-        console.log(`Successfully loaded ${articles.length} articles from D1 database`)
+        logger.debug(`Successfully loaded ${articles.length} articles from D1 database`)
       } catch (dbError) {
-        console.error('Failed to load articles from D1 database:', dbError)
+        logger.error('Failed to load articles from D1 database:', dbError)
         articlesError = `Cache failed: ${cacheError.message}. Database failed: ${dbError.message}`
         articles = [] // Use empty array if both cache and DB fail
       }
@@ -784,22 +785,36 @@ async function getEnhancedFallbackHTML(env, debugInfo = {}) {
                 <p>📱 For the best experience, please refresh the page to load our full interactive app.</p>
             </div>
             
-            <!-- Debug Information -->
+            <!-- Enhanced Debug Information -->
             <div class="debug-info" style="margin-top: 2rem; padding: 1rem; background: #1a1a1a; border-radius: 8px; border-left: 4px solid #ef4444;">
                 <h3 style="color: #ef4444; font-size: 1.1rem; margin-bottom: 0.5rem;">🚨 Fallback Mode Active</h3>
                 <p style="font-size: 0.9rem; color: #888; margin-bottom: 1rem;">The React app failed to load. This fallback page is showing instead.</p>
                 
                 <div class="debug-details" style="font-family: 'Courier New', monospace; font-size: 0.8rem; color: #ccc;">
-                    <div><strong>Reason:</strong> ${debugInfo.reason || 'Static assets unavailable'}</div>
+                    <div><strong>Primary Error:</strong> ${debugInfo.reason || 'Static assets unavailable'}</div>
+                    ${debugInfo.error ? `<div><strong>Error Details:</strong> ${escapeHtml(debugInfo.error)}</div>` : ''}
+                    ${debugInfo.stack ? `<div><strong>Stack Trace:</strong><pre style="margin: 0.5rem 0; padding: 0.5rem; background: #0a0a0a; border-radius: 4px; overflow-x: auto; white-space: pre-wrap;">${escapeHtml(debugInfo.stack)}</pre></div>` : ''}
+                    ${debugInfo.fileName ? `<div><strong>File:</strong> ${escapeHtml(debugInfo.fileName)}</div>` : ''}
+                    ${debugInfo.lineNumber ? `<div><strong>Line:</strong> ${debugInfo.lineNumber}</div>` : ''}
+                    ${debugInfo.columnNumber ? `<div><strong>Column:</strong> ${debugInfo.columnNumber}</div>` : ''}
+                    ${debugInfo.path ? `<div><strong>Request Path:</strong> ${escapeHtml(debugInfo.path)}</div>` : ''}
                     <div><strong>Static Content Available:</strong> ${debugInfo.hasStaticContent ? 'Yes' : 'No'}</div>
                     <div><strong>Articles Loaded:</strong> ${articles.length} articles (source: ${source})</div>
-                    ${articlesError ? `<div><strong>Articles Error:</strong> ${articlesError}</div>` : ''}
-                    <div><strong>Environment:</strong> ${env.NODE_ENV || 'unknown'}</div>
+                    ${articlesError ? `<div><strong>Articles Error:</strong> ${escapeHtml(articlesError)}</div>` : ''}
+                    <div><strong>Environment:</strong> ${env.NODE_ENV || 'production'}</div>
+                    <div><strong>Worker Location:</strong> ${env.CF_WORKER_LOCATION || 'unknown'}</div>
                     <div><strong>Timestamp:</strong> ${new Date().toISOString()}</div>
                 </div>
                 
+                <!-- JavaScript Error Capture Section -->
+                <div id="js-errors" style="margin-top: 1rem; display: none;">
+                    <h4 style="color: #facc15; font-size: 1rem; margin-bottom: 0.5rem;">⚠️ JavaScript Errors Detected:</h4>
+                    <div id="error-list" style="font-family: 'Courier New', monospace; font-size: 0.75rem; color: #ff6b6b; max-height: 200px; overflow-y: auto; padding: 0.5rem; background: #0a0a0a; border-radius: 4px;"></div>
+                </div>
+                
                 <p style="font-size: 0.8rem; color: #666; margin-top: 1rem;">
-                    💡 This diagnostic info helps developers understand why the React app isn't loading.
+                    💡 This diagnostic info helps developers identify exactly where and why the React app failed to load.
+                    <br>🔄 Press F5 to refresh, or check the browser console for additional details.
                 </p>
             </div>
         </main>
@@ -808,13 +823,114 @@ async function getEnhancedFallbackHTML(env, debugInfo = {}) {
     <div id="root"></div>
     
     <script>
-        // Simple manual refresh instruction
         console.log('Enhanced fallback loaded. If you see this, press F5 to refresh.');
+        
+        // Enhanced error capture and reporting
+        const errorList = document.getElementById('error-list');
+        const jsErrorsSection = document.getElementById('js-errors');
+        const errors = [];
+        
+        function displayError(error) {
+            errors.push(error);
+            jsErrorsSection.style.display = 'block';
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.style.marginBottom = '0.5rem';
+            errorDiv.style.paddingBottom = '0.5rem';
+            errorDiv.style.borderBottom = '1px solid #333';
+            
+            errorDiv.innerHTML = \`
+                <div style="color: #ff6b6b; font-weight: bold;">\${error.type}: \${error.message}</div>
+                \${error.filename ? \`<div style="color: #facc15;">📁 File: \${error.filename}\</div>\` : ''}
+                \${error.lineno ? \`<div style="color: #22c55e;">📍 Line: \${error.lineno}\</div>\` : ''}
+                \${error.colno ? \`<div style="color: #22c55e;">📍 Column: \${error.colno}\</div>\` : ''}
+                \${error.stack ? \`<div style="color: #a3a3a3; margin-top: 0.25rem; font-size: 0.7rem;">Stack:<pre style="margin: 0; white-space: pre-wrap;">\${error.stack}\</pre></div>\` : ''}
+                <div style="color: #666; font-size: 0.7rem; margin-top: 0.25rem;">⏰ \${new Date().toLocaleTimeString()}</div>
+            \`;
+            
+            errorList.appendChild(errorDiv);
+            
+            // Scroll to show latest error
+            errorList.scrollTop = errorList.scrollHeight;
+        }
+        
+        // Global error handler for uncaught exceptions
+        window.addEventListener('error', function(event) {
+            displayError({
+                type: 'JavaScript Error',
+                message: event.message || 'Unknown error',
+                filename: event.filename || 'unknown',
+                lineno: event.lineno || 0,
+                colno: event.colno || 0,
+                stack: event.error?.stack || 'No stack trace available'
+            });
+        });
+        
+        // Global handler for unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+            displayError({
+                type: 'Unhandled Promise Rejection',
+                message: event.reason?.message || event.reason || 'Promise rejection',
+                filename: event.reason?.fileName || 'unknown',
+                lineno: event.reason?.lineNumber || 0,
+                colno: event.reason?.columnNumber || 0,
+                stack: event.reason?.stack || 'No stack trace available'
+            });
+        });
+        
+        // Monitor React/Vite specific errors
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            
+            const errorMessage = args.join(' ');
+            if (errorMessage.includes('ChunkLoadError') || 
+                errorMessage.includes('Loading chunk') || 
+                errorMessage.includes('Failed to import') ||
+                errorMessage.includes('React') ||
+                errorMessage.includes('Vite')) {
+                displayError({
+                    type: 'Module Loading Error',
+                    message: errorMessage,
+                    filename: 'console',
+                    stack: new Error().stack
+                });
+            }
+        };
+        
+        // Try to detect if React mounting fails
+        setTimeout(function() {
+            const rootElement = document.getElementById('root');
+            if (rootElement && rootElement.children.length === 0) {
+                displayError({
+                    type: 'React Mount Failure',
+                    message: 'React app did not mount to #root element after 2 seconds',
+                    filename: 'main.jsx (suspected)',
+                    stack: 'React mounting timeout - check main.jsx and App.jsx'
+                });
+            }
+        }, 2000);
+        
+        // Detect network errors for assets
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            return originalFetch.apply(this, args).catch(error => {
+                displayError({
+                    type: 'Network/Fetch Error',
+                    message: \`Failed to fetch: \${args[0]}\`,
+                    filename: 'network',
+                    stack: error.stack
+                });
+                throw error;
+            });
+        };
+        
+        console.log('🔍 Enhanced error monitoring active - all errors will be displayed above');
     </script>
 </body>
 </html>`
   } catch (error) {
-    console.error('Failed to generate enhanced fallback HTML:', error)
+    logger.error('Failed to generate enhanced fallback HTML:', error)
     // Fall back to the basic HTML if enhanced version fails
     return getBasicHTML()
   }
@@ -962,15 +1078,15 @@ export default {
               ASSET_MANIFEST: assetManifest,
             })
           } catch (kvError) {
-            console.warn('KV Asset Handler failed:', kvError.message)
+            logger.warn('KV Asset Handler failed:', kvError.message)
             
             // For persistent RPC issues, bypass KV entirely and serve fallback for SPA routes
             if (kvError.message.includes('RPC receiver') || kvError.message.includes('does not implement') || kvError.message.includes('method "get"')) {
-              console.log('KV RPC issue detected, serving SPA fallback instead of retrying')
+              logger.debug('KV RPC issue detected, serving SPA fallback instead of retrying')
               
               // For index.html specifically, serve fallback HTML when KV fails
               if (url.pathname === '/index.html' || url.pathname === '/') {
-                console.log('Serving enhanced fallback for index.html due to KV RPC issues')
+                logger.debug('Serving enhanced fallback for index.html due to KV RPC issues')
                 const fallbackHTML = await getEnhancedFallbackHTML(env, {
                   reason: `KV RPC issues detected, serving enhanced fallback`,
                   hasStaticContent: true,
@@ -985,7 +1101,7 @@ export default {
               }
               
               // For other assets (JS, CSS, etc.), return 404 so browser handles the failure properly
-              console.log(`Asset ${url.pathname} not available due to KV issues, returning 404`)
+              logger.debug(`Asset ${url.pathname} not available due to KV issues, returning 404`)
               return new Response('Asset not available due to KV issues', { 
                 status: 404,
                 headers: { 'Content-Type': 'text/plain' }
@@ -993,7 +1109,7 @@ export default {
             } else {
               // If it's not an RPC issue, still provide fallback for critical assets
               if (url.pathname === '/index.html' || url.pathname === '/') {
-                console.warn('Critical index.html failed to load, using fallback HTML')
+                logger.warn('Critical index.html failed to load, using fallback HTML')
                 const fallbackHTML = await getEnhancedFallbackHTML(env, {
                   reason: `Asset loading failed: ${kvError.message}`,
                   hasStaticContent: true,
@@ -1097,11 +1213,11 @@ export default {
             ASSET_MANIFEST: assetManifest,
           })
         } catch (kvError) {
-          console.warn('Failed to load index.html from KV:', kvError.message)
+          logger.warn('Failed to load index.html from KV:', kvError.message)
           
           // In both development and production, retry for index.html due to RPC/KV issues
           if (kvError.message.includes('RPC receiver') || kvError.message.includes('does not implement') || kvError.message.includes('method "get"')) {
-            console.log('Retrying index.html load due to KV RPC issues...')
+            logger.debug('Retrying index.html load due to KV RPC issues...')
             
             // Retry with delay
             await new Promise(resolve => setTimeout(resolve, 100))
@@ -1114,12 +1230,15 @@ export default {
                 ASSET_NAMESPACE: env.__STATIC_CONTENT,
                 ASSET_MANIFEST: assetManifest,
               })
-              console.log('Index.html retry successful')
+              logger.debug('Index.html retry successful')
             } catch (retryError) {
-              console.warn('Index.html retry failed, using fallback')
+              logger.warn('Index.html retry failed, using fallback')
               // Only use fallback as last resort
               const fallbackHTML = await getEnhancedFallbackHTML(env, {
                 reason: `Failed to load React app after retry: ${retryError.message}`,
+                error: retryError.message,
+                stack: retryError.stack,
+                fileName: retryError.fileName || 'index.html',
                 hasStaticContent: !!env.__STATIC_CONTENT,
                 path: request.url
               })
@@ -1134,6 +1253,9 @@ export default {
             // For non-development or other errors, use fallback
             const fallbackHTML = await getEnhancedFallbackHTML(env, {
               reason: `Failed to load React app: ${kvError.message}`,
+              error: kvError.message,
+              stack: kvError.stack,
+              fileName: kvError.fileName || 'worker/index.js',
               hasStaticContent: !!env.__STATIC_CONTENT,
               path: request.url
             })
@@ -1155,9 +1277,13 @@ export default {
         // index.html not found, serving enhanced fallback HTML with articles
         const fallbackHTML = await getEnhancedFallbackHTML(env, {
           reason: `Asset loading failed: ${error.message}`,
+          error: error.message,
+          stack: error.stack,
+          fileName: error.fileName || 'static-assets',
+          lineNumber: error.lineNumber,
+          columnNumber: error.columnNumber,
           hasStaticContent: true,
-          path: request.url,
-          error: error.message
+          path: request.url
         })
         return new Response(fallbackHTML, {
           headers: { 
