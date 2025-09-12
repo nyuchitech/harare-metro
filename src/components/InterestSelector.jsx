@@ -1,7 +1,56 @@
-// src/components/InterestSelector.jsx - User interests selection component
+// src/components/InterestSelector.jsx - User interests selection component with Lucide icons
 import React, { useState, useEffect } from 'react'
-import { Check, X, Sparkles } from 'lucide-react'
+import { 
+  Check, X, Sparkles, Film, Music, Gamepad2, BookOpen,
+  Shirt, ChefHat, MapPin as Travel, Heart, Laptop,
+  Brain, Bitcoin, Users, TrendingUp, Briefcase,
+  DollarSign, Palette, Camera, Lightbulb, Atom,
+  Clock, Globe2, Trophy, Mountain, Scissors,
+  Building, Newspaper, Church, Home as HomeIcon
+} from 'lucide-react'
 import { cn } from '../lib/utils'
+
+// Icon mapping for categories
+const getIconForCategory = (categoryId, isSelected) => {
+  const iconClass = `h-5 w-5 ${isSelected ? 'text-zw-green' : 'text-muted-foreground'}`
+  
+  const iconMap = {
+    'movies_cinema': <Film className={iconClass} />,
+    'music_audio': <Music className={iconClass} />,
+    'gaming_esports': <Gamepad2 className={iconClass} />,
+    'books_literature': <BookOpen className={iconClass} />,
+    'fashion_style': <Shirt className={iconClass} />,
+    'food_culinary': <ChefHat className={iconClass} />,
+    'travel_adventure': <Travel className={iconClass} />,
+    'fitness_wellness': <Heart className={iconClass} />,
+    'tech_gadgets': <Laptop className={iconClass} />,
+    'ai_future': <Brain className={iconClass} />,
+    'crypto_blockchain': <Bitcoin className={iconClass} />,
+    'local_community': <Users className={iconClass} />,
+    'social_activism': <TrendingUp className={iconClass} />,
+    'relationships_dating': <Heart className={iconClass} />,
+    'entrepreneurship': <Lightbulb className={iconClass} />,
+    'career_professional': <Briefcase className={iconClass} />,
+    'finance_investing': <DollarSign className={iconClass} />,
+    'visual_arts': <Palette className={iconClass} />,
+    'photography': <Camera className={iconClass} />,
+    'design_creative': <Lightbulb className={iconClass} />,
+    'science_research': <Atom className={iconClass} />,
+    'history_culture': <Clock className={iconClass} />,
+    'languages_learning': <Globe2 className={iconClass} />,
+    'sports_athletics': <Trophy className={iconClass} />,
+    'outdoor_nature': <Mountain className={iconClass} />,
+    'hobbies_crafts': <Scissors className={iconClass} />,
+    'politics_governance': <Building className={iconClass} />,
+    'world_news': <Newspaper className={iconClass} />,
+    'local_news': <HomeIcon className={iconClass} />,
+    'spirituality_religion': <Church className={iconClass} />,
+    'philosophy_thought': <Brain className={iconClass} />,
+    'personal_development': <TrendingUp className={iconClass} />
+  }
+  
+  return iconMap[categoryId] || <Sparkles className={iconClass} />
+}
 
 const InterestSelector = ({ 
   onInterestsChange, 
@@ -119,40 +168,57 @@ const InterestSelector = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-gray-400">Loading categories...</div>
+      <div className="flex items-center justify-center p-12 bg-gradient-to-br from-background via-background to-muted/20 backdrop-blur-xl rounded-3xl">
+        <div className="text-center space-y-4 animate-fade-in-scale">
+          <div className="w-12 h-12 bg-gradient-to-br from-zw-green/20 to-zw-green/10 rounded-2xl flex items-center justify-center mx-auto">
+            <Sparkles className="h-6 w-6 text-zw-green animate-pulse" />
+          </div>
+          <div className="text-muted-foreground font-medium">Loading categories...</div>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <div className="text-red-400 mb-4">Error: {error}</div>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="px-4 py-2 bg-zw-green text-white rounded-lg"
-        >
-          Retry
-        </button>
+      <div className="p-12 text-center bg-gradient-to-br from-background via-background to-muted/20 backdrop-blur-xl rounded-3xl">
+        <div className="space-y-6 animate-slide-in-top">
+          <div className="w-16 h-16 bg-gradient-to-br from-zw-red/20 to-zw-red/10 rounded-2xl flex items-center justify-center mx-auto">
+            <X className="h-8 w-8 text-zw-red" />
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-xl font-serif font-bold text-foreground">Error Loading Categories</h3>
+            <p className="text-red-500 font-medium">{error}</p>
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-6 py-3 bg-gradient-to-r from-zw-green to-zw-green/90 text-white rounded-2xl font-semibold hover:scale-105 transition-all duration-200 shadow-lg"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-8 animate-fade-in-scale">
       {showHeader && (
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Sparkles className="h-8 w-8 text-zw-green mr-3" />
-            <h2 className="text-3xl font-bold text-white">Choose Your Interests</h2>
+        <div className="text-center mb-12 animate-slide-in-top">
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-zw-green via-zw-yellow to-zw-red rounded-3xl flex items-center justify-center shadow-2xl glass-effect animate-pulse-glow">
+              <Sparkles className="h-8 w-8 text-white" />
+            </div>
           </div>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Select up to {maxInterests} categories that interest you most. 
-            This will help us prioritize content in your feed to show you the stories you care about.
-          </p>
-          <div className="mt-4 p-3 bg-zw-green/10 border border-zw-green/30 rounded-lg">
-            <p className="text-sm text-zw-green">
+          <div className="space-y-4">
+            <h2 className="text-4xl font-serif font-bold text-foreground tracking-tight">Choose Your Interests</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium leading-relaxed">
+              Select up to {maxInterests} categories that interest you most. 
+              This will help us prioritize content in your feed to show you the stories you care about.
+            </p>
+          </div>
+          <div className="mt-8 p-4 bg-gradient-to-r from-zw-green/10 to-zw-green/5 border-2 border-zw-green/30 rounded-2xl glass-effect">
+            <p className="text-lg font-semibold text-zw-green">
               {selectedInterests.length}/{maxInterests} interests selected
             </p>
           </div>
@@ -163,7 +229,7 @@ const InterestSelector = ({
         {Object.entries(categoryGroups).map(([groupName, groupCategories]) => (
           groupCategories.length > 0 && (
             <div key={groupName} className="space-y-4">
-              <h3 className="text-lg font-semibold text-white border-b border-gray-700 pb-2">
+              <h3 className="text-xl font-serif font-bold text-foreground border-b-2 border-zw-green/30 pb-3 mb-2 tracking-tight">
                 {groupName}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -177,18 +243,23 @@ const InterestSelector = ({
                       onClick={() => !isDisabled && handleInterestToggle(category.id)}
                       disabled={isDisabled}
                       className={cn(
-                        "relative p-4 rounded-lg border-2 transition-all duration-200 text-left",
-                        "hover:scale-105 hover:shadow-lg",
-                        isSelected && "border-zw-green bg-zw-green/20",
-                        !isSelected && !isDisabled && "border-gray-600 bg-gray-800 hover:border-gray-500",
-                        isDisabled && "border-gray-700 bg-gray-900 opacity-50 cursor-not-allowed"
+                        "relative p-5 rounded-2xl border-2 transition-all duration-200 text-left backdrop-blur-sm glass-effect",
+                        "hover:scale-105 hover:shadow-xl",
+                        isSelected && "border-zw-green/50 bg-gradient-to-br from-zw-green/10 to-zw-green/5",
+                        !isSelected && !isDisabled && "border-border/50 bg-muted/30 hover:border-zw-green/30 hover:bg-muted/50",
+                        isDisabled && "border-border/30 bg-muted/10 opacity-50 cursor-not-allowed"
                       )}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <span className="text-2xl">{category.emoji}</span>
+                        <div className="flex items-center space-x-4">
+                          <div className={cn(
+                            "w-10 h-10 rounded-2xl flex items-center justify-center transition-colors duration-200",
+                            isSelected ? "bg-zw-green/20" : "bg-muted/30"
+                          )}>
+                            {getIconForCategory(category.id, isSelected)}
+                          </div>
                           <div>
-                            <h4 className="font-medium text-white text-sm">{category.name}</h4>
+                            <h4 className="font-semibold text-foreground text-base">{category.name}</h4>
                           </div>
                         </div>
                         {isSelected && (
@@ -213,10 +284,10 @@ const InterestSelector = ({
       </div>
 
       {showHeader && (
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8 pt-6 border-t border-gray-700">
+        <div className="flex flex-col sm:flex-row gap-6 justify-center mt-12 pt-8 border-t-2 border-border/30">
           <button
             onClick={handleReset}
-            className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            className="px-8 py-4 bg-muted/30 border-2 border-border/50 text-foreground rounded-2xl hover:bg-muted/60 transition-all duration-200 hover:scale-105 glass-effect font-semibold"
           >
             Clear All
           </button>
@@ -224,10 +295,10 @@ const InterestSelector = ({
             onClick={handleSave}
             disabled={selectedInterests.length === 0}
             className={cn(
-              "px-8 py-3 rounded-lg font-medium transition-colors",
+              "px-10 py-4 rounded-2xl font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg",
               selectedInterests.length > 0
-                ? "bg-zw-green text-white hover:bg-zw-green/90"
-                : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                ? "bg-gradient-to-r from-zw-green to-zw-green/90 hover:from-zw-green/90 hover:to-zw-green/80 text-white glass-effect border border-zw-green/20"
+                : "bg-muted/30 text-muted-foreground cursor-not-allowed border-2 border-border/30"
             )}
           >
             Save Interests ({selectedInterests.length})
@@ -235,7 +306,7 @@ const InterestSelector = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="px-8 py-4 bg-muted/30 border-2 border-border/50 text-foreground rounded-2xl hover:bg-muted/60 transition-all duration-200 hover:scale-105 glass-effect font-semibold flex items-center justify-center"
             >
               <X className="h-5 w-5" />
             </button>

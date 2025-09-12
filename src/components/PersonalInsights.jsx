@@ -448,10 +448,10 @@ const PersonalInsights = ({ currentColors, allFeeds, lastUpdated }) => {
   ]
 
   const insightTypes = [
-    { value: 'overview', label: 'Overview', icon: BarChart3, emoji: '📊' },
-    { value: 'habits', label: 'Reading Habits', icon: Clock, emoji: '⏰' },
-    { value: 'preferences', label: 'Preferences', icon: Heart, emoji: '❤️' },
-    { value: 'recommendations', label: 'For You', icon: Lightbulb, emoji: '💡' }
+    { value: 'overview', label: 'Overview', icon: BarChart3 },
+    { value: 'habits', label: 'Reading Habits', icon: Clock },
+    { value: 'preferences', label: 'Preferences', icon: Heart },
+    { value: 'recommendations', label: 'For You', icon: Lightbulb }
   ]
 
   return (
@@ -494,7 +494,7 @@ const PersonalInsights = ({ currentColors, allFeeds, lastUpdated }) => {
                 onClick={() => setSelectedInsightType(type.value)}
                 aria-label={`View ${type.label} insights`}
               >
-                <span className="text-category">{type.emoji}</span>
+                <type.icon className="h-4 w-4" />
                 <span className="text-category">{type.label}</span>
               </Button>
             )

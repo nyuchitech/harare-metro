@@ -163,19 +163,23 @@ const ProfilePage = ({
   // If viewing another user's profile and not found, show not found message
   if (!isOwnProfile && !viewingProfile) {
     return (
-      <div className={`min-h-screen ${currentColors.bg}`}>
-        <div className="flex flex-col items-center justify-center py-20">
-          <UserCircle className="w-16 h-16 text-gray-400 mb-4" />
-          <h2 className={`text-xl font-bold ${currentColors.text} mb-2`}>User not found</h2>
-          <p className={`${currentColors.textMuted} text-center`}>
-            The profile @{username} doesn't exist or is not available.
-          </p>
-          {onClose && (
-            <Button onClick={onClose} variant="outline" className="mt-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go back
-            </Button>
-          )}
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 backdrop-blur-xl">
+        <div className="flex flex-col items-center justify-center py-20 animate-fade-in-scale">
+          <div className="w-20 h-20 bg-gradient-to-br from-zw-red/20 to-zw-red/10 rounded-3xl flex items-center justify-center shadow-2xl glass-effect mb-6">
+            <UserCircle className="w-10 h-10 text-zw-red" />
+          </div>
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl font-serif font-bold text-foreground tracking-tight">User not found</h2>
+            <p className="text-muted-foreground text-lg font-medium max-w-md mx-auto">
+              The profile @{username} doesn&apos;t exist or is not available.
+            </p>
+            {onClose && (
+              <Button onClick={onClose} variant="outline" className="mt-6 h-14 px-8 rounded-2xl bg-muted/30 border-2 border-border/50 hover:bg-muted/60 transition-all duration-200 hover:scale-105 glass-effect font-semibold">
+                <ArrowLeft className="w-5 h-5 mr-3" />
+                Go back
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -184,8 +188,8 @@ const ProfilePage = ({
   const getProfileAvatar = () => {
     const initials = userData.name.split(' ').map(n => n[0]).join('').toUpperCase()
     return (
-      <div className="w-20 h-20 bg-gradient-to-br from-zw-green via-zw-yellow to-zw-red rounded-full flex items-center justify-center shadow-xl">
-        <span className="text-white text-2xl font-serif font-bold drop-shadow-lg">
+      <div className="w-24 h-24 bg-gradient-to-br from-zw-green via-zw-yellow to-zw-red rounded-3xl flex items-center justify-center shadow-2xl border border-white/20 backdrop-blur-sm glass-effect animate-pulse-glow">
+        <span className="text-white text-3xl font-serif font-bold drop-shadow-lg">
           {initials}
         </span>
       </div>
@@ -194,37 +198,36 @@ const ProfilePage = ({
 
   const ProfileView = () => (
     <div className="space-y-6">
-      {/* Profile Header */}
-      <div className="text-center space-y-4">
+      {/* Premium Profile Header */}
+      <div className="text-center space-y-6 animate-slide-in-top">
         {getProfileAvatar()}
         
-        <div className="space-y-2">
-          <h1 className="text-2xl font-serif font-bold text-foreground">
+        <div className="space-y-4">
+          <h1 className="text-3xl font-serif font-bold text-foreground tracking-tight">
             {userData.name}
           </h1>
           
-          <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-            <span>@newsreader</span>
+          <div className="flex items-center justify-center space-x-3 text-base text-muted-foreground font-medium">
+            <span className="bg-muted/50 px-3 py-1 rounded-lg">@newsreader</span>
             <span>•</span>
-            <span>
+            <span className="bg-muted/50 px-3 py-1 rounded-lg">
               Joined {new Date(userData.joinDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
             </span>
           </div>
           
-          <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+          <p className="text-muted-foreground text-lg max-w-sm mx-auto font-medium leading-relaxed">
             Passionate about news, technology, and staying informed. 
-            <span className="text-zw-green font-medium"> #HarareMetro</span>
+            <span className="text-zw-green font-semibold"> #HarareMetro</span>
           </p>
         </div>
 
-        {/* Quick Actions - Only show for own profile */}
+        {/* Premium Quick Actions - Only show for own profile */}
         {isOwnProfile && (
-          <div className="flex space-x-3 justify-center">
+          <div className="flex space-x-4 justify-center">
             <Button 
               onClick={() => setActiveView('edit')}
               variant="outline" 
-              size="sm"
-              className="rounded-full"
+              className="h-12 px-6 rounded-2xl bg-muted/30 border-2 border-border/50 hover:bg-muted/60 transition-all duration-200 hover:scale-105 glass-effect font-semibold"
             >
               <Edit className="h-4 w-4 mr-2" />
               Edit Profile
@@ -233,8 +236,7 @@ const ProfilePage = ({
             <Button 
               onClick={() => setActiveView('settings')}
               variant="outline" 
-              size="sm"
-              className="rounded-full"
+              className="h-12 px-6 rounded-2xl bg-muted/30 border-2 border-border/50 hover:bg-muted/60 transition-all duration-200 hover:scale-105 glass-effect font-semibold"
             >
               <Settings className="h-4 w-4 mr-2" />
               Settings
@@ -242,10 +244,10 @@ const ProfilePage = ({
           </div>
         )}
 
-        {/* Verification Badge */}
+        {/* Premium Verification Badge */}
         <div className="flex justify-center">
-          <Badge variant="secondary" className="flex items-center space-x-1">
-            <Check className="h-3 w-3" />
+          <Badge className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-zw-green/20 to-zw-green/10 border-2 border-zw-green/30 text-zw-green rounded-full font-semibold">
+            <Check className="h-4 w-4" />
             <span>Verified Member</span>
           </Badge>
         </div>
