@@ -1,5 +1,6 @@
 // Direct Data Service - Fast initial loading with minimal server calls
 // Uses single /api/direct-sync call then processes everything locally
+import { logger } from '../utils/logger'
 
 class DirectDataService {
   constructor() {
@@ -23,13 +24,13 @@ class DirectDataService {
       const cached = localStorage.getItem('hm_direct_cache')
       if (cached) {
         this.cache = { ...this.cache, ...JSON.parse(cached) }
-        console.log('📱 DirectDataService: Loaded from localStorage', {
+        logger.debug('📱 DirectDataService: Loaded from localStorage', {
           articles: this.cache.articles?.length || 0,
           cacheAge: this.cache.lastUpdate ? Date.now() - this.cache.lastUpdate : null
         })
       }
     } catch (error) {
-      console.warn('DirectDataService: Failed to load cache from localStorage:', error)
+      logger.warn('DirectDataService: Failed to load cache from localStorage:', error)
     }
   }
 
@@ -41,7 +42,7 @@ class DirectDataService {
         lastUpdate: Date.now()
       }))
     } catch (error) {
-      console.warn('DirectDataService: Failed to save cache to localStorage:', error)
+      logger.warn('DirectDataService: Failed to save cache to localStorage:', error)
     }
   }
 
@@ -58,7 +59,7 @@ class DirectDataService {
     }
 
     try {
-      console.log('📱 DirectDataService: Cache stale, fetching fresh data from worker...')
+      logger.debug('📱 DirectDataService: Cache stale, fetching fresh data from worker...')
       
       // Single worker call to get ALL data at once
       const response = await fetch('/api/direct-sync', {
@@ -77,15 +78,15 @@ class DirectDataService {
           this.cache.lastUpdate = Date.now()
           this.saveToStorage()
           
-          console.log(`✅ DirectDataService: Synced ${this.cache.articles.length} articles directly`)
+          logger.debug(`✅ DirectDataService: Synced ${this.cache.articles.length} articles directly`)
           return true
         }
       }
       
-      console.warn('DirectDataService: Worker sync failed, using cached data')
+      logger.warn('DirectDataService: Worker sync failed, using cached data')
       return false
     } catch (error) {
-      console.error('DirectDataService: Sync failed:', error)
+      logger.error('DirectDataService: Sync failed:', error)
       return false
     }
   }
@@ -95,10 +96,10 @@ class DirectDataService {
     if (this.isCacheFresh()) return
     
     try {
-      console.log('🔄 DirectDataService: Background refresh...')
+      logger.debug('🔄 DirectDataService: Background refresh...')
       await this.ensureFreshData()
     } catch (error) {
-      console.warn('DirectDataService: Background refresh failed:', error)
+      logger.warn('DirectDataService: Background refresh failed:', error)
     }
   }
 
@@ -357,7 +358,7 @@ class DirectDataService {
 
   // Force refresh cache
   async forceRefresh() {
-    console.log('🚀 DirectDataService: Force refresh...')
+    logger.debug('🚀 DirectDataService: Force refresh...')
     this.cache.lastUpdate = null
     return await this.ensureFreshData()
   }
@@ -371,7 +372,7 @@ class DirectDataService {
       version: '2.0'
     }
     localStorage.removeItem('hm_direct_cache')
-    console.log('🗑️ DirectDataService: Cache cleared')
+    logger.debug('🗑️ DirectDataService: Cache cleared')
   }
 
   // Check if service is ready for fast responses
@@ -396,9 +397,9 @@ const directDataService = new DirectDataService()
 
 // Initialize immediately for fastest possible initial load
 directDataService.ensureFreshData().then(() => {
-  console.log('📱 DirectDataService: Ready for fast responses')
+  logger.debug('📱 DirectDataService: Ready for fast responses')
 }).catch(error => {
-  console.warn('DirectDataService: Initial load failed, will use cache/fallbacks', error)
+  logger.warn('DirectDataService: Initial load failed, will use cache/fallbacks', error)
 })
 
 export default directDataService

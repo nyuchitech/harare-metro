@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger'
 // src/pages/auth/SignUpPage.jsx - Sign up page
 import React from 'react'
 import { Link, Navigate } from 'react-router-dom'
@@ -97,7 +98,7 @@ const SignUpPage = ({ currentColors }) => {
       })
       // Navigation will be handled by redirect above
     } catch (err) {
-      console.error('Sign up error:', err)
+      logger.error('Sign up error:', err)
     } finally {
       setIsSubmitting(false)
     }

@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger'
 // src/pages/FeedPage.jsx - Main feed page with URL support
 import React from 'react'
 import { useParams } from 'react-router-dom'
@@ -80,7 +81,7 @@ const FeedPage = ({ currentColors, viewMode = 'grid' }) => {
           setCategories([allCategory, ...data.categories])
         }
       } catch (error) {
-        console.error('Failed to fetch categories:', error)
+        logger.error('Failed to fetch categories:', error)
         // Fallback to empty array - CategoryFilter will use its defaults
         setCategories([])
       }
@@ -106,13 +107,13 @@ const FeedPage = ({ currentColors, viewMode = 'grid' }) => {
           url: article.link
         })
       } catch (error) {
-        console.error('Share failed:', error)
+        logger.error('Share failed:', error)
       }
     } else {
       try {
         await navigator.clipboard.writeText(article.link)
       } catch (error) {
-        console.error('Copy failed:', error)
+        logger.error('Copy failed:', error)
       }
     }
   }
@@ -131,7 +132,7 @@ const FeedPage = ({ currentColors, viewMode = 'grid' }) => {
       const updatedHistory = [historyEntry, ...currentHistory.slice(0, 99)]
       localStorage.setItem('harare_metro_reading_history', JSON.stringify(updatedHistory))
     } catch (error) {
-      console.error('Failed to save reading history:', error)
+      logger.error('Failed to save reading history:', error)
     }
   }
 
@@ -139,9 +140,9 @@ const FeedPage = ({ currentColors, viewMode = 'grid' }) => {
     // Use optimized bookmark toggle with instant UI feedback
     try {
       await toggleBookmark(article)
-      console.log('✅ Optimistic bookmark toggle completed')
+      logger.debug('✅ Optimistic bookmark toggle completed')
     } catch (error) {
-      console.error('Failed to toggle bookmark:', error)
+      logger.error('Failed to toggle bookmark:', error)
     }
   }
 

@@ -26,7 +26,7 @@ function ArticleCard({
   onLike,
   onBookmark
 }) {
-  const { trackArticleClick, trackUserInteraction } = useAnalytics()
+  const { trackUserInteraction } = useAnalytics()
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -77,12 +77,12 @@ function ArticleCard({
     }
   }, [])
 
-  const handleLike = () => {
+  const _handleLike = () => {
     const newLikeState = onLike(article)
     trackUserInteraction('like', article, newLikeState)
   }
 
-  const handleBookmark = () => {
+  const _handleBookmark = () => {
     const newBookmarkState = onBookmark(article)
     trackUserInteraction('bookmark', article, newBookmarkState)
   }

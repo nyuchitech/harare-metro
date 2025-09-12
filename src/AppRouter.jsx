@@ -2,6 +2,7 @@
 import React from 'react'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
+import { logger } from './utils/logger'
 
 // Layout components
 import HeaderNavigation from './components/HeaderNavigation'
@@ -10,7 +11,6 @@ import ErrorBoundary from './components/ErrorBoundary'
 import AuthModal from './components/auth/AuthModal'
 
 // Page components
-import HomePage from './pages/HomePage'
 import FeedPage from './pages/FeedPage'
 import NewsBytesPage from './pages/NewsBytesPage' 
 import SearchPage from './components/SearchPage'
@@ -25,13 +25,7 @@ import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 import AuthConfirmPage from './pages/auth/AuthConfirmPage'
 
 // Utils
-import { useHead } from './hooks/useHead'
 import { useAnalytics } from './hooks/useAnalytics'
-
-// Simple cn utility function
-function cn(...classes) {
-  return classes.filter(Boolean).join(' ')
-}
 
 const AppRouter = () => {
   const { user, profile, isAuthenticated, loading: authLoading, signOut } = useAuth()
@@ -46,7 +40,7 @@ const AppRouter = () => {
   
   const [viewMode, setViewMode] = React.useState('grid')
   const [showAuthModal, setShowAuthModal] = React.useState(false)
-  const [authModalMode, setAuthModalMode] = React.useState('signin')
+  const [authModalMode] = React.useState('signin')
 
   // Analytics
   const { trackPageView } = useAnalytics()
@@ -96,7 +90,7 @@ const AppRouter = () => {
       navigate('/')
       window.location.reload()
     } catch (error) {
-      console.error('Logout error:', error)
+      logger.error('Logout error:', error)
     }
   }
 

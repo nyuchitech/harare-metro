@@ -1,6 +1,10 @@
 // Multi-tier Caching & Intelligent State Management
 // Implements sophisticated caching strategies for optimal user experience
 
+/* eslint-env browser */
+/* global setTimeout, setInterval, clearTimeout, clearInterval */
+import { logger } from '../utils/logger.js'
+
 class MultiTierCacheManager {
   constructor() {
     this.version = '2.0.0'
@@ -104,7 +108,7 @@ class MultiTierCacheManager {
     // Load user behavior patterns
     this.loadUserBehaviorData()
     
-    console.log('🎯 Multi-tier cache manager initialized', this.getCacheStats())
+    logger.debug('🎯 Multi-tier cache manager initialized', this.getCacheStats())
   }
   
   // Network condition detection and monitoring
@@ -126,7 +130,7 @@ class MultiTierCacheManager {
         }
         
         if (condition !== this.state.networkCondition) {
-          console.log(`📶 Network condition changed: ${this.state.networkCondition} → ${condition}`)
+          logger.debug(`📶 Network condition changed: ${this.state.networkCondition} → ${condition}`)
           this.state.networkCondition = condition
           this.adaptToNetworkConditions()
         }
@@ -167,7 +171,7 @@ class MultiTierCacheManager {
       }
       
     } catch (error) {
-      console.warn('Network speed test failed:', error)
+      logger.warn('Network speed test failed:', error)
     }
   }
   
@@ -178,7 +182,7 @@ class MultiTierCacheManager {
     this.config.preloadAhead = networkConfig.preloadAhead
     this.config.prefetchBatch = networkConfig.prefetchBatch
     
-    console.log(`⚙️ Adapted to ${this.state.networkCondition} network:`, networkConfig)
+    logger.debug(`⚙️ Adapted to ${this.state.networkCondition} network:`, networkConfig)
     
     // Trigger cache optimization
     this.optimizeCacheForNetwork()
@@ -194,7 +198,7 @@ class MultiTierCacheManager {
     // L1 Hot cache check - instant access
     if (this.cache.hot.has(cacheKey) && this.isCacheValid(this.cache.hot.get(cacheKey))) {
       this.state.cacheStats.hitRate++
-      console.log('🔥 Hot cache hit:', cacheKey)
+      logger.debug('🔥 Hot cache hit:', cacheKey)
       
       const result = this.cache.hot.get(cacheKey)
       this.triggerIntelligentPreloading(result, offset, limit)
@@ -204,7 +208,7 @@ class MultiTierCacheManager {
     // L2 Warm cache check
     if (this.cache.warm.has(cacheKey) && this.isCacheValid(this.cache.warm.get(cacheKey))) {
       this.state.cacheStats.hitRate++
-      console.log('🔶 Warm cache hit:', cacheKey)
+      logger.debug('🔶 Warm cache hit:', cacheKey)
       
       const result = this.cache.warm.get(cacheKey)
       // Promote to hot cache
@@ -216,7 +220,7 @@ class MultiTierCacheManager {
     // L3 Cold cache check
     if (this.cache.cold.has(cacheKey) && this.isCacheValid(this.cache.cold.get(cacheKey))) {
       this.state.cacheStats.hitRate++
-      console.log('🔷 Cold cache hit:', cacheKey)
+      logger.debug('🔷 Cold cache hit:', cacheKey)
       
       const result = this.cache.cold.get(cacheKey)
       // Promote to warm cache
@@ -227,7 +231,7 @@ class MultiTierCacheManager {
     
     // Cache miss - fetch from worker with CDN-style fallback
     this.state.cacheStats.missRate++
-    console.log('❌ Cache miss, fetching from worker:', cacheKey)
+    logger.debug('❌ Cache miss, fetching from worker:', cacheKey)
     
     try {
       const response = await this.fetchFromWorker({ limit, offset, category, search, sortBy })
@@ -255,12 +259,12 @@ class MultiTierCacheManager {
       return response
       
     } catch (error) {
-      console.error('🚨 Failed to fetch from worker:', error)
+      logger.error('🚨 Failed to fetch from worker:', error)
       
       // Fallback: Return stale cache if available
       const staleResults = this.getStaleCache(cacheKey)
       if (staleResults) {
-        console.log('⚠️ Serving stale cache as fallback')
+        logger.debug('⚠️ Serving stale cache as fallback')
         return staleResults
       }
       
@@ -354,7 +358,7 @@ class MultiTierCacheManager {
     
     const promises = highPriorityItems.map(async (item) => {
       try {
-        console.log(`🔄 Preloading (${item.reason}):`, item.cacheKey)
+        logger.debug(`🔄 Preloading (${item.reason}):`, item.cacheKey)
         
         // Extract parameters from cache key
         const params = this.parseCacheKey(item.cacheKey)
@@ -370,10 +374,10 @@ class MultiTierCacheManager {
         })
         
         this.state.cacheStats.preloadSuccess++
-        console.log('✅ Preloaded successfully:', item.cacheKey)
+        logger.debug('✅ Preloaded successfully:', item.cacheKey)
         
       } catch (error) {
-        console.warn('⚠️ Preload failed:', item.cacheKey, error.message)
+        logger.warn('⚠️ Preload failed:', item.cacheKey, error.message)
       }
     })
     
@@ -401,7 +405,7 @@ class MultiTierCacheManager {
       retryCount: 0
     })
     
-    console.log(`⚡ Optimistic update: ${action} on ${articleId}`)
+    logger.debug(`⚡ Optimistic update: ${action} on ${articleId}`)
     
     // Background synchronization for data consistency
     this.backgroundSyncInteraction(articleId, action, value)
@@ -425,7 +429,7 @@ class MultiTierCacheManager {
           timestamp: Date.now()
         })
       }).catch(error => {
-        console.warn('Background sync failed:', error)
+        logger.warn('Background sync failed:', error)
         
         // Mark for retry
         const interactionKey = `${articleId}:${action}`
@@ -445,7 +449,7 @@ class MultiTierCacheManager {
       }
       
     } catch (error) {
-      console.warn('Background sync failed:', error)
+      logger.warn('Background sync failed:', error)
     }
   }
   
@@ -486,7 +490,7 @@ class MultiTierCacheManager {
     
     if (oldestKey) {
       cache.delete(oldestKey)
-      console.log(`🗑️ Evicted from ${tier} cache:`, oldestKey)
+      logger.debug(`🗑️ Evicted from ${tier} cache:`, oldestKey)
     }
   }
   
@@ -568,12 +572,12 @@ class MultiTierCacheManager {
       }
       
       const responseTime = Date.now() - startTime
-      console.log(`⚡ Worker fetch completed in ${responseTime}ms`)
+      logger.debug(`⚡ Worker fetch completed in ${responseTime}ms`)
       
       return data
       
     } catch (error) {
-      console.error('Worker fetch failed:', error)
+      logger.error('Worker fetch failed:', error)
       throw error
     }
   }
@@ -615,7 +619,7 @@ class MultiTierCacheManager {
       ? this.performance.loadTimes.reduce((a, b) => a + b, 0) / this.performance.loadTimes.length 
       : 0
     
-    console.log('📊 Multi-tier Cache Performance Metrics:', {
+    logger.debug('📊 Multi-tier Cache Performance Metrics:', {
       cacheHitRate: `${((stats.hitRate / stats.totalRequests) * 100).toFixed(1)}%`,
       avgLoadTime: `${avgLoadTime.toFixed(0)}ms`,
       networkCondition: this.state.networkCondition,
@@ -632,7 +636,7 @@ class MultiTierCacheManager {
         this.state.userBehavior = { ...this.state.userBehavior, ...JSON.parse(saved) }
       }
     } catch (error) {
-      console.warn('Failed to load user behavior data:', error)
+      logger.warn('Failed to load user behavior data:', error)
     }
   }
   
@@ -660,7 +664,7 @@ class MultiTierCacheManager {
     try {
       localStorage.setItem('hm_user_behavior', JSON.stringify(behavior))
     } catch (error) {
-      console.warn('Failed to save user behavior:', error)
+      logger.warn('Failed to save user behavior:', error)
     }
   }
   
@@ -688,7 +692,7 @@ class MultiTierCacheManager {
         }
       }
     } catch (error) {
-      console.warn('Failed to load cache from storage:', error)
+      logger.warn('Failed to load cache from storage:', error)
     }
   }
   
@@ -710,7 +714,7 @@ class MultiTierCacheManager {
       
       localStorage.setItem('hm_multitier_cache', JSON.stringify(data))
     } catch (error) {
-      console.warn('Failed to save cache to storage:', error)
+      logger.warn('Failed to save cache to storage:', error)
     }
   }
   
@@ -745,7 +749,7 @@ class MultiTierCacheManager {
     })
     
     if (cleanedCount > 0) {
-      console.log(`🧹 Cleaned ${cleanedCount} expired cache entries`)
+      logger.debug(`🧹 Cleaned ${cleanedCount} expired cache entries`)
     }
   }
   
@@ -764,7 +768,7 @@ class MultiTierCacheManager {
     // Optimize cache sizes
     this.optimizeCacheSizes()
     
-    console.log(`🔧 Full cleanup completed: ${cleanedInteractions} interactions cleaned`)
+    logger.debug(`🔧 Full cleanup completed: ${cleanedInteractions} interactions cleaned`)
   }
   
   optimizeCacheSizes() {
@@ -835,11 +839,11 @@ class MultiTierCacheManager {
   // Seed MultiTierCache with articles from DirectDataService for hybrid approach
   seedWithArticles(articles) {
     if (!articles || !Array.isArray(articles)) {
-      console.warn('MultiTierCacheManager: Invalid articles for seeding')
+      logger.warn('MultiTierCacheManager: Invalid articles for seeding')
       return
     }
     
-    console.log(`🌱 MultiTierCacheManager: Seeding with ${articles.length} articles from DirectDataService`)
+    logger.debug(`🌱 MultiTierCacheManager: Seeding with ${articles.length} articles from DirectDataService`)
     
     // Store articles in hot cache for immediate access
     const cacheKey = this.generateCacheKey({ limit: articles.length, offset: 0 })
@@ -863,7 +867,7 @@ class MultiTierCacheManager {
     // Also seed metadata cache for performance tracking
     this.storeArticleMetadata(articles)
     
-    console.log('✅ MultiTierCacheManager: Seeding complete, ready for optimistic updates')
+    logger.debug('✅ MultiTierCacheManager: Seeding complete, ready for optimistic updates')
   }
   
   clearCache() {
@@ -876,7 +880,7 @@ class MultiTierCacheManager {
     this.state.preloadQueue = []
     localStorage.removeItem('hm_multitier_cache')
     
-    console.log('🗑️ All caches cleared')
+    logger.debug('🗑️ All caches cleared')
   }
   
   // Article metadata storage for predictions

@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger'
 // src/pages/auth/SignInPage.jsx - Sign in page
 import React from 'react'
 import { Link, Navigate } from 'react-router-dom'
@@ -42,7 +43,7 @@ const SignInPage = ({ currentColors }) => {
       await signIn(formData.email, formData.password)
       // Navigation will be handled by redirect above
     } catch (err) {
-      console.error('Sign in error:', err)
+      logger.error('Sign in error:', err)
     } finally {
       setIsSubmitting(false)
     }

@@ -10,15 +10,15 @@ import {
 
 const MobileNavigation = ({ 
   currentView, 
-  setCurrentView,
+  _setCurrentView,
   onHomeClick,
   onSearchClick,
   onBytesClick,
   onProfileClick,
-  onSavedClick,
-  onInsightsClick,
-  likedCount,
-  bookmarkedCount,
+  _onSavedClick,
+  _onInsightsClick,
+  _likedCount,
+  _bookmarkedCount,
   className = ''
 }) => {
   const navigation = [

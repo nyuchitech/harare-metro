@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger'
 // src/pages/NewsBytesPage.jsx - News Bytes page
 import React from 'react'
 import NewsBytes from '../components/NewsBytes'
@@ -35,13 +36,13 @@ const NewsBytesPage = ({ currentColors, viewMode }) => {
           url: article.link
         })
       } catch (error) {
-        console.error('Share failed:', error)
+        logger.error('Share failed:', error)
       }
     } else {
       try {
         await navigator.clipboard.writeText(article.link)
       } catch (error) {
-        console.error('Copy failed:', error)
+        logger.error('Copy failed:', error)
       }
     }
   }

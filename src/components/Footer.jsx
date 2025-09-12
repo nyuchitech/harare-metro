@@ -27,7 +27,7 @@ export default function Footer({ currentColors, className = '' }) {
                 />
               </div>
               <p className={`text-sm ${currentColors.textMuted} mb-4 leading-relaxed`}>
-                Zimbabwe's premier news aggregator, bringing you real-time updates from over 17 trusted local sources.
+                Zimbabwe&apos;s premier news aggregator, bringing you real-time updates from over 17 trusted local sources.
               </p>
               <div className="flex items-center justify-center md:justify-start space-x-2">
                 <HeartIcon className="h-4 w-4 text-red-400" />

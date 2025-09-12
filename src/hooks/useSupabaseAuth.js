@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger'
 // Enhanced Supabase auth hook with user data management
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from './useAuth'
@@ -71,7 +72,7 @@ export function useSupabaseAuth() {
       }
 
     } catch (error) {
-      console.error('Failed to load user data:', error)
+      logger.error('Failed to load user data:', error)
       setUserDataError(error.message)
     } finally {
       setUserDataLoading(false)
@@ -163,7 +164,7 @@ export function useSupabaseAuth() {
 
       return !isCurrentlyBookmarked
     } catch (error) {
-      console.error('Failed to sync bookmark:', error)
+      logger.error('Failed to sync bookmark:', error)
       // Revert optimistic update on error
       if (isCurrentlyBookmarked) {
         setBookmarks(prev => [...prev, bookmarks.find(b => b.article_id === articleId)])
@@ -218,7 +219,7 @@ export function useSupabaseAuth() {
 
       return !isCurrentlyLiked
     } catch (error) {
-      console.error('Failed to sync like:', error)
+      logger.error('Failed to sync like:', error)
       // Revert optimistic update on error
       setLikes(likes)
       return isCurrentlyLiked
@@ -254,7 +255,7 @@ export function useSupabaseAuth() {
         ...prev.slice(0, 49) // Keep only 50 recent items
       ])
     } catch (error) {
-      console.error('Failed to track article read:', error)
+      logger.error('Failed to track article read:', error)
     }
   }, [auth.user])
 
@@ -278,7 +279,7 @@ export function useSupabaseAuth() {
       }
       return { data, error: null }
     } catch (error) {
-      console.error('Failed to update preferences:', error)
+      logger.error('Failed to update preferences:', error)
       // Revert optimistic update
       setPreferences(preferences)
       return { data: null, error }

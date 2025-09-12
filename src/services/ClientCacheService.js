@@ -1,5 +1,6 @@
 // Client-side caching service for articles and feeds
 // Using localStorage with IndexedDB fallback for larger datasets
+import { logger } from '../utils/logger'
 
 class ClientCacheService {
   constructor() {
@@ -52,21 +53,21 @@ class ClientCacheService {
       
       // Check if we're approaching localStorage limits
       if (serialized.length > this.MAX_CACHE_SIZE * 0.8) {
-        console.warn('ClientCache: Large cache entry, consider cleanup')
+        logger.warn('ClientCache: Large cache entry, consider cleanup')
         this.cleanup()
       }
       
       localStorage.setItem(key, serialized)
       return true
     } catch (error) {
-      console.warn('ClientCache: localStorage write failed:', error.message)
+      logger.warn('ClientCache: localStorage write failed:', error.message)
       // Clear some space and try again
       this.cleanup()
       try {
         localStorage.setItem(key, JSON.stringify({ data, timestamp: this.now(), ttl }))
         return true
       } catch (retryError) {
-        console.error('ClientCache: localStorage write failed after cleanup:', retryError.message)
+        logger.error('ClientCache: localStorage write failed after cleanup:', retryError.message)
         return false
       }
     }
@@ -88,7 +89,7 @@ class ClientCacheService {
       
       return cacheEntry.data
     } catch (error) {
-      console.warn('ClientCache: localStorage read failed:', error.message)
+      logger.warn('ClientCache: localStorage read failed:', error.message)
       return null
     }
   }
@@ -210,7 +211,7 @@ class ClientCacheService {
       localStorage.removeItem(key)
       return true
     } catch (error) {
-      console.warn('ClientCache: Clear failed:', error.message)
+      logger.warn('ClientCache: Clear failed:', error.message)
       return false
     }
   }
@@ -223,10 +224,10 @@ class ClientCacheService {
       
       cacheKeys.forEach(key => localStorage.removeItem(key))
       
-      console.log(`ClientCache: Cleared ${cacheKeys.length} cache entries`)
+      logger.debug(`ClientCache: Cleared ${cacheKeys.length} cache entries`)
       return true
     } catch (error) {
-      console.error('ClientCache: Clear all failed:', error.message)
+      logger.error('ClientCache: Clear all failed:', error.message)
       return false
     }
   }
@@ -256,12 +257,12 @@ class ClientCacheService {
       }
       
       if (cleanedCount > 0) {
-        console.log(`ClientCache: Cleaned up ${cleanedCount} expired entries`)
+        logger.debug(`ClientCache: Cleaned up ${cleanedCount} expired entries`)
       }
       
       return cleanedCount
     } catch (error) {
-      console.warn('ClientCache: Cleanup failed:', error.message)
+      logger.warn('ClientCache: Cleanup failed:', error.message)
       return 0
     }
   }
@@ -302,7 +303,7 @@ class ClientCacheService {
         usagePercent: Math.round((totalSize / this.MAX_CACHE_SIZE) * 100)
       }
     } catch (error) {
-      console.warn('ClientCache: Stats failed:', error.message)
+      logger.warn('ClientCache: Stats failed:', error.message)
       return {
         totalEntries: 0,
         validEntries: 0,
@@ -316,7 +317,7 @@ class ClientCacheService {
 
   // Preload cache with essential data
   async preloadCache() {
-    console.log('ClientCache: Starting preload...')
+    logger.debug('ClientCache: Starting preload...')
     
     // Clean up expired entries first
     await this.cleanup()
@@ -324,25 +325,25 @@ class ClientCacheService {
     // Check if we have recent articles
     const cacheInfo = await this.getCacheInfo('all')
     if (cacheInfo && !cacheInfo.isStale) {
-      console.log('ClientCache: Cache is fresh, no preload needed')
+      logger.debug('ClientCache: Cache is fresh, no preload needed')
       return true
     }
     
     // Cache needs refresh
-    console.log('ClientCache: Cache is stale or empty, needs refresh')
+    logger.debug('ClientCache: Cache is stale or empty, needs refresh')
     return false
   }
 
   // Initialize cache service
   async initialize() {
-    console.log('ClientCache: Initializing...')
+    logger.debug('ClientCache: Initializing...')
     
     // Run cleanup on startup
     const cleaned = await this.cleanup()
     
     // Get cache stats
     const stats = await this.getCacheStats()
-    console.log('ClientCache: Initialized', {
+    logger.debug('ClientCache: Initialized', {
       entries: stats.validEntries,
       sizeKB: stats.totalSizeKB,
       cleanedEntries: cleaned

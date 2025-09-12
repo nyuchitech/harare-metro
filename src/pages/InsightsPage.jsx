@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger'
 // src/pages/InsightsPage.jsx - Personal insights page
 import React from 'react'
 import PersonalInsights from '../components/PersonalInsights'
@@ -21,7 +22,7 @@ const InsightsPage = ({ currentColors }) => {
       const history = JSON.parse(localStorage.getItem('harare_metro_reading_history') || '[]')
       setReadingHistory(history)
     } catch (error) {
-      console.error('Failed to load reading history:', error)
+      logger.error('Failed to load reading history:', error)
       setReadingHistory([])
     }
   }, [])

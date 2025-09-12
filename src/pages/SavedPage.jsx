@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger'
 // src/pages/SavedPage.jsx - Saved articles page
 import React from 'react'
 import SaveForLater from '../components/SaveForLater'
@@ -12,7 +13,7 @@ const SavedPage = ({ currentColors }) => {
       const bookmarks = JSON.parse(localStorage.getItem('harare-metro_bookmarks') || '[]')
       setSavedArticles(bookmarks)
     } catch (error) {
-      console.error('Failed to load bookmarks:', error)
+      logger.error('Failed to load bookmarks:', error)
       setSavedArticles([])
     }
 
@@ -22,7 +23,7 @@ const SavedPage = ({ currentColors }) => {
         const bookmarks = JSON.parse(localStorage.getItem('harare-metro_bookmarks') || '[]')
         setSavedArticles(bookmarks)
       } catch (error) {
-        console.error('Failed to load bookmarks:', error)
+        logger.error('Failed to load bookmarks:', error)
       }
     }
 
@@ -53,7 +54,7 @@ const SavedPage = ({ currentColors }) => {
       setSavedArticles(updatedBookmarks)
       window.dispatchEvent(new CustomEvent('bookmarksChanged'))
     } catch (error) {
-      console.error('Failed to toggle bookmark:', error)
+      logger.error('Failed to toggle bookmark:', error)
     }
   }
 
@@ -66,13 +67,13 @@ const SavedPage = ({ currentColors }) => {
           url: article.link
         })
       } catch (error) {
-        console.error('Share failed:', error)
+        logger.error('Share failed:', error)
       }
     } else {
       try {
         await navigator.clipboard.writeText(article.link)
       } catch (error) {
-        console.error('Copy failed:', error)
+        logger.error('Copy failed:', error)
       }
     }
   }
@@ -91,7 +92,7 @@ const SavedPage = ({ currentColors }) => {
       const updatedHistory = [historyEntry, ...currentHistory.slice(0, 99)]
       localStorage.setItem('harare_metro_reading_history', JSON.stringify(updatedHistory))
     } catch (error) {
-      console.error('Failed to save reading history:', error)
+      logger.error('Failed to save reading history:', error)
     }
   }
 

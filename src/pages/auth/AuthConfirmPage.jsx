@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger'
 // src/pages/auth/AuthConfirmPage.jsx - Dynamic auth confirmation page
 // 
 // This page handles multiple auth confirmation scenarios:
@@ -117,7 +118,7 @@ const AuthConfirmPage = ({ currentColors }) => {
         }
         
       } catch (error) {
-        console.error('Auth confirmation error:', error)
+        logger.error('Auth confirmation error:', error)
         setStatus('error')
         setMessage('An unexpected error occurred. Please try again.')
       }
@@ -157,7 +158,7 @@ const AuthConfirmPage = ({ currentColors }) => {
       }, 2000)
       
     } catch (error) {
-      console.error('Password update error:', error)
+      logger.error('Password update error:', error)
       setMessage('Failed to update password. Please try again.')
     } finally {
       setIsUpdatingPassword(false)

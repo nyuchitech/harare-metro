@@ -1,3 +1,6 @@
+/* eslint-env browser */
+/* global setTimeout, clearTimeout */
+import { logger } from '../utils/logger'
 // Pure vertical scroll news experience with snap scrolling
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Button } from './ui/button'
@@ -78,7 +81,7 @@ const NewsBytes = ({
       if (isScrolling) return
       
       const containerRect = container.getBoundingClientRect()
-      const containerHeight = containerRect.height
+      const _containerHeight = containerRect.height
       
       // Find which article is currently most visible
       let mostVisibleIndex = 0
@@ -286,7 +289,7 @@ const NewsBytes = ({
       }, 500)
       
     } catch (error) {
-      console.error('Force refresh failed:', error)
+      logger.error('Force refresh failed:', error)
     } finally {
       setTimeout(() => {
         setIsRefreshing(false)
@@ -303,7 +306,7 @@ const NewsBytes = ({
       const newState = await toggleLike(article)
       trackUserInteraction('like', article, newState)
     } catch (error) {
-      console.error('Error liking article:', error)
+      logger.error('Error liking article:', error)
     }
   }, [currentIndex, validArticles, toggleLike, trackUserInteraction])
 
@@ -315,7 +318,7 @@ const NewsBytes = ({
       const newState = await toggleBookmark(article)
       trackUserInteraction('bookmark', article, newState)
     } catch (error) {
-      console.error('Error bookmarking article:', error)
+      logger.error('Error bookmarking article:', error)
     }
   }, [currentIndex, validArticles, toggleBookmark, trackUserInteraction])
 

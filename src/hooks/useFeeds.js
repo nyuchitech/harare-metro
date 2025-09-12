@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger'
 // Legacy useFeeds hook - DEPRECATED
 // All functionality has been moved to useOptimizedFeeds for TikTok-like performance
 // This file provides compatibility redirects only
@@ -6,13 +7,13 @@ import { useOptimizedFeeds } from './useOptimizedFeeds'
 
 // Main export - redirects to useOptimizedFeeds  
 export function useFeeds(params) {
-  console.warn('useFeeds is deprecated. Components should import useOptimizedFeeds directly for better performance.')
+  logger.warn('useFeeds is deprecated. Components should import useOptimizedFeeds directly for better performance.')
   return useOptimizedFeeds(params)
 }
 
 // Legacy compatibility exports - all redirect to useOptimizedFeeds
 export const useAPI = () => {
-  console.warn('useAPI is deprecated. All operations now use multi-tier caching.')
+  logger.warn('useAPI is deprecated. All operations now use multi-tier caching.')
   return {
     loading: false,
     error: null,
@@ -23,7 +24,7 @@ export const useAPI = () => {
 }
 
 export const useUserData = () => {
-  console.warn('useUserData is deprecated. Use useOptimizedFeeds instead.')
+  logger.warn('useUserData is deprecated. Use useOptimizedFeeds instead.')
   const feeds = useOptimizedFeeds()
   return {
     likes: feeds.optimisticLikes || new Map(),
@@ -38,7 +39,7 @@ export const useUserData = () => {
 }
 
 export const useScrollAndFeed = (params) => {
-  console.warn('useScrollAndFeed is deprecated. Use useOptimizedFeeds instead.')
+  logger.warn('useScrollAndFeed is deprecated. Use useOptimizedFeeds instead.')
   const feeds = useOptimizedFeeds(params)
   return {
     displayedFeeds: feeds.feeds,
@@ -56,7 +57,7 @@ export const useScrollAndFeed = (params) => {
 
 // Mock articles for fallback - now with TikTok-style optimization
 function generateMockArticles(count = 24) {
-  console.warn('Using mock articles - MultiTierCacheManager may not be initialized properly')
+  logger.warn('Using mock articles - MultiTierCacheManager may not be initialized properly')
   return Array.from({ length: count }, (_, i) => ({
     id: `mock-${i + 1}`,
     slug: `mock-article-${i + 1}`,

@@ -7,17 +7,14 @@ import {
   ChartBarIcon,
   ArrowTrendingUpIcon,
   GlobeAltIcon,
-  DevicePhoneMobileIcon,
-  ComputerDesktopIcon,
   EyeIcon,
   CalendarIcon,
   TagIcon,
-  ArrowPathIcon,
   TrophyIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline'
 
-const EnhancedAnalyticsSection = ({ currentColors, allFeeds, searchQuery, recentSearches }) => {
+const EnhancedAnalyticsSection = ({ currentColors, allFeeds, _searchQuery, recentSearches }) => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d')
   const [selectedMetric, setSelectedMetric] = useState('overview')
 
@@ -381,7 +378,7 @@ const EnhancedAnalyticsSection = ({ currentColors, allFeeds, searchQuery, recent
               Trending Categories
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {analytics.categoryTrends.slice(0, 6).map((category, index) => (
+              {analytics.categoryTrends.slice(0, 6).map((category) => (
                 <div key={category.category} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="flex items-center">
                     <div className={`w-3 h-3 rounded-full mr-3 ${

@@ -9,6 +9,7 @@ import directDataService from '../services/DirectDataService.js'
 import clientCache from '../services/ClientCacheService.js'
 import { useSupabaseAuth } from './useSupabaseAuth'
 import useUserInterests from './useUserInterests'
+import { logger } from '../utils/logger'
 
 export function useOptimizedFeeds({
   selectedCategory = 'all',
@@ -78,16 +79,16 @@ export function useOptimizedFeeds({
   useEffect(() => {
     const initializeClientCache = async () => {
       try {
-        console.log('💾 Initializing client cache...')
+        logger.debug('💾 Initializing client cache...')
         await clientCache.initialize()
         
         // Optional: preload cache if needed
         const needsRefresh = await clientCache.preloadCache()
         if (needsRefresh) {
-          console.log('💾 Client cache needs refresh - will fetch fresh data')
+          logger.debug('💾 Client cache needs refresh - will fetch fresh data')
         }
       } catch (error) {
-        console.warn('💾 Client cache initialization failed:', error.message)
+        logger.warn('💾 Client cache initialization failed:', error.message)
       }
     }
     
@@ -121,7 +122,7 @@ export function useOptimizedFeeds({
           }
         }
       } catch (error) {
-        console.error('Failed to load category data for interests:', error)
+        logger.error('Failed to load category data for interests:', error)
       }
     }
 
@@ -209,7 +210,7 @@ export function useOptimizedFeeds({
       const offset = append ? feeds.length : 0
       const limit = append ? 12 : 24 // Mobile-optimized: 24 initial, 12 per page
       
-      console.log(`🎯 CLIENT-CACHE-FIRST fetch: offset=${offset}, limit=${limit}, append=${append}`)
+      logger.debug(`🎯 CLIENT-CACHE-FIRST fetch: offset=${offset}, limit=${limit}, append=${append}`)
       
       // CLIENT-CACHE-FIRST STRATEGY:
       // 1. Check client cache first (fastest - 0ms)
@@ -221,13 +222,13 @@ export function useOptimizedFeeds({
       
       if (!append && offset === 0) {
         // INITIAL LOAD: Try client cache first
-        console.log('💾 Checking client cache first...')
+        logger.debug('💾 Checking client cache first...')
         const cachedArticles = await clientCache.getCachedArticles(selectedCategory)
         const cacheInfo = await clientCache.getCacheInfo(selectedCategory)
         
         if (cachedArticles && cachedArticles.length > 0 && !cacheInfo?.isStale) {
           // CACHE HIT: Use cached data immediately
-          console.log(`⚡ CACHE HIT: ${cachedArticles.length} articles from client cache`)
+          logger.debug(`⚡ CACHE HIT: ${cachedArticles.length} articles from client cache`)
           result = {
             articles: cachedArticles.slice(0, limit),
             total: cachedArticles.length,
@@ -238,7 +239,7 @@ export function useOptimizedFeeds({
           
           // Background refresh if cache is getting old (but still valid)
           if (cacheInfo && cacheInfo.age > 15 * 60 * 1000) { // 15 minutes
-            console.log('🔄 Background refresh triggered for stale cache')
+            logger.debug('🔄 Background refresh triggered for stale cache')
             setTimeout(() => fetchFreshDataAndCache(), 100)
           }
           
@@ -249,7 +250,7 @@ export function useOptimizedFeeds({
         
       } else if (append) {
         // PAGINATION: Check if we have more cached data
-        console.log('📄 Pagination - checking cached data...')
+        logger.debug('📄 Pagination - checking cached data...')
         const cachedArticles = await clientCache.getCachedArticles(selectedCategory)
         
         if (cachedArticles && cachedArticles.length > offset) {
@@ -262,7 +263,7 @@ export function useOptimizedFeeds({
             source: 'client-cache-pagination'
           }
           cacheHit = true
-          console.log(`📄 Paginated from cache: ${paginatedArticles.length} articles`)
+          logger.debug(`📄 Paginated from cache: ${paginatedArticles.length} articles`)
         } else {
           // Need to fetch more from server
           result = await directDataService.getMoreArticles({
@@ -286,7 +287,7 @@ export function useOptimizedFeeds({
       
       // Helper function to fetch fresh data and cache it
       async function fetchFreshDataAndCache() {
-        console.log('🌐 Fetching fresh data from server...')
+        logger.debug('🌐 Fetching fresh data from server...')
         
         try {
           // Try DirectDataService first (fastest server call)
@@ -300,7 +301,7 @@ export function useOptimizedFeeds({
           // Cache the fresh data
           if (serverResult.articles && serverResult.articles.length > 0) {
             await clientCache.cacheArticles(serverResult.articles, selectedCategory)
-            console.log(`💾 Cached ${serverResult.articles.length} articles locally`)
+            logger.debug(`💾 Cached ${serverResult.articles.length} articles locally`)
             
             // Seed MultiTierCacheManager for advanced features
             multiTierCacheManager.seedWithArticles(serverResult.articles)
@@ -312,7 +313,7 @@ export function useOptimizedFeeds({
           }
           
         } catch (serverError) {
-          console.warn('🌐 Server fetch failed, trying fallback...', serverError.message)
+          logger.warn('🌐 Server fetch failed, trying fallback...', serverError.message)
           
           // Fallback to MultiTierCacheManager
           const fallbackResult = await multiTierCacheManager.getArticles({
@@ -353,7 +354,7 @@ export function useOptimizedFeeds({
         
         const source = result.source || 'unknown'
         const cacheStatus = cacheHit ? 'CACHE HIT' : 'CACHE MISS'
-        console.log(`✅ CLIENT-CACHE-FIRST fetch completed: ${result.articles.length} articles in ${loadTime.toFixed(0)}ms (${source}) - ${cacheStatus}`)
+        logger.debug(`✅ CLIENT-CACHE-FIRST fetch completed: ${result.articles.length} articles in ${loadTime.toFixed(0)}ms (${source}) - ${cacheStatus}`)
         
         // Update cache hit rate metrics
         setPerformanceMetrics(prev => ({
@@ -363,18 +364,18 @@ export function useOptimizedFeeds({
         
         // Log performance insights
         if (source.includes('client-cache')) {
-          console.log('⚡ INSTANT: Client cache used - 0ms network time')
+          logger.debug('⚡ INSTANT: Client cache used - 0ms network time')
         } else if (source.includes('server')) {
-          console.log('🌐 NETWORK: Server fetch required')
+          logger.debug('🌐 NETWORK: Server fetch required')
         } else {
-          console.log('🔧 FALLBACK: Advanced processing used')
+          logger.debug('🔧 FALLBACK: Advanced processing used')
         }
       }
       
       return { success: true, count: result.articles?.length || 0 }
       
     } catch (error) {
-      console.error('❌ Optimized fetch failed:', error)
+      logger.error('❌ Optimized fetch failed:', error)
       setError(error.message)
       return { success: false, error: error.message }
     } finally {
@@ -390,7 +391,7 @@ export function useOptimizedFeeds({
     const nextPage = currentPage + 1
     setCurrentPage(nextPage)
     
-    console.log(`📱 Loading more articles: page ${nextPage}`)
+    logger.debug(`📱 Loading more articles: page ${nextPage}`)
     
     // Track user behavior
     const behavior = userBehaviorRef.current
@@ -417,7 +418,7 @@ export function useOptimizedFeeds({
     // Background sync with optimistic update mechanism
     multiTierCacheManager.optimisticUpdate(articleId, 'like', newLikeState)
     
-    console.log(`🔐 Supabase like update: ${articleId} = ${newLikeState}`)
+    logger.debug(`🔐 Supabase like update: ${articleId} = ${newLikeState}`)
     
     return newLikeState
   }, [supabaseAuth])
@@ -434,7 +435,7 @@ export function useOptimizedFeeds({
     // Update analytics tracking
     multiTierCacheManager.optimisticUpdate(articleId, 'bookmark', newBookmarkState)
     
-    console.log(`🔖 Supabase bookmark update: ${articleId} = ${newBookmarkState}`)
+    logger.debug(`🔖 Supabase bookmark update: ${articleId} = ${newBookmarkState}`)
     
     return newBookmarkState
   }, [supabaseAuth])
@@ -603,7 +604,7 @@ export function useOptimizedFeeds({
     const interval = setInterval(async () => {
       // Only auto-refresh if user isn't actively scrolling
       if (!isScrolling && scrollVelocity < 0.1) {
-        console.log('🔄 Auto-refresh (background)')
+        logger.debug('🔄 Auto-refresh (background)')
         await fetchFeeds(false)
       }
     }, refreshInterval)
@@ -613,7 +614,7 @@ export function useOptimizedFeeds({
 
   // Parameter change effect
   useEffect(() => {
-    console.log('🔄 Parameters changed, refreshing feeds...')
+    logger.debug('🔄 Parameters changed, refreshing feeds...')
     fetchFeeds(false)
   }, [selectedCategory, searchQuery, selectedTimeframe, sortBy])
 
@@ -652,7 +653,7 @@ export function useOptimizedFeeds({
 
   // CLIENT-CACHE-FIRST force refresh with all cache clearing
   const forceRefresh = useCallback(async () => {
-    console.log('🚀 CLIENT-CACHE-FIRST force refresh - clearing all caches...')
+    logger.debug('🚀 CLIENT-CACHE-FIRST force refresh - clearing all caches...')
     
     setLoading(true)
     setError(null)
@@ -663,7 +664,7 @@ export function useOptimizedFeeds({
       multiTierCacheManager.clearCache()
       directDataService.clearCache()
       
-      console.log('💾 All caches cleared (client + server)')
+      logger.debug('💾 All caches cleared (client + server)')
       
       // Reset optimistic state
       setOptimisticLikes(new Map())
@@ -673,11 +674,11 @@ export function useOptimizedFeeds({
       // Fetch fresh data (will be cached immediately)
       await fetchFeeds(false)
       
-      console.log('✅ Force refresh completed with fresh cache')
+      logger.debug('✅ Force refresh completed with fresh cache')
       return { success: true }
       
     } catch (error) {
-      console.error('❌ Force refresh failed:', error)
+      logger.error('❌ Force refresh failed:', error)
       setError(error.message)
       return { success: false, error: error.message }
     } finally {

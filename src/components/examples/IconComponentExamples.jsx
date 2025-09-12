@@ -1,5 +1,6 @@
 // Icon Component Usage Examples
 import React from 'react'
+import { logger } from '../../utils/logger'
 import { IconButton } from '@/components/ui/icon-button'
 import { IconGroup } from '@/components/ui/icon-group'
 import { IconWrapper } from '@/components/ui/icon-wrapper'
@@ -63,7 +64,7 @@ export const IconComponentExamples = () => {
         <h3 className="text-lg font-semibold mb-3">Article Actions</h3>
         <ArticleActions
           onLike={() => setLiked(!liked)}
-          onShare={() => console.log('Share')}
+          onShare={() => logger.debug('Share')}
           onBookmark={() => setBookmarked(!bookmarked)}
           isLiked={liked}
           isBookmarked={bookmarked}
@@ -98,12 +99,12 @@ export const IconComponentExamples = () => {
       <section>
         <h3 className="text-lg font-semibold mb-3">Utility Components</h3>
         <IconGroup>
-          <SearchButton onClick={() => console.log('Search')} />
-          <RefreshButton onClick={() => console.log('Refresh')} />
+          <SearchButton onClick={() => logger.debug('Search')} />
+          <RefreshButton onClick={() => logger.debug('Refresh')} />
           <ActionButton 
             icon={StarIcon} 
             label="Favorite" 
-            onClick={() => console.log('Favorite')}
+            onClick={() => logger.debug('Favorite')}
           />
         </IconGroup>
       </section>

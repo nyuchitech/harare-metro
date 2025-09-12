@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger'
 // PWA Hook - TEMPORARILY DISABLED
 
 /*
@@ -57,7 +58,7 @@ export function usePWA() {
         })
       }
     } catch (error) {
-      console.log('Error checking cache status:', error)
+      logger.debug('Error checking cache status:', error)
     }
   }
 
@@ -71,7 +72,7 @@ export function usePWA() {
       const cacheCheckResponse = await fetch('/api/admin/refresh-status')
       const cacheInfo = await cacheCheckResponse.json()
       
-      console.log('🔍 Cache status before refresh:', cacheInfo)
+      logger.debug('🔍 Cache status before refresh:', cacheInfo)
       
       // 3. Determine if refresh is needed
       const lastRefresh = new Date(cacheInfo.backgroundRefresh?.lastRefresh || 0)
@@ -79,7 +80,7 @@ export function usePWA() {
       const isStale = Date.now() - lastRefresh.getTime() > stalenessThreshold
       
       if (isStale || !cacheInfo.backgroundRefresh?.cachedArticles) {
-        console.log('📥 Cache is stale, triggering refresh...')
+        logger.debug('📥 Cache is stale, triggering refresh...')
         
         // 4. Trigger background refresh on worker
         await fetch('/api/admin/force-refresh', { method: 'POST' })
@@ -97,7 +98,7 @@ export function usePWA() {
       return result
       
     } catch (error) {
-      console.log('Enhanced refresh failed:', error)
+      logger.debug('Enhanced refresh failed:', error)
       // Fallback to regular API call
       return await apiCall()
     }

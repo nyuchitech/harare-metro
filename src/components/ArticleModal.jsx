@@ -1,10 +1,12 @@
+/* eslint-env browser */
+/* global setTimeout, clearTimeout */
+import { logger } from '../utils/logger'
 // src/components/ArticleModal.jsx - Modern Harare Metro article modal with source branding
 import React, { useState, useEffect, useRef } from 'react'
 import { 
   X,
   Share2, 
   Heart,
-  Globe,
   Clock,
   Bookmark,
   Maximize2,
@@ -25,14 +27,7 @@ const ArticleModal = ({
   savedArticles = [],
   onToggleSave 
 }) => {
-  // Early return if no article
-  if (!article) {
-    console.log('ArticleModal: No article provided, not rendering')
-    return null
-  }
-
-  console.log('ArticleModal: Rendering modal for article:', article.title)
-
+  // Initialize all hooks first before any conditional logic
   const [isLiked, setIsLiked] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [readingProgress, setReadingProgress] = useState(0)
@@ -49,9 +44,6 @@ const ArticleModal = ({
   const contentRef = useRef(null)
   const scrollTimeoutRef = useRef(null)
 
-  // Check if article is saved
-  const isBookmarked = savedArticles.some(saved => saved.link === article.link)
-
   // Calculate reading time
   useEffect(() => {
     if (article?.description) {
@@ -63,7 +55,7 @@ const ArticleModal = ({
 
   // Track reading progress and auto-hide header
   useEffect(() => {
-    if (!contentRef.current) return
+    if (!contentRef.current || !article) return
 
     const handleScroll = () => {
       const element = contentRef.current
@@ -90,13 +82,15 @@ const ArticleModal = ({
         clearTimeout(scrollTimeoutRef.current)
       }
     }
-  }, [])
+  }, [article])
 
   // Handle keyboard shortcuts
   useEffect(() => {
+    if (!article) return
+    
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        console.log('ArticleModal: Escape key pressed, closing modal')
+        logger.debug('ArticleModal: Escape key pressed, closing modal')
         onClose()
       } else if (e.key === 'f' || e.key === 'F') {
         setIsFullscreen(!isFullscreen)
@@ -111,21 +105,31 @@ const ArticleModal = ({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, isFullscreen, showHeader])
+  }, [article, onClose, isFullscreen, showHeader])
 
   // Auto-hide header after initial load
   useEffect(() => {
+    if (!article) return
+    
     const timer = setTimeout(() => {
       setShowHeader(false)
     }, 3000)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [article])
+
+  // Early return after all hooks are initialized
+  if (!article) {
+    return null
+  }
+
+  // Check if article is saved
+  const isBookmarked = savedArticles.some(saved => saved.link === article.link)
 
   // Close modal when clicking outside content area
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
-      console.log('ArticleModal: Backdrop clicked, closing modal')
+      logger.debug('ArticleModal: Backdrop clicked, closing modal')
       onClose()
     }
   }
@@ -149,7 +153,7 @@ const ArticleModal = ({
   }
 
   const handleCloseModal = () => {
-    console.log('ArticleModal: Close button clicked')
+    logger.debug('ArticleModal: Close button clicked')
     onClose()
   }
 

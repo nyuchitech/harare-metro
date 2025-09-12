@@ -1,3 +1,6 @@
+/* eslint-env browser */
+/* global setTimeout */
+import { logger } from '../utils/logger'
 // src/components/InterestSetupModal.jsx - Modal for setting up user interests
 import React, { useState } from 'react'
 import { X, CheckCircle } from 'lucide-react'
@@ -24,7 +27,7 @@ const InterestSetupModal = ({ isOpen, onClose, isFirstTime = false }) => {
         onClose()
       }, 2000)
     } catch (error) {
-      console.error('Failed to save interests:', error)
+      logger.error('Failed to save interests:', error)
       // Handle error - could show toast notification
     }
   }
@@ -32,7 +35,7 @@ const InterestSetupModal = ({ isOpen, onClose, isFirstTime = false }) => {
   const handleSkip = () => {
     if (isFirstTime) {
       // Save empty interests for first-time users so they don't see this again
-      saveInterests([]).catch(console.error)
+      saveInterests([]).catch(logger.error)
     }
     onClose()
   }

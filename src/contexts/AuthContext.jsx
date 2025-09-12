@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react'
 import { auth, supabase, isSupabaseConfigured } from '../lib/supabase'
 import { AuthContext } from './contexts'
+import { logger } from '../utils/logger'
 
 // Re-export AuthContext for convenience
 export { AuthContext }
@@ -119,11 +120,11 @@ export const AuthProvider = ({ children }) => {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
           // eslint-disable-next-line no-console
-          console.log('🔐 Auth state change:', event, session?.user?.email)
+          logger.debug('🔐 Auth state change:', event, session?.user?.email)
           
           if (session?.user) {
             // eslint-disable-next-line no-console
-            console.log('🔐 Setting user:', session.user.email)
+            logger.debug('🔐 Setting user:', session.user.email)
             setUser(session.user)
             
             // Set profile from user metadata for now
@@ -139,7 +140,7 @@ export const AuthProvider = ({ children }) => {
             })
           } else {
             // eslint-disable-next-line no-console
-            console.log('🔐 Clearing user')
+            logger.debug('🔐 Clearing user')
             setUser(null)
             setProfile(null)
           }
