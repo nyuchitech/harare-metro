@@ -205,6 +205,7 @@ export class NewsSourceManager {
 
       // Extract articles for quality assessment
       try {
+        // Dynamic import for better performance - only load parser when needed
         const { XMLParser } = await import('fast-xml-parser');
         const parser = new XMLParser({
           ignoreAttributes: false,

@@ -11,4 +11,17 @@ export default defineConfig({
     reactRouter(),
     tsconfigPaths(),
   ],
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress fast-xml-parser dynamic/static import warnings
+        // This is intentional: RSSFeedService uses static import (frequent use)
+        // NewsSourceManager uses dynamic import (occasional use for better performance)
+        if (warning.message?.includes('fast-xml-parser') && warning.message?.includes('dynamically imported')) {
+          return;
+        }
+        warn(warning);
+      },
+    },
+  },
 });
