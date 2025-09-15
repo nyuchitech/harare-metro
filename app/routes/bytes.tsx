@@ -111,7 +111,6 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
       
       if (mostVisibleIndex !== currentIndex) {
         setCurrentIndex(mostVisibleIndex);
-        setShowBackToTop(mostVisibleIndex > 0);
       }
     };
 

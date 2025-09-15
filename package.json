@@ -7,7 +7,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "fast-xml-parser": "^4.5.3",
-    "hono": "4.8.2",
+    "hono": "^4.9.7",
     "isbot": "5.1.26",
     "lucide-react": "^0.468.0",
     "react": "19.0.0",
@@ -34,6 +34,7 @@
     "deploy": "npm run build && wrangler deploy",
     "dev": "react-router dev",
     "preview": "npm run build && vite preview",
+    "test": "npm run build",
     "typecheck": "npm run cf-typegen && react-router typegen && tsc -b",
     "migrate-d1": "./scripts/migrate-d1.sh"
   }
