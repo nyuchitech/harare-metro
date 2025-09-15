@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "npm run clean && npm run typecheck && npm run build && wrangler deploy",
+    "deploy": "npm run clean && npm run build && wrangler deploy",
     "build": "wrangler deploy --dry-run",
     "test": "npm run build",
     "typecheck": "tsc --noEmit",

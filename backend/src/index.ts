@@ -3,12 +3,12 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
 // Import services
-import { D1Service } from "../worker/database/D1Service.js";
-import { D1ConfigService } from "../worker/services/D1ConfigService.js";
-import { D1CacheService } from "../worker/services/D1CacheService.js";
-import { AnalyticsEngineService } from "../worker/services/AnalyticsEngineService.js";
-import { RSSFeedService } from "../worker/services/RSSFeedService.js";
-import { NewsSourceService } from "../worker/services/NewsSourceService.js";
+import { D1Service } from "../../database/D1Service.js";
+import { D1ConfigService } from "../workers/services/D1ConfigService.js";
+import { D1CacheService } from "../workers/services/D1CacheService.js";
+import { AnalyticsEngineService } from "../workers/services/AnalyticsEngineService.js";
+import { RSSFeedService } from "../workers/services/RSSFeedService.js";
+import { NewsSourceService } from "../workers/services/NewsSourceService.js";
 
 // Import admin interface
 import { getAdminHTML } from "./admin/index.js";
@@ -18,6 +18,12 @@ import { CloudflareImagesService } from "./services/CloudflareImagesService.js";
 import { AuthService } from "./services/AuthService.js";
 
 // Types for Cloudflare bindings
+interface CloudflareImages {
+  upload: (file: any) => Promise<any>;
+  delete: (id: string) => Promise<any>;
+  list: () => Promise<any>;
+}
+
 type Bindings = {
   ARTICLES_DB: D1Database;
   CATEGORY_CLICKS: AnalyticsEngineDataset;
@@ -180,7 +186,7 @@ app.get("/api/health", async (c) => {
   } catch (error) {
     return c.json({
       status: "unhealthy",
-      error: error.message,
+      error: error instanceof Error ? error.message : "Unknown error",
       timestamp: new Date().toISOString()
     }, 500);
   }
@@ -197,7 +203,7 @@ app.get("/api/feeds", async (c) => {
     
     let filteredArticles = articles;
     if (category && category !== "all") {
-      filteredArticles = articles.filter(article => 
+      filteredArticles = articles.filter((article: any) => 
         article.category_id === category || article.category === category
       );
     }
@@ -214,7 +220,7 @@ app.get("/api/feeds", async (c) => {
   } catch (error) {
     return c.json({
       error: "Failed to fetch feeds",
-      message: error.message,
+      message: error instanceof Error ? error.message : "Unknown error",
       timestamp: new Date().toISOString()
     }, 500);
   }
@@ -233,7 +239,7 @@ app.get("/api/categories", async (c) => {
   } catch (error) {
     return c.json({
       error: "Failed to fetch categories",
-      message: error.message,
+      message: error instanceof Error ? error.message : "Unknown error",
       timestamp: new Date().toISOString()
     }, 500);
   }
@@ -262,7 +268,7 @@ app.get("/api/search", async (c) => {
         const analyticsService = new AnalyticsEngineService({
           searchQueries: c.env.SEARCH_QUERIES
         });
-        await analyticsService.trackSearchQuery(query, category, results.length);
+        await analyticsService.trackSearch(query, category);
       } catch (analyticsError) {
         console.warn("Failed to track search query:", analyticsError);
       }
@@ -278,7 +284,7 @@ app.get("/api/search", async (c) => {
   } catch (error) {
     return c.json({
       error: "Search failed",
-      message: error.message,
+      message: error instanceof Error ? error.message : "Unknown error",
       timestamp: new Date().toISOString()
     }, 500);
   }
@@ -325,7 +331,7 @@ app.get("/api/image", async (c) => {
     });
 
     if (!response.ok) {
-      return c.json({ error: "Failed to fetch image" }, response.status);
+      return c.json({ error: "Failed to fetch image" }, response.status as any);
     }
 
     return new Response(response.body, {
@@ -361,7 +367,7 @@ app.post("/api/admin/upload-image", requireAdmin, async (c) => {
     const result = await imagesService.uploadFromUrl(imageUrl, metadata);
     
     if (result.success) {
-      const variants = imagesService.getImageVariants(result.result.id);
+      const variants = imagesService.getImageVariants(result.result?.id || "");
       return c.json({
         success: true,
         image: result.result,
@@ -386,7 +392,7 @@ app.post("/api/admin/refresh-rss", requireAdmin, async (c) => {
       imagesService = new CloudflareImagesService(c.env.IMAGES, c.env.CLOUDFLARE_ACCOUNT_ID);
     }
     
-    const rssService = new RSSFeedService(c.env.ARTICLES_DB, imagesService);
+    const rssService = new RSSFeedService(c.env.ARTICLES_DB);
     const results = await rssService.refreshAllFeeds();
     
     console.log(`[RSS] Refresh completed: ${results.newArticles} new articles`);
@@ -407,7 +413,7 @@ app.post("/api/admin/refresh-rss", requireAdmin, async (c) => {
     return c.json({
       success: false,
       error: "RSS refresh failed", 
-      message: error.message,
+      message: error instanceof Error ? error.message : "Unknown error",
       timestamp: new Date().toISOString()
     }, 500);
   }
@@ -432,7 +438,7 @@ app.get("/api/admin/stats", requireAdmin, async (c) => {
   } catch (error) {
     return c.json({
       error: "Failed to fetch admin stats",
-      message: error.message,
+      message: error instanceof Error ? error.message : "Unknown error",
       timestamp: new Date().toISOString()
     }, 500);
   }
@@ -456,7 +462,7 @@ export async function scheduled(
       imagesService = new CloudflareImagesService(env.IMAGES, env.CLOUDFLARE_ACCOUNT_ID);
     }
     
-    const rssService = new RSSFeedService(env.ARTICLES_DB, imagesService);
+    const rssService = new RSSFeedService(env.ARTICLES_DB);
     const results = await rssService.refreshAllFeeds();
     
     console.log(`[CRON] RSS refresh completed: ${results.newArticles} new articles from ${results.sources} sources`);

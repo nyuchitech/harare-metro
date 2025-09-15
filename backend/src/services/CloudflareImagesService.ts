@@ -23,10 +23,10 @@ export interface ImageVariant {
 }
 
 export class CloudflareImagesService {
-  private images: CloudflareImages;
+  private images: any;
   private accountId: string;
 
-  constructor(images: CloudflareImages, accountId: string) {
+  constructor(images: any, accountId: string) {
     this.images = images;
     this.accountId = accountId;
   }
@@ -89,7 +89,7 @@ export class CloudflareImagesService {
       console.error('Failed to upload image:', error);
       return {
         success: false,
-        errors: [error.message]
+        errors: [error instanceof Error ? error.message : String(error)]
       };
     }
   }
@@ -175,8 +175,8 @@ export class CloudflareImagesService {
         }
       });
 
-      const result = await response.json();
-      return result.success;
+      const result: any = await response.json();
+      return result?.success;
     } catch (error) {
       console.error('Failed to delete image:', error);
       return false;

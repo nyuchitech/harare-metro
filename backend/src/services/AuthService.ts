@@ -46,7 +46,7 @@ export class AuthService {
         return null;
       }
 
-      const userData = await response.json();
+      const userData: any = await response.json();
       
       if (!userData || !userData.id) {
         return null;
@@ -97,7 +97,7 @@ export class AuthService {
         return null;
       }
 
-      const profiles = await response.json();
+      const profiles: any = await response.json();
       return profiles && profiles.length > 0 ? profiles[0] : null;
     } catch (error) {
       console.error('Failed to get user profile:', error);
@@ -128,7 +128,7 @@ export class AuthService {
         };
       }
 
-      const updatedProfile = await response.json();
+      const updatedProfile: any = await response.json();
       
       return {
         success: true,
@@ -160,7 +160,7 @@ export class AuthService {
         return [];
       }
 
-      const profiles = await response.json();
+      const profiles: any = await response.json();
       return profiles || [];
     } catch (error) {
       console.error('Failed to list users:', error);
