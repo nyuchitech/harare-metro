@@ -4,8 +4,9 @@ This guide covers deploying both the frontend and backend components of Harare M
 
 ## Architecture Overview
 
-- **Frontend**: `www.hararemetro.co.zw` (React Router SPA)
-- **Backend**: `admin.hararemetro.co.zw` (Hono API + Admin Interface)
+**Monorepo Structure**: Both frontend and backend are in the same repository
+- **Frontend**: `www.hararemetro.co.zw` (React Router SPA) - Root directory
+- **Backend**: `admin.hararemetro.co.zw` (Hono API + Admin Interface) - `/backend` directory
 
 ## Prerequisites
 
@@ -37,7 +38,8 @@ npm run deploy:test
 #### Backend Deployment
 
 ```bash
-cd ../harare-metro-backend
+# From repository root:
+cd backend
 
 # Install dependencies
 npm install
