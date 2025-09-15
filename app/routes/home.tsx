@@ -6,7 +6,7 @@ import { UserProfile } from "../components/auth/UserProfile";
 import HeaderNavigation from "../components/HeaderNavigation";
 import MobileNavigation from "../components/MobileNavigation";
 import { Heart, Bookmark, ExternalLink } from "lucide-react";
-import { buildApiUrl } from "../lib/api-utils";
+import { buildApiUrl, buildClientImageUrl } from "../lib/api-utils";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -22,62 +22,35 @@ export function meta({}: Route.MetaArgs) {
 export async function loader({ context, request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const category = url.searchParams.get('category') || 'all';
-  const limit = parseInt(url.searchParams.get('limit') || '24');
+  const limit = url.searchParams.get('limit') || '24';
   
   try {
-    // Check if we're running in Cloudflare Worker environment
-    const cloudflareContext = context?.cloudflare;
+    // Fetch articles from backend API
+    const apiUrl = buildApiUrl(request, '/api/feeds', new URLSearchParams({ category, limit }));
+    const response = await fetch(apiUrl);
     
-    if (cloudflareContext?.env?.ARTICLES_DB) {
-      // Direct database access in production worker
-      const db = cloudflareContext.env.ARTICLES_DB;
-      
-      // Get articles directly from D1
-      let articlesQuery = `
-        SELECT a.*, c.name as category_name, c.emoji as category_emoji, c.color as category_color
-        FROM articles a
-        LEFT JOIN categories c ON a.category_id = c.id
-        WHERE a.status = 'published'
-      `;
-      const params: any[] = [];
-      
-      if (category && category !== 'all') {
-        articlesQuery += ' AND a.category_id = ?';
-        params.push(category);
-      }
-      
-      articlesQuery += ' ORDER BY a.published_at DESC LIMIT ?';
-      params.push(limit);
-      
-      const articlesResult = await db.prepare(articlesQuery).bind(...params).all();
-      
-      // Get categories directly from D1
-      const categoriesResult = await db.prepare('SELECT * FROM categories WHERE enabled = 1 ORDER BY sort_order').all();
-      
-      return {
-        articles: articlesResult.results || [],
-        categories: categoriesResult.results || [],
-        selectedCategory: category,
-        total: articlesResult.results?.length || 0
-      };
-    } else {
-      // Fallback to HTTP fetch for development
-      const apiUrl = buildApiUrl(request, '/api/feeds', new URLSearchParams({ category, limit: limit.toString() }));
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-      
-      // Fetch categories
-      const categoriesUrl = buildApiUrl(request, '/api/categories');
-      const categoriesResponse = await fetch(categoriesUrl);
-      const categoriesData = await categoriesResponse.json();
-      
-      return {
-        articles: data.articles || [],
-        categories: categoriesData.categories || [],
-        selectedCategory: category,
-        total: data.total || 0
-      };
+    if (!response.ok) {
+      throw new Error(`API responded with ${response.status}: ${response.statusText}`);
     }
+    
+    const data = await response.json();
+    
+    // Fetch categories from backend API
+    const categoriesUrl = buildApiUrl(request, '/api/categories');
+    const categoriesResponse = await fetch(categoriesUrl);
+    
+    if (!categoriesResponse.ok) {
+      throw new Error(`Categories API responded with ${categoriesResponse.status}: ${categoriesResponse.statusText}`);
+    }
+    
+    const categoriesData = await categoriesResponse.json();
+    
+    return {
+      articles: data.articles || [],
+      categories: categoriesData.categories || [],
+      selectedCategory: category,
+      total: data.total || 0
+    };
   } catch (error) {
     console.error('Failed to load data:', error);
     // Return fallback data
@@ -86,7 +59,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       categories: [],
       selectedCategory: 'all',
       total: 0,
-      error: 'Failed to load articles'
+      error: 'Failed to load articles. Please check if backend service is running.'
     };
   }
 }
@@ -221,7 +194,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 {article.image_url && (
                   <div className="overflow-hidden">
                     <img 
-                      src={article.image_url} 
+                      src={buildClientImageUrl(article.image_url)} 
                       alt={article.title}
                       className="w-full h-auto object-cover"
                     />
