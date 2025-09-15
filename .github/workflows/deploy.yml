@@ -7,15 +7,15 @@ on:
     branches: [ main ]
 
 jobs:
-  test-frontend:
+  test:
     runs-on: ubuntu-latest
-    name: Test Frontend
+    name: Test Both Projects
     
     steps:
-    - name: Checkout frontend code
+    - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Node.js
+    - name: Setup Node.js for frontend
       uses: actions/setup-node@v4
       with:
         node-version: '20'
@@ -26,54 +26,49 @@ jobs:
         
     - name: Test frontend build
       run: npm run test
-
-  test-backend:
-    runs-on: ubuntu-latest
-    name: Test Backend
-    
-    steps:
-    - name: Checkout backend code
-      uses: actions/checkout@v4
-      with:
-        repository: nyuchitech/harare-metro-backend
-        token: ${{ secrets.GITHUB_TOKEN }}
       
-    - name: Setup Node.js
+    - name: Setup Node.js for backend
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
+        cache-dependency-path: 'backend/package-lock.json'
         
     - name: Install backend dependencies
-      run: npm install
+      run: |
+        cd backend
+        npm install
         
     - name: Test backend build
-      run: npm run test
+      run: |
+        cd backend
+        npm run test
 
   deploy-backend:
     runs-on: ubuntu-latest
     name: Deploy Backend
-    needs: [test-frontend, test-backend]
+    needs: test
     if: github.ref == 'refs/heads/main'
     
     steps:
-    - name: Checkout backend code
+    - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        repository: nyuchitech/harare-metro-backend
-        token: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
+        cache-dependency-path: 'backend/package-lock.json'
         
     - name: Install backend dependencies
-      run: npm install
+      run: |
+        cd backend
+        npm install
         
     - name: Deploy backend to Cloudflare
       run: |
+        cd backend
         # Set secrets before deploying
         echo "${{ secrets.SUPABASE_SERVICE_KEY }}" | wrangler secret put SUPABASE_SERVICE_KEY
         echo "${{ secrets.SUPABASE_URL }}" | wrangler secret put SUPABASE_URL
@@ -87,11 +82,11 @@ jobs:
   deploy-frontend:
     runs-on: ubuntu-latest
     name: Deploy Frontend
-    needs: [test-frontend, test-backend, deploy-backend]
+    needs: [test, deploy-backend]
     if: github.ref == 'refs/heads/main'
     
     steps:
-    - name: Checkout frontend code
+    - name: Checkout code
       uses: actions/checkout@v4
       
     - name: Setup Node.js

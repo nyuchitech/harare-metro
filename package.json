@@ -43,6 +43,9 @@
     "validate": "npm run typecheck && npm run build",
     "deploy:all": "./scripts/deploy-all.sh",
     "deploy:backend": "./scripts/deploy-all.sh backend",
+    "test:backend": "cd backend && npm run test",
+    "dev:backend": "cd backend && npm run dev",
+    "install:backend": "cd backend && npm install",
     "deploy:frontend": "./scripts/deploy-all.sh frontend",
     "deploy:test": "./scripts/deploy-all.sh test"
   }
