@@ -1,5 +1,5 @@
 // app/components/Logo.tsx
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
 interface LogoProps {
   variant?: 'main' | 'horizontal' | 'compact'
@@ -12,6 +12,28 @@ const Logo: React.FC<LogoProps> = ({
   size = 'md',
   className = ''
 }) => {
+  const [isDark, setIsDark] = useState(false)
+
+  // Detect theme changes
+  useEffect(() => {
+    const checkTheme = () => {
+      const isDarkMode = document.documentElement.classList.contains('dark')
+      setIsDark(isDarkMode)
+    }
+
+    // Initial check
+    checkTheme()
+
+    // Watch for theme changes
+    const observer = new MutationObserver(checkTheme)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
   const sizes = {
     sm: {
       main: { width: 120, height: 36 },
@@ -32,11 +54,11 @@ const Logo: React.FC<LogoProps> = ({
 
   const { width, height } = sizes[size][variant]
 
-  // SVG file paths
+  // SVG file paths with theme-aware colors
   const svgPaths = {
-    main: '/hm-logo-main.svg',
-    horizontal: '/hm-logo-horizontal.svg',
-    compact: '/hm-logo-compact.svg'
+    main: `/hm-logo-main.svg`,
+    horizontal: `/hm-logo-horizontal.svg`,
+    compact: `/hm-logo-compact.svg`
   }
 
   return (
@@ -45,7 +67,8 @@ const Logo: React.FC<LogoProps> = ({
       alt="Harare Metro Logo"
       width={width}
       height={height}
-      className={`logo-${variant} ${className}`}
+      className={`logo-${variant} ${isDark ? 'brightness-0 invert' : ''} ${className}`}
+      style={{ filter: isDark ? 'brightness(0) invert(1)' : 'none' }}
     />
   )
 }
