@@ -4,11 +4,11 @@ import { logger } from "hono/logger";
 
 // Import all business logic services - backend does the heavy lifting
 import { D1Service } from "../../database/D1Service.js";
-import { D1ConfigService } from "../workers/services/D1ConfigService.js";
-import { D1CacheService } from "../workers/services/D1CacheService.js";
-import { AnalyticsEngineService } from "../workers/services/AnalyticsEngineService.js";
-import { ArticleService } from "../workers/services/ArticleService.js";
-import { NewsSourceService } from "../workers/services/NewsSourceService.js";
+import { D1ConfigService } from "./workers/services/D1ConfigService.js";
+import { D1CacheService } from "./workers/services/D1CacheService.js";
+import { AnalyticsEngineService } from "./workers/services/AnalyticsEngineService.js";
+import { ArticleService } from "./workers/services/ArticleService.js";
+import { NewsSourceService } from "./workers/services/NewsSourceService.js";
 
 // Import admin interface
 import { getAdminHTML } from "./admin/index.js";
