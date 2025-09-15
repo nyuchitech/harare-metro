@@ -5,9 +5,9 @@ import { logger } from "hono/logger";
 
 // Import our D1 services
 import { D1Service } from "../database/D1Service.js";
-import { D1ConfigService } from "../backend/workers/services/D1ConfigService.js";
-import { D1CacheService } from "../backend/workers/services/D1CacheService.js";
-import { AnalyticsEngineService } from "../backend/workers/services/AnalyticsEngineService.js";
+import { D1ConfigService } from "./services/D1ConfigService.js";
+import { D1CacheService } from "./services/D1CacheService.js";
+import { AnalyticsEngineService } from "./services/AnalyticsEngineService.js";
 import { RSSFeedService } from "./services/RSSFeedService.js";
 import { CategoryManager } from "./services/CategoryManager.ts";
 import { NewsSourceManager } from "./services/NewsSourceManager.ts";
