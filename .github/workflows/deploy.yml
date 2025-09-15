@@ -7,12 +7,12 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  test-frontend:
     runs-on: ubuntu-latest
-    name: Test Both Projects
+    name: Test Frontend
     
     steps:
-    - name: Checkout code
+    - name: Checkout frontend code
       uses: actions/checkout@v4
       
     - name: Setup Node.js
@@ -22,31 +22,21 @@ jobs:
         cache: 'npm'
         
     - name: Install frontend dependencies
-      run: |
-        npm install
-        
-    - name: Install backend dependencies
-      run: |
-        cd ../harare-metro-backend
-        npm install
+      run: npm install
         
     - name: Test frontend build
       run: npm run test
-      
-    - name: Test backend build
-      run: |
-        cd ../harare-metro-backend
-        npm run test
 
-  deploy-backend:
+  test-backend:
     runs-on: ubuntu-latest
-    name: Deploy Backend
-    needs: test
-    if: github.ref == 'refs/heads/main'
+    name: Test Backend
     
     steps:
-    - name: Checkout code
+    - name: Checkout backend code
       uses: actions/checkout@v4
+      with:
+        repository: nyuchitech/harare-metro-backend
+        token: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -55,13 +45,35 @@ jobs:
         cache: 'npm'
         
     - name: Install backend dependencies
-      run: |
-        cd ../harare-metro-backend
-        npm install
+      run: npm install
+        
+    - name: Test backend build
+      run: npm run test
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    name: Deploy Backend
+    needs: [test-frontend, test-backend]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout backend code
+      uses: actions/checkout@v4
+      with:
+        repository: nyuchitech/harare-metro-backend
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install backend dependencies
+      run: npm install
         
     - name: Deploy backend to Cloudflare
       run: |
-        cd ../harare-metro-backend
         # Set secrets before deploying
         echo "${{ secrets.SUPABASE_SERVICE_KEY }}" | wrangler secret put SUPABASE_SERVICE_KEY
         echo "${{ secrets.SUPABASE_URL }}" | wrangler secret put SUPABASE_URL
@@ -75,11 +87,11 @@ jobs:
   deploy-frontend:
     runs-on: ubuntu-latest
     name: Deploy Frontend
-    needs: [test, deploy-backend]
+    needs: [test-frontend, test-backend, deploy-backend]
     if: github.ref == 'refs/heads/main'
     
     steps:
-    - name: Checkout code
+    - name: Checkout frontend code
       uses: actions/checkout@v4
       
     - name: Setup Node.js
