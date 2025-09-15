@@ -6,6 +6,7 @@ import { UserProfile } from "../components/auth/UserProfile";
 import HeaderNavigation from "../components/HeaderNavigation";
 import MobileNavigation from "../components/MobileNavigation";
 import { Heart, Bookmark, Share, Globe, RefreshCw, ExternalLink } from "lucide-react";
+import { buildApiUrl } from "../lib/api-utils";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -18,7 +19,8 @@ export function meta({}: Route.MetaArgs) {
 export async function loader({ request }: Route.LoaderArgs) {
   try {
     // Fetch articles with images for bytes view
-    const response = await fetch(`http://localhost:5173/api/feeds?limit=50&with_images=true`);
+    const apiUrl = buildApiUrl(request, '/api/feeds', new URLSearchParams({ limit: '50', with_images: 'true' }));
+    const response = await fetch(apiUrl);
     const data = await response.json();
     
     // Filter articles that have images

@@ -6,6 +6,7 @@ import { UserProfile } from "../components/auth/UserProfile";
 import HeaderNavigation from "../components/HeaderNavigation";
 import MobileNavigation from "../components/MobileNavigation";
 import { Heart, Bookmark, ExternalLink, ArrowLeft } from "lucide-react";
+import { buildApiUrl } from "../lib/api-utils";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -20,7 +21,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   
   try {
     // Fetch single article from our D1 API
-    const response = await fetch(`http://localhost:5173/api/article/${id}`);
+    const apiUrl = buildApiUrl(request, `/api/article/${id}`);
+    const response = await fetch(apiUrl);
     const data = await response.json();
     
     if (!data.article) {

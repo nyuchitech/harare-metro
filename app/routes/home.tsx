@@ -6,6 +6,7 @@ import { UserProfile } from "../components/auth/UserProfile";
 import HeaderNavigation from "../components/HeaderNavigation";
 import MobileNavigation from "../components/MobileNavigation";
 import { Heart, Bookmark, ExternalLink } from "lucide-react";
+import { buildApiUrl } from "../lib/api-utils";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -24,12 +25,14 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const limit = url.searchParams.get('limit') || '24';
   
   try {
-    // Fetch articles from our D1 API (server-side in React Router dev uses local context)
-    const response = await fetch(`http://localhost:5173/api/feeds?category=${category}&limit=${limit}`);
+    // Fetch articles from our D1 API (environment-aware URL)
+    const apiUrl = buildApiUrl(request, '/api/feeds', new URLSearchParams({ category, limit }));
+    const response = await fetch(apiUrl);
     const data = await response.json();
     
     // Fetch categories
-    const categoriesResponse = await fetch(`http://localhost:5173/api/categories`);
+    const categoriesUrl = buildApiUrl(request, '/api/categories');
+    const categoriesResponse = await fetch(categoriesUrl);
     const categoriesData = await categoriesResponse.json();
     
     return {

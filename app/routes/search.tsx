@@ -6,6 +6,7 @@ import { UserProfile } from "../components/auth/UserProfile";
 import HeaderNavigation from "../components/HeaderNavigation";
 import MobileNavigation from "../components/MobileNavigation";
 import { Heart, Bookmark, ExternalLink } from "lucide-react";
+import { buildApiUrl } from "../lib/api-utils";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -41,11 +42,13 @@ export async function loader({ request }: Route.LoaderArgs) {
     }
     
     // Fetch search results from our D1 API
-    const response = await fetch(`http://localhost:5173/api/search?${searchParams.toString()}`);
+    const apiUrl = buildApiUrl(request, '/api/search', searchParams);
+    const response = await fetch(apiUrl);
     const data = await response.json();
     
     // Fetch categories for filter
-    const categoriesResponse = await fetch(`http://localhost:5173/api/config/categories`);
+    const categoriesUrl = buildApiUrl(request, '/api/config/categories');
+    const categoriesResponse = await fetch(categoriesUrl);
     const categoriesData = await categoriesResponse.json();
     
     return {
