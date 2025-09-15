@@ -74,10 +74,10 @@ jobs:
         # Clean up any conflicting wrangler configs
         rm -rf ../.wrangler/deploy/ || true
         # Set secrets before deploying
-        echo "${{ secrets.SUPABASE_SERVICE_KEY }}" | wrangler secret put SUPABASE_SERVICE_KEY
-        echo "${{ secrets.SUPABASE_URL }}" | wrangler secret put SUPABASE_URL
+        echo "${{ secrets.SUPABASE_SERVICE_KEY }}" | npx wrangler secret put SUPABASE_SERVICE_KEY
+        echo "${{ secrets.SUPABASE_URL }}" | npx wrangler secret put SUPABASE_URL
         if [ -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
-          echo "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" | wrangler secret put CLOUDFLARE_ACCOUNT_ID
+          echo "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" | npx wrangler secret put CLOUDFLARE_ACCOUNT_ID
         fi
         npm run deploy
       env:
