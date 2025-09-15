@@ -7,9 +7,8 @@ import { D1Service } from "../worker/database/D1Service.js";
 import { D1ConfigService } from "../worker/services/D1ConfigService.js";
 import { D1CacheService } from "../worker/services/D1CacheService.js";
 import { AnalyticsEngineService } from "../worker/services/AnalyticsEngineService.js";
-import { RSSFeedService } from "../workers/services/RSSFeedService.js";
-import { CategoryManager } from "../workers/services/CategoryManager.js";
-import { NewsSourceManager } from "../workers/services/NewsSourceManager.js";
+import { RSSFeedService } from "../worker/services/RSSFeedService.js";
+import { NewsSourceService } from "../worker/services/NewsSourceService.js";
 
 // Import admin interface
 import { getAdminHTML } from "./admin/index.js";
