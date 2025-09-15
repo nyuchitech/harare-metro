@@ -12,6 +12,14 @@ import "./app.css";
 import { AuthProvider } from "./contexts/AuthContext";
 
 export const links: Route.LinksFunction = () => [
+  // Favicon links
+  { rel: "icon", href: "/favicon.ico", sizes: "any" },
+  { rel: "icon", href: "/favicon.png", type: "image/png" },
+  { rel: "icon", href: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+  { rel: "icon", href: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+  
+  // Font preconnects
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
