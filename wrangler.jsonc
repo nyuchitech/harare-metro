@@ -11,6 +11,13 @@
   "main": "./workers/app.ts",
   
   /**
+   * Custom Domain Routes - Frontend at www.hararemetro.co.zw
+   */
+  "routes": [
+    "www.hararemetro.co.zw/*"
+  ],
+  
+  /**
    * Environment Variables
    */
   "vars": {
@@ -28,8 +35,8 @@
    */
   "d1_databases": [
     {
-      "binding": "ARTICLES_DB", 
-      "database_name": "hararemetro_articles",
+      "binding": "DB", 
+      "database_name": "hararemetro_db",
       "database_id": "70d94fe9-4a78-4926-927b-e88e37141a54"
     }
   ],

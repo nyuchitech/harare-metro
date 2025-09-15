@@ -1,5 +1,6 @@
--- Harare Metro Articles Database Schema
--- D1 Database for storing articles with slugs and full content
+-- Harare Metro Database Schema
+-- D1 Database: hararemetro_db - Complete news platform with authentication
+-- Replaces Supabase with full Cloudflare stack
 
 -- Articles table with slugs for sharing
 CREATE TABLE IF NOT EXISTS articles (
@@ -46,7 +47,7 @@ CREATE TABLE IF NOT EXISTS article_analytics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     article_id INTEGER NOT NULL,
     event_type TEXT NOT NULL,            -- view, share, like, bookmark
-    user_id TEXT,                        -- User ID if logged in (from Supabase)
+    user_id TEXT REFERENCES users(id) ON DELETE SET NULL, -- User ID if logged in
     session_id TEXT,                     -- Anonymous session ID
     ip_address TEXT,                     -- Hashed IP for analytics
     user_agent TEXT,                     -- Browser info
