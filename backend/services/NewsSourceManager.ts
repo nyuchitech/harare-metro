@@ -316,16 +316,16 @@ export class NewsSourceManager {
       // Extract base domain
       const baseDomain = new URL(websiteUrl).hostname;
 
-      // Check if source already exists
+      // Check if source already exists by URL or name
       const existingSource = await this.db
-        .prepare('SELECT id FROM rss_sources WHERE base_domain = ?')
-        .bind(baseDomain)
+        .prepare('SELECT id FROM rss_sources WHERE url = ? OR name = ?')
+        .bind(websiteUrl, sourceName)
         .first();
 
       if (existingSource) {
         return {
           success: false,
-          message: `Source with domain ${baseDomain} already exists`
+          message: `Source ${sourceName} already exists`
         };
       }
 
@@ -392,19 +392,19 @@ export class NewsSourceManager {
       await this.db
         .prepare(`
           INSERT INTO rss_sources (
-            id, name, url, rss_url, base_domain, category, country, language,
-            enabled, priority, quality_score, reliability_score, freshness_score,
-            validation_status, error_count, success_count, last_validated_at,
-            last_successful_fetch, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            id, name, url, category, enabled, priority, metadata
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
         `)
         .bind(
-          source.id, source.name, source.url, source.rss_url, source.base_domain,
-          source.category, source.country, source.language, source.enabled ? 1 : 0,
-          source.priority, source.quality_score, source.reliability_score, source.freshness_score,
-          source.validation_status, source.error_count, source.success_count,
-          source.last_validated_at, source.last_successful_fetch,
-          source.created_at, source.updated_at
+          source.id, source.name, source.rss_url, source.category, source.enabled ? 1 : 0,
+          source.priority, JSON.stringify({
+            base_domain: source.base_domain,
+            country: source.country,
+            language: source.language,
+            quality_score: source.quality_score,
+            validation_status: source.validation_status,
+            original_url: source.url
+          })
         )
         .run();
 
@@ -539,47 +539,60 @@ export class NewsSourceManager {
   // ===============================================================
 
   /**
-   * Add multiple Zimbabwe news sources
+   * Add multiple Zimbabwe news sources including education, travel, and specialized sources
    */
   async addZimbabweNewsSources(): Promise<{ added: number; failed: number; details: string[] }> {
     const zimbabweSources = [
-      // Major Media Houses
+      // Major Media Houses (Essential)
       { name: "The Herald", url: "https://www.herald.co.zw", category: "general", priority: 5 },
       { name: "NewsDay", url: "https://www.newsday.co.zw", category: "general", priority: 5 },
       { name: "The Chronicle", url: "https://www.chronicle.co.zw", category: "general", priority: 5 },
       
-      // Online Publications
+      // Key Online Publications
       { name: "ZimLive", url: "https://www.zimlive.com", category: "general", priority: 4 },
-      { name: "New Zimbabwe", url: "https://www.newzimbabwe.com", category: "general", priority: 4 },
-      { name: "ZimEye", url: "https://zimeye.net", category: "general", priority: 4 },
+      { name: "The Standard", url: "https://www.thestandard.co.zw", category: "general", priority: 4 },
       { name: "263Chat", url: "https://263chat.com", category: "general", priority: 4 },
       
-      // Business & Finance  
-      { name: "Financial Gazette", url: "https://fingaz.co.zw", category: "finance_investing", priority: 4 },
-      { name: "Business Weekly", url: "https://businessweekly.co.zw", category: "finance_investing", priority: 4 },
-      { name: "Zimbabwe Independent", url: "https://www.theindependent.co.zw", category: "finance_investing", priority: 4 },
+      // Regional & Alternative Media
+      { name: "The Zimbabwean", url: "https://www.thezimbabwean.co", category: "general", priority: 4 },
+      { name: "ZimEye", url: "https://www.zimeye.net", category: "general", priority: 4 },
+      { name: "MyZimbabwe", url: "https://www.myzimbabwe.co.zw", category: "general", priority: 3 },
+      { name: "NewZimbabwe", url: "https://www.newzimbabwe.com", category: "general", priority: 4 },
+      { name: "ZimFact", url: "https://zimfact.org", category: "general", priority: 3 },
       
-      // Technology
+      // Business & Finance
+      { name: "Financial Gazette", url: "https://fingaz.co.zw", category: "finance_investing", priority: 4 },
+      { name: "Zimbabwe Independent", url: "https://www.theindependent.co.zw", category: "finance_investing", priority: 4 },
+      { name: "Business Weekly", url: "https://www.businessweekly.co.zw", category: "finance_investing", priority: 3 },
+      { name: "The Source", url: "https://www.thesource.co.zw", category: "finance_investing", priority: 3 },
+      
+      // Technology & Innovation
       { name: "Techzim", url: "https://www.techzim.co.zw", category: "tech_gadgets", priority: 4 },
       { name: "TechnoMag", url: "https://technomag.co.zw", category: "tech_gadgets", priority: 3 },
       
-      // Regional
-      { name: "Manica Post", url: "https://manicapost.co.zw", category: "local_news", priority: 3 },
-      { name: "Southern Eye", url: "https://southerneye.co.zw", category: "local_news", priority: 3 },
-      
-      // Radio/Broadcasting
-      { name: "Star FM", url: "https://www.starfm.co.zw", category: "entertainment", priority: 3 },
+      // Broadcasting & Media
       { name: "ZBC News Online", url: "https://www.zbc.co.zw", category: "general", priority: 4 },
+      { name: "Star FM", url: "https://www.starfm.co.zw", category: "general", priority: 3 },
+      { name: "ZiFM Stereo", url: "https://www.zifmstereo.co.zw", category: "general", priority: 3 },
       
       // Sports
-      { name: "Soccer24 Zimbabwe", url: "https://soccer24.co.zw", category: "sports_athletics", priority: 3 },
-      { name: "The Sports Hub", url: "https://sportshub.co.zw", category: "sports_athletics", priority: 3 },
+      { name: "The Sports Hub", url: "https://www.thesportshub.co.zw", category: "sports", priority: 4 },
+      { name: "Soccer24", url: "https://www.soccer24.co.zw", category: "sports", priority: 3 },
+      { name: "Zimbabwe Cricket", url: "https://www.zimcricket.org", category: "sports", priority: 3 },
+      
+      // Education & Academic
+      { name: "University of Zimbabwe", url: "https://www.uz.ac.zw", category: "languages_learning", priority: 3 },
+      { name: "Zimbabwe Trust Schools", url: "https://zimbabwetrust.edu.zw", category: "languages_learning", priority: 4 },
+      { name: "UNICEF Zimbabwe", url: "https://www.unicef.org/zimbabwe", category: "languages_learning", priority: 3 },
+      
+      // Tourism & Travel
+      { name: "Zimbabwe Tourism Authority", url: "https://www.zimbabwetourism.net", category: "travel_tourism", priority: 4 },
+      { name: "Victoria Falls Guide", url: "https://victoriafallsguide.net", category: "travel_tourism", priority: 4 },
+      { name: "Travel News Zimbabwe", url: "https://www.travelnewszimbabwe.com", category: "travel_tourism", priority: 3 },
       
       // Health & Lifestyle
-      { name: "Health Times", url: "https://healthtimes.co.zw", category: "fitness_wellness", priority: 2 },
-      
-      // Education
-      { name: "Education Matters", url: "https://educationmatters.co.zw", category: "languages_learning", priority: 2 }
+      { name: "Ministry of Health Zimbabwe", url: "https://www.mohcc.gov.zw", category: "wellness", priority: 3 },
+      { name: "ZimHealth", url: "https://zimhealth.co.zw", category: "wellness", priority: 3 }
     ];
 
     let added = 0;

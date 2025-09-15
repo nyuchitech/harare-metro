@@ -8,8 +8,15 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "harare-metro-backend",
   "compatibility_date": "2025-04-01",
-  "main": "./src/index.ts",
+  "main": "./index.ts",
   
+  /**
+   * Custom Domain Routes - Admin backend at admin.hararemetro.co.zw
+   */
+  "routes": [
+    "admin.hararemetro.co.zw/*"
+  ],
+
   /**
    * Environment Variables
    */
@@ -28,29 +35,90 @@
    */
   "d1_databases": [
     {
-      "binding": "ARTICLES_DB", 
-      "database_name": "hararemetro_articles",
+      "binding": "DB", 
+      "database_name": "hararemetro_db",
       "database_id": "70d94fe9-4a78-4926-927b-e88e37141a54"
     }
   ],
 
   /**
-   * Analytics Engine - User interaction tracking (handled by frontend worker)
+   * Analytics Engine - User interaction tracking
    */
-  // "analytics_engine_datasets": [
-  //   {
-  //     "binding": "CATEGORY_CLICKS",
-  //     "dataset": "category_clicks"
-  //   },
-  //   {
-  //     "binding": "NEWS_INTERACTIONS",
-  //     "dataset": "news_interactions"
-  //   },
-  //   {
-  //     "binding": "SEARCH_QUERIES",
-  //     "dataset": "search_queries"
-  //   }
-  // ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "NEWS_ANALYTICS",
+      "dataset": "news_analytics"
+    },
+    {
+      "binding": "SEARCH_ANALYTICS", 
+      "dataset": "search_analytics"
+    },
+    {
+      "binding": "CATEGORY_ANALYTICS",
+      "dataset": "category_analytics"
+    },
+    {
+      "binding": "USER_ANALYTICS",
+      "dataset": "user_analytics"
+    },
+    {
+      "binding": "PERFORMANCE_ANALYTICS",
+      "dataset": "performance_analytics"
+    }
+  ],
+
+  /**
+   * AI Services - Workers AI and Vectorize for content processing
+   */
+  "ai": {
+    "binding": "AI"
+  },
+
+  "vectorize": [
+    {
+      "binding": "VECTORIZE_INDEX",
+      "index_name": "harare-metro-articles"
+    }
+  ],
+
+  /**
+   * KV Namespaces - Key-Value storage for auth sessions and caching
+   */
+  "kv_namespaces": [
+    {
+      "binding": "AUTH_STORAGE", 
+      "id": "28448bdb9dd041dcaaefe292a7651c8a"
+    }
+  ],
+
+  /**
+   * Durable Objects - User interactions and realtime state management
+   * Note: Temporarily disabled for deployment
+   */
+  // "durable_objects": {
+  //   "bindings": [
+  //     {
+  //       "name": "ARTICLE_INTERACTIONS",
+  //       "class_name": "ArticleInteractionsDO",
+  //       "script_name": "harare-metro-backend"
+  //     },
+  //     {
+  //       "name": "USER_BEHAVIOR", 
+  //       "class_name": "UserBehaviorDO",
+  //       "script_name": "harare-metro-backend"
+  //     },
+  //     {
+  //       "name": "REALTIME_COUNTERS",
+  //       "class_name": "RealtimeCountersDO",
+  //       "script_name": "harare-metro-backend"
+  //     },
+  //     {
+  //       "name": "REALTIME_ANALYTICS",
+  //       "class_name": "RealtimeAnalyticsDO",
+  //       "script_name": "harare-metro-backend"
+  //     }
+  //   ]
+  // },
 
   /**
    * Cloudflare Images - Image storage and optimization

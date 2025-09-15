@@ -14,29 +14,53 @@ export function getAdminHTML(): string {
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #00A651 0%, #FDD116 50%, #EF3340 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #000000;
             min-height: 100vh;
             padding: 20px;
+            position: relative;
+            color: #ffffff;
+        }
+        
+        /* Zimbabwe Flag Strip - Core Brand Element */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 100vh;
+            z-index: 1000;
+            background: linear-gradient(to bottom,
+                #00A651 0% 20%,
+                #FDD116 20% 40%, 
+                #EF3340 40% 60%,
+                #000000 60% 80%,
+                #FFFFFF 80% 100%
+            );
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
+            margin-left: calc(50% - 600px + 12px); /* Account for flag strip */
+            background: #1a1a1a;
             border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid #333;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
             overflow: hidden;
         }
         
         .header {
-            background: linear-gradient(90deg, #00A651, #FDD116);
+            background: #000000;
             color: white;
             padding: 30px;
             text-align: center;
+            border-bottom: 1px solid #333;
         }
         
         .header h1 {
+            font-family: Georgia, 'Times New Roman', serif;
             font-size: 2.5rem;
             font-weight: bold;
             margin-bottom: 10px;
@@ -49,8 +73,8 @@ export function getAdminHTML(): string {
         
         .nav {
             display: flex;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
+            background: #2a2a2a;
+            border-bottom: 1px solid #333;
         }
         
         .nav-item {
@@ -62,15 +86,17 @@ export function getAdminHTML(): string {
             border: none;
             background: none;
             font-size: 1rem;
+            color: #ccc;
         }
         
         .nav-item:hover {
-            background: #e9ecef;
+            background: #333;
+            color: #fff;
         }
         
         .nav-item.active {
-            background: #00A651;
-            color: white;
+            background: #fff;
+            color: #000;
         }
         
         .content {
@@ -86,22 +112,23 @@ export function getAdminHTML(): string {
         }
         
         .card {
-            background: #f8f9fa;
+            background: #2a2a2a;
             border-radius: 12px;
             padding: 25px;
             margin-bottom: 20px;
-            border: 1px solid #e9ecef;
+            border: 1px solid #444;
         }
         
         .card h3 {
-            color: #00A651;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: #fff;
             margin-bottom: 15px;
             font-size: 1.3rem;
         }
         
         .btn {
-            background: #00A651;
-            color: white;
+            background: #fff;
+            color: #000;
             border: none;
             padding: 12px 24px;
             border-radius: 8px;
@@ -112,24 +139,25 @@ export function getAdminHTML(): string {
         }
         
         .btn:hover {
-            background: #008a45;
+            background: #ccc;
         }
         
         .btn-danger {
-            background: #EF3340;
+            background: #333;
+            color: #fff;
         }
         
         .btn-danger:hover {
-            background: #d92536;
+            background: #555;
         }
         
         .btn-warning {
-            background: #FDD116;
-            color: #333;
+            background: #666;
+            color: #fff;
         }
         
         .btn-warning:hover {
-            background: #fcc02b;
+            background: #888;
         }
         
         .stats-grid {
@@ -140,11 +168,11 @@ export function getAdminHTML(): string {
         }
         
         .stat-card {
-            background: white;
+            background: #333;
             border-radius: 12px;
             padding: 20px;
             text-align: center;
-            border: 2px solid #e9ecef;
+            border: 2px solid #555;
             transition: transform 0.3s;
         }
         
@@ -155,11 +183,11 @@ export function getAdminHTML(): string {
         .stat-number {
             font-size: 2rem;
             font-weight: bold;
-            color: #00A651;
+            color: #fff;
         }
         
         .stat-label {
-            color: #6c757d;
+            color: #ccc;
             margin-top: 5px;
         }
         
@@ -184,22 +212,23 @@ export function getAdminHTML(): string {
         .sources-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid #444;
+            color: #fff;
         }
         
         .sources-table th {
-            background: #f8f9fa;
-            color: #00A651;
+            background: #333;
+            color: #fff;
             font-weight: bold;
         }
         
         .status-active {
-            color: #00A651;
+            color: #00ff00;
             font-weight: bold;
         }
         
         .status-inactive {
-            color: #EF3340;
+            color: #ff6666;
             font-weight: bold;
         }
         
@@ -217,8 +246,15 @@ export function getAdminHTML(): string {
 <body>
     <div class="container">
         <div class="header">
-            <h1>🇿🇼 Harare Metro Admin</h1>
-            <p>Backend Management & Analytics Dashboard</p>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 2.5rem; font-weight: bold; color: #fff;">
+                    Harare Metro
+                </div>
+                <div style="font-size: 1.5rem;">🇿🇼</div>
+            </div>
+            <div style="margin-top: 10px; font-size: 1.1rem; opacity: 0.9; color: #ccc;">
+                Backend Management & Analytics Dashboard
+            </div>
         </div>
         
         <div class="nav">

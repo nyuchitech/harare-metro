@@ -1,7 +1,7 @@
 // worker/services/D1ConfigService.js
 // Replaces ConfigService.js - uses D1 instead of KV storage
 
-import { D1Service } from '../../../database/D1Service.js'
+import { D1Service } from '../../database/D1Service.js'
 
 export class D1ConfigService {
   constructor(database) {

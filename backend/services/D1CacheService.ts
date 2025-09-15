@@ -1,7 +1,7 @@
 // worker/services/D1CacheService.js
 // Replaces CacheService.js - uses D1 instead of KV storage
 
-import { D1Service } from '../../../database/D1Service.js'
+import { D1Service } from '../../database/D1Service.js'
 
 export class D1CacheService {
   constructor(database, articleService = null) {

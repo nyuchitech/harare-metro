@@ -1,7 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 import { CategoryManager } from './CategoryManager.js';
 import { NewsSourceManager } from './NewsSourceManager.js';
-import { CloudflareImagesService } from '../../src/services/CloudflareImagesService.js';
+import { CloudflareImagesService } from './CloudflareImagesService.js';
 
 export interface RSSSource {
   id: string;
@@ -59,11 +59,130 @@ export class RSSFeedService {
   }
 
   /**
+   * INITIAL BULK PULL - For first-time setup and testing
+   * Pulls more articles than regular refresh for comprehensive database seeding
+   */
+  async initialBulkPull(options: {
+    articlesPerSource?: number;
+    includeOlderArticles?: boolean;
+    testMode?: boolean;
+  } = {}): Promise<{ 
+    processed: number; 
+    newArticles: number; 
+    sources: number; 
+    errors: string[];
+    sourceResults: Array<{
+      sourceName: string;
+      articlesFound: number;
+      articlesStored: number;
+      success: boolean;
+      error?: string;
+    }>;
+  }> {
+    const {
+      articlesPerSource = 200, // Higher limit for initial pull
+      includeOlderArticles = true,
+      testMode = false
+    } = options;
+
+    console.log(`[RSS] Starting INITIAL BULK PULL - ${articlesPerSource} articles per source`);
+    
+    const results = {
+      processed: 0,
+      newArticles: 0,
+      sources: 0,
+      errors: [] as string[],
+      sourceResults: [] as Array<{
+        sourceName: string;
+        articlesFound: number;
+        articlesStored: number;
+        success: boolean;
+        error?: string;
+      }>
+    };
+
+    try {
+      // Get all enabled RSS sources from D1
+      const sourcesQuery = await this.db
+        .prepare('SELECT * FROM rss_sources WHERE enabled = 1 ORDER BY priority DESC')
+        .all();
+      
+      const sources = sourcesQuery.results as RSSSource[];
+      console.log(`[RSS] Found ${sources.length} enabled RSS sources for bulk pull`);
+      
+      results.sources = sources.length;
+
+      // Process each RSS source with higher limits
+      for (const source of sources) {
+        const sourceResult = {
+          sourceName: source.name,
+          articlesFound: 0,
+          articlesStored: 0,
+          success: false,
+          error: undefined as string | undefined
+        };
+
+        try {
+          console.log(`[RSS] Bulk pulling from ${source.name} (${source.url})`);
+          
+          const articles = await this.fetchAndParseFeedBulk(source, articlesPerSource, includeOlderArticles);
+          sourceResult.articlesFound = articles.length;
+          console.log(`[RSS] ${source.name}: Retrieved ${articles.length} articles for bulk processing`);
+          
+          // Store articles in D1 with enhanced field population testing
+          const newCount = await this.storeArticlesBulk(articles, source, testMode);
+          sourceResult.articlesStored = newCount;
+          
+          results.processed += articles.length;
+          results.newArticles += newCount;
+          sourceResult.success = true;
+          
+          // Update source fetch status
+          await this.updateSourceStatus(source.id, true, null);
+          
+          // Track source performance  
+          await this.sourceManager.updateSourcePerformance(source.id, true, newCount);
+          
+          console.log(`[RSS] ${source.name}: Stored ${newCount}/${articles.length} articles in bulk pull`);
+          
+        } catch (error) {
+          const errorMsg = `${source.name}: ${error.message}`;
+          sourceResult.error = error.message;
+          results.errors.push(errorMsg);
+          console.error(`[RSS] Error in bulk pull for ${source.name}:`, error);
+          
+          // Update source with error status
+          await this.updateSourceStatus(source.id, false, error.message);
+          
+          // Track source performance failure
+          await this.sourceManager.updateSourcePerformance(source.id, false, 0, error.message);
+        }
+
+        results.sourceResults.push(sourceResult);
+
+        // Small delay between sources in test mode
+        if (testMode) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      
+      console.log(`[RSS] BULK PULL COMPLETE: ${results.newArticles} new articles from ${results.processed} processed across ${results.sources} sources`);
+      return results;
+      
+    } catch (error) {
+      console.error('[RSS] Critical error in bulk pull:', error);
+      results.errors.push(`Critical error: ${error.message}`);
+      return results;
+    }
+  }
+
+  /**
    * MAIN RSS REFRESH FUNCTION
    * This addresses your key concerns:
    * 1. Articles stored permanently in D1 (no age limits on DB)
    * 2. Analytics/counts not affected by caching or pagination
    * 3. Continuous growth database
+   * 4. Per-source daily limits (100 articles/day)
    */
   async refreshAllFeeds(): Promise<{ 
     processed: number; 
@@ -96,8 +215,19 @@ export class RSSFeedService {
         try {
           console.log(`[RSS] Processing ${source.name} (${source.url})`);
           
-          const articles = await this.fetchAndParseFeed(source);
-          console.log(`[RSS] ${source.name}: Retrieved ${articles.length} articles`);
+          // Check daily limit from database configuration
+          const dailyCount = await this.getTodayArticleCount(source.id);
+          const dailyLimit = source.daily_limit || 100; // Use source-specific limit
+          
+          if (dailyCount >= dailyLimit) {
+            console.log(`[RSS] ${source.name}: Daily limit reached (${dailyCount}/${dailyLimit}), skipping`);
+            continue;
+          }
+          
+          const remainingQuota = dailyLimit - dailyCount;
+          const articlesPerFetch = source.articles_per_fetch || 50;
+          const articles = await this.fetchAndParseFeed(source, Math.min(articlesPerFetch, remainingQuota));
+          console.log(`[RSS] ${source.name}: Retrieved ${articles.length} articles (quota: ${remainingQuota})`);
           
           // Store articles in D1 (PERMANENT STORAGE - NO AGE LIMITS)
           const newCount = await this.storeArticles(articles, source);
@@ -111,7 +241,7 @@ export class RSSFeedService {
           // Track source performance  
           await this.sourceManager.updateSourcePerformance(source.id, true, newCount);
           
-          console.log(`[RSS] ${source.name}: Stored ${newCount} new articles`);
+          console.log(`[RSS] ${source.name}: Stored ${newCount} new articles (daily total: ${dailyCount + newCount}/${dailyLimit})`);
           
         } catch (error) {
           const errorMsg = `${source.name}: ${error.message}`;
@@ -137,9 +267,27 @@ export class RSSFeedService {
   }
 
   /**
-   * Fetch and parse a single RSS feed
+   * Get today's article count for a source from daily stats
    */
-  private async fetchAndParseFeed(source: RSSSource): Promise<Article[]> {
+  private async getTodayArticleCount(sourceId: string): Promise<number> {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const result = await this.db
+        .prepare('SELECT articles_stored FROM daily_source_stats WHERE source_id = ? AND date_tracked = ?')
+        .bind(sourceId, today)
+        .first() as any;
+      
+      return result?.articles_stored || 0;
+    } catch (error) {
+      console.warn(`[RSS] Error getting today's count for ${sourceId}:`, error);
+      return 0;
+    }
+  }
+
+  /**
+   * Fetch and parse a single RSS feed with configurable limits
+   */
+  private async fetchAndParseFeed(source: RSSSource, maxArticles?: number): Promise<Article[]> {
     // Fetch RSS feed with proper headers
     const response = await fetch(source.url, {
       headers: {
@@ -168,7 +316,8 @@ export class RSSFeedService {
     // Convert RSS items to our Article format
     const articles: Article[] = [];
     
-    for (const item of items.slice(0, 50)) { // Limit to 50 articles per fetch
+    const articleLimit = maxArticles || 50;
+    for (const item of items.slice(0, articleLimit)) { // Use configurable limit
       try {
         const article = await this.parseRSSItem(item, source);
         if (article) {
@@ -468,5 +617,197 @@ export class RSSFeedService {
     // Add timestamp to ensure uniqueness
     const timestamp = Date.now().toString().slice(-6);
     return `${baseSlug}-${timestamp}`;
+  }
+
+  // ===================================================================
+  // BULK PULL SPECIFIC METHODS
+  // ===================================================================
+
+  /**
+   * Fetch and parse feed with bulk pull settings (higher limits, older articles)
+   */
+  private async fetchAndParseFeedBulk(
+    source: RSSSource, 
+    maxArticles: number, 
+    includeOlderArticles: boolean
+  ): Promise<Article[]> {
+    // Use RSS URL if available, otherwise use main URL + /feed/
+    const feedUrl = source.rss_url || source.url + '/feed/';
+    
+    // Fetch RSS feed with proper headers
+    const response = await fetch(feedUrl, {
+      headers: {
+        'User-Agent': 'Harare Metro News Aggregator 2.0 (Bulk Pull)',
+        'Accept': 'application/rss+xml, application/xml, text/xml',
+        'Cache-Control': 'no-cache'
+      },
+      timeout: 45000 // Longer timeout for bulk operations
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const xmlText = await response.text();
+    const feedData = this.parser.parse(xmlText);
+    
+    // Handle different RSS/Atom feed structures
+    const channel = feedData.rss?.channel || feedData.feed || feedData;
+    const items = channel.item || channel.entry || [];
+    
+    if (!Array.isArray(items)) {
+      throw new Error('No articles found in RSS feed');
+    }
+
+    // Convert RSS items to our Article format with bulk settings
+    const articles: Article[] = [];
+    
+    // Get system configuration for max article age if including older articles
+    let maxAge = 30; // Default 30 days
+    if (!includeOlderArticles) {
+      maxAge = 7; // Only last week for regular bulk pull
+    }
+    
+    const cutoffDate = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);
+    
+    for (const item of items.slice(0, maxArticles)) {
+      try {
+        const article = await this.parseRSSItem(item, source);
+        if (article) {
+          // Check article age if configured
+          if (includeOlderArticles || new Date(article.published_at) > cutoffDate) {
+            articles.push(article);
+          }
+        }
+      } catch (error) {
+        console.warn(`[RSS] Error parsing bulk item from ${source.name}:`, error);
+      }
+    }
+    
+    return articles;
+  }
+
+  /**
+   * Store articles with enhanced field population testing for bulk operations
+   */
+  private async storeArticlesBulk(articles: Article[], source: RSSSource, testMode: boolean = false): Promise<number> {
+    let newCount = 0;
+    
+    // Get valid category IDs to prevent FOREIGN KEY constraints
+    const categoriesQuery = await this.db
+      .prepare('SELECT id FROM categories')
+      .all();
+    const validCategoryIds = new Set(categoriesQuery.results.map((cat: any) => cat.id));
+    
+    for (const article of articles) {
+      try {
+        // Check if article already exists (prevent duplicates)
+        const existing = await this.db
+          .prepare('SELECT id FROM articles WHERE original_url = ? OR rss_guid = ?')
+          .bind(article.original_url, article.rss_guid)
+          .first();
+        
+        if (existing) {
+          if (testMode) {
+            console.log(`[RSS] [TEST] Duplicate article skipped: "${article.title}"`);
+          }
+          continue; // Skip duplicate articles
+        }
+
+        // Validate category_id - use 'general' if invalid
+        let categoryId = article.category_id;
+        if (!validCategoryIds.has(categoryId)) {
+          categoryId = 'general'; // Fallback to general category
+          if (testMode) {
+            console.warn(`[RSS] [TEST] Invalid category_id "${article.category_id}" for article "${article.title}", using 'general'`);
+          }
+        }
+
+        // Enhanced field population testing in test mode
+        if (testMode) {
+          console.log(`[RSS] [TEST] Article fields for "${article.title.substring(0, 50)}...":`, {
+            hasTitle: !!article.title,
+            hasDescription: !!article.description,
+            hasAuthor: !!article.author,
+            hasSource: !!article.source,
+            hasCategory: !!categoryId,
+            hasPublishedAt: !!article.published_at,
+            hasImageUrl: !!article.image_url,
+            hasOriginalUrl: !!article.original_url,
+            hasRssGuid: !!article.rss_guid,
+            descriptionLength: article.description?.length || 0,
+            publishedAt: article.published_at
+          });
+        }
+
+        // Insert new article (PERMANENT STORAGE)
+        await this.db
+          .prepare(`
+            INSERT INTO articles (
+              title, slug, description, author, source, source_id, source_url,
+              category_id, published_at, image_url, original_url, rss_guid,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+          `)
+          .bind(
+            article.title,
+            this.generateSlug(article.title),
+            article.description,
+            article.author,
+            article.source,
+            article.source_id,
+            article.source_url,
+            categoryId,
+            article.published_at,
+            article.image_url,
+            article.original_url,
+            article.rss_guid
+          )
+          .run();
+        
+        newCount++;
+        
+        if (testMode && newCount <= 5) {
+          console.log(`[RSS] [TEST] Successfully stored article #${newCount}: "${article.title}"`);
+        }
+        
+      } catch (error) {
+        console.warn(`[RSS] Error storing article "${article.title}":`, error);
+        if (testMode) {
+          console.error(`[RSS] [TEST] Error details for "${article.title}":`, error.message);
+        }
+      }
+    }
+    
+    return newCount;
+  }
+
+  /**
+   * Get system configuration value
+   */
+  private async getSystemConfig(key: string, defaultValue: any): Promise<any> {
+    try {
+      const result = await this.db
+        .prepare('SELECT config_value, config_type FROM system_config WHERE config_key = ?')
+        .bind(key)
+        .first() as any;
+      
+      if (!result) return defaultValue;
+      
+      // Parse based on type
+      switch (result.config_type) {
+        case 'number':
+          return parseInt(result.config_value);
+        case 'boolean':
+          return result.config_value === 'true';
+        case 'json':
+          return JSON.parse(result.config_value);
+        default:
+          return result.config_value;
+      }
+    } catch (error) {
+      console.warn(`[RSS] Error getting system config ${key}:`, error);
+      return defaultValue;
+    }
   }
 }

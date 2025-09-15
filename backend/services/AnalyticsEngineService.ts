@@ -452,6 +452,43 @@ export class AnalyticsEngineService {
     }
   }
 
+  /**
+   * Generic event tracking method for admin operations
+   */
+  async trackEvent(eventType, data = {}) {
+    try {
+      const timestamp = Date.now();
+      
+      // Use NEWS_ANALYTICS as the default dataset for admin events
+      if (this.datasets.NEWS_ANALYTICS) {
+        this.datasets.NEWS_ANALYTICS.writeDataPoint({
+          blobs: [
+            eventType,                    // Event type
+            'admin_operation',            // Category
+            data.source || 'system',     // Source
+            'unknown',                    // Country
+            'web',                        // Device type
+            'system',                     // Browser
+            'admin',                      // Referrer
+            'admin_user'                  // User ID
+          ],
+          doubles: [
+            1,                            // Count
+            timestamp,                    // Timestamp
+            Object.keys(data).length      // Data complexity
+          ],
+          indexes: [eventType]            // Event type for sampling
+        });
+      }
+      
+      console.log(`[Analytics] Tracked event: ${eventType}`, data);
+      return { success: true };
+    } catch (error) {
+      console.warn(`[Analytics] Failed to track event ${eventType}:`, error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // ✅ UPDATE: Add PERFORMANCE_ANALYTICS to the summary
   getAnalyticsSummary() {
     return {
@@ -462,7 +499,8 @@ export class AnalyticsEngineService {
       })),
       supportedEvents: [
         'article_view', 'search_query', 'category_click', 
-        'user_interaction', 'page_view', 'performance_metric', 'error_event'
+        'user_interaction', 'page_view', 'performance_metric', 'error_event',
+        'initial_bulk_pull', 'zimbabwe_sources_added', 'ai_rss_refresh'
       ],
       status: 'ready'
     }

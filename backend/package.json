@@ -18,8 +18,10 @@
     "db:schema": "echo 'Database schema located at: ./worker/database/schema.sql'"
   },
   "dependencies": {
+    "@openauthjs/openauth": "^0.4.3",
+    "fast-xml-parser": "^4.4.1",
     "hono": "^4.9.7",
-    "fast-xml-parser": "^4.4.1"
+    "valibot": "^1.1.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250425.0",
