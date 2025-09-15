@@ -1,4 +1,4 @@
-import type { Route } from "./+types/article";
+import type { Route } from "./+types/$source.$slug";
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { AuthModal } from "../components/auth/AuthModal";
@@ -9,19 +9,20 @@ import { Heart, Bookmark, ExternalLink, ArrowLeft } from "lucide-react";
 import { buildApiUrl } from "../lib/api-utils";
 
 export function meta({ params }: Route.MetaArgs) {
+  const { source, slug } = params;
   return [
-    { title: `Article - Harare Metro` },
+    { title: `${source} - Harare Metro` },
     { name: "description", content: "Read the latest news from Zimbabwe's trusted sources" },
     { name: "keywords", content: "Zimbabwe news, Harare news, African news, breaking news" },
   ];
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const { id } = params;
+  const { source, slug } = params;
   
   try {
-    // Fetch single article from our D1 API
-    const apiUrl = buildApiUrl(request, `/api/article/${id}`);
+    // Fetch single article from our D1 API using source_id and slug
+    const apiUrl = buildApiUrl(request, `/api/article/by-source-slug`, new URLSearchParams({ source, slug }));
     const response = await fetch(apiUrl);
     const data = await response.json();
     

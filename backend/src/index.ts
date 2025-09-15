@@ -290,6 +290,42 @@ app.get("/api/search", async (c) => {
   }
 });
 
+// Article by source and slug endpoint
+app.get("/api/article/by-source-slug", async (c) => {
+  try {
+    const source = c.req.query("source");
+    const slug = c.req.query("slug");
+    
+    if (!source || !slug) {
+      return c.json({
+        error: "Both 'source' and 'slug' parameters are required",
+        timestamp: new Date().toISOString()
+      }, 400);
+    }
+    
+    const d1Service = new D1Service(c.env.ARTICLES_DB);
+    const article = await d1Service.getArticleBySourceSlug(source, slug);
+    
+    if (!article) {
+      return c.json({
+        error: "Article not found",
+        timestamp: new Date().toISOString()
+      }, 404);
+    }
+    
+    return c.json({
+      article,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return c.json({
+      error: "Failed to fetch article",
+      message: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString()
+    }, 500);
+  }
+});
+
 // Enhanced image handling with Cloudflare Images
 app.get("/api/image", async (c) => {
   try {
@@ -475,5 +511,124 @@ export async function scheduled(
     console.error("[CRON] RSS refresh failed:", error);
   }
 }
+
+// Dynamic PWA manifest endpoint
+app.get("/api/manifest.json", async (c) => {
+  try {
+    const d1Service = new D1Service(c.env.ARTICLES_DB);
+    const categories = await d1Service.getCategories();
+    
+    const shortcuts = categories
+      .filter(cat => cat.id !== 'all' && cat.enabled)
+      .slice(0, 4) // PWA spec recommends max 4 shortcuts
+      .map(category => ({
+        name: `${category.emoji || '📰'} ${category.name}`,
+        url: `/?category=${category.id}`,
+        description: `Browse ${category.name.toLowerCase()} news`
+      }));
+
+    const manifest = {
+      name: "Harare Metro - Zimbabwe News",
+      short_name: "Harare Metro",
+      description: "Zimbabwe's premier news aggregation platform with real-time updates",
+      start_url: "/",
+      display: "standalone",
+      background_color: "#00A651",
+      theme_color: "#00A651",
+      orientation: "portrait-primary",
+      scope: "/",
+      lang: "en",
+      dir: "ltr",
+      categories: ["news", "africa", "zimbabwe"],
+      icons: [
+        {
+          src: "/android-chrome-192x192.png",
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "any maskable"
+        },
+        {
+          src: "/android-chrome-512x512.png", 
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any maskable"
+        },
+        {
+          src: "/apple-touch-icon.png",
+          sizes: "180x180",
+          type: "image/png",
+          purpose: "any"
+        },
+        {
+          src: "/favicon-32x32.png",
+          sizes: "32x32", 
+          type: "image/png",
+          purpose: "any"
+        },
+        {
+          src: "/favicon-16x16.png",
+          sizes: "16x16",
+          type: "image/png", 
+          purpose: "any"
+        }
+      ],
+      shortcuts,
+      screenshots: [
+        {
+          src: "/og-image.png",
+          sizes: "1200x630",
+          type: "image/png",
+          form_factor: "wide",
+          label: "Harare Metro News Homepage"
+        }
+      ],
+      related_applications: [],
+      prefer_related_applications: false,
+      edge_side_panel: {
+        preferred_width: 400
+      }
+    };
+
+    // Set proper cache headers
+    c.header('Content-Type', 'application/manifest+json');
+    c.header('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    
+    return c.json(manifest);
+  } catch (error) {
+    return c.json({
+      error: "Failed to generate manifest",
+      message: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString()
+    }, 500);
+  }
+});
+
+// Dynamic categories endpoint for service worker
+app.get("/api/categories", async (c) => {
+  try {
+    const d1Service = new D1Service(c.env.ARTICLES_DB);
+    const categories = await d1Service.getCategories();
+    
+    // Set cache headers for service worker consumption
+    c.header('Content-Type', 'application/json');
+    c.header('Cache-Control', 'public, max-age=1800'); // Cache for 30 minutes
+    
+    return c.json({
+      categories: categories.map(cat => ({
+        id: cat.id,
+        name: cat.name, 
+        emoji: cat.emoji || '📰',
+        enabled: cat.enabled
+      })),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return c.json({
+      error: "Failed to fetch categories",
+      message: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString()
+    }, 500);
+  }
+});
 
 export default app;

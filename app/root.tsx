@@ -12,6 +12,9 @@ import "./app.css";
 import { AuthProvider } from "./contexts/AuthContext";
 
 export const links: Route.LinksFunction = () => [
+  // PWA Manifest - Dynamic from D1 database
+  { rel: "manifest", href: "/api/manifest.json" },
+  
   // Favicon links
   { rel: "icon", href: "/favicon.ico", sizes: "any" },
   { rel: "icon", href: "/favicon.png", type: "image/png" },

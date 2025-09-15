@@ -4,13 +4,13 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
 // Import our D1 services
-import { D1Service } from "../worker/database/D1Service.js";
-import { D1ConfigService } from "../worker/services/D1ConfigService.js";
-import { D1CacheService } from "../worker/services/D1CacheService.js";
-import { AnalyticsEngineService } from "../worker/services/AnalyticsEngineService.js";
+import { D1Service } from "../database/D1Service.js";
+import { D1ConfigService } from "../backend/workers/services/D1ConfigService.js";
+import { D1CacheService } from "../backend/workers/services/D1CacheService.js";
+import { AnalyticsEngineService } from "../backend/workers/services/AnalyticsEngineService.js";
 import { RSSFeedService } from "./services/RSSFeedService.js";
-import { CategoryManager } from "./services/CategoryManager.js";
-import { NewsSourceManager } from "./services/NewsSourceManager.js";
+import { CategoryManager } from "./services/CategoryManager.ts";
+import { NewsSourceManager } from "./services/NewsSourceManager.ts";
 
 // Types for Cloudflare bindings
 type Bindings = {

@@ -10,26 +10,37 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const SITE_URL = 'https://www.hararemetro.co.zw'
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://admin.hararemetro.co.zw'
 
-// All available categories from the app (from database/migrations/002_seed_initial_data.sql)
-const CATEGORIES = [
-  'all',
-  'politics',
-  'economy',
-  'technology',
-  'sports',
-  'health',
-  'education',
-  'entertainment',
-  'international',
-  'general',
-  'harare',
-  'agriculture',
-  'crime',
-  'environment'
-]
+// Fetch categories from API
+async function fetchCategories() {
+  try {
+    console.log('Fetching categories from D1 database via API...')
+    const response = await fetch(`${BACKEND_API_URL}/api/categories`)
+    
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    console.log(`✅ Fetched ${data.categories.length} categories from D1 database`)
+    
+    return data.categories.filter(cat => cat.enabled).map(cat => cat.id)
+  } catch (error) {
+    console.warn('⚠️  Failed to fetch categories from API:', error.message)
+    console.log('Using fallback categories...')
+    
+    // Fallback categories if API is unavailable
+    return [
+      'all', 'politics', 'economy', 'technology', 'sports', 'health',
+      'education', 'entertainment', 'international', 'general', 'harare',
+      'agriculture', 'crime', 'environment'
+    ]
+  }
+}
 
-function generateSitemap() {
+async function generateSitemap() {
+  const categories = await fetchCategories()
   const today = new Date().toISOString().split('T')[0]
   
   let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -44,7 +55,7 @@ function generateSitemap() {
   </url>
   
   <!-- Category pages -->
-${CATEGORIES.map(category => `  <url>
+${categories.map(category => `  <url>
     <loc>${SITE_URL}/?category=${category}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>hourly</changefreq>

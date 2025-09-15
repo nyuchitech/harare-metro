@@ -224,7 +224,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                   <div className="flex flex-col space-y-3">
                     <div className="flex items-center justify-between">
                       <a 
-                        href={`/article/${article.id}`}
+                        href={`/${article.source_id}/${article.slug}`}
                         className="inline-flex items-center space-x-1 text-zw-green text-sm font-medium hover:text-zw-green/80 transition-colors"
                       >
                         <span>Read More</span>

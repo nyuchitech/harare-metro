@@ -35,22 +35,22 @@
   ],
 
   /**
-   * Analytics Engine - User interaction tracking
+   * Analytics Engine - User interaction tracking (handled by frontend worker)
    */
-  "analytics_engine_datasets": [
-    {
-      "binding": "CATEGORY_CLICKS",
-      "dataset": "category_clicks"
-    },
-    {
-      "binding": "NEWS_INTERACTIONS",
-      "dataset": "news_interactions"
-    },
-    {
-      "binding": "SEARCH_QUERIES",
-      "dataset": "search_queries"
-    }
-  ],
+  // "analytics_engine_datasets": [
+  //   {
+  //     "binding": "CATEGORY_CLICKS",
+  //     "dataset": "category_clicks"
+  //   },
+  //   {
+  //     "binding": "NEWS_INTERACTIONS",
+  //     "dataset": "news_interactions"
+  //   },
+  //   {
+  //     "binding": "SEARCH_QUERIES",
+  //     "dataset": "search_queries"
+  //   }
+  // ],
 
   /**
    * Cloudflare Images - Image storage and optimization
@@ -61,11 +61,11 @@
   // },
 
   /**
-   * Cron Triggers - Background RSS refresh
+   * Cron Triggers - Background RSS refresh (handled by frontend worker)
    */
-  "triggers": {
-    "crons": ["0 * * * *"]
-  },
+  // "triggers": {
+  //   "crons": ["0 * * * *"]
+  // },
   "observability": {
     "enabled": true
   },

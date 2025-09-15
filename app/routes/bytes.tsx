@@ -225,7 +225,7 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
           break;
         case 'Enter':
           e.preventDefault();
-          window.location.href = `/article/${articles[currentIndex]?.id}`;
+          window.location.href = `/${articles[currentIndex]?.source_id}/${articles[currentIndex]?.slug}`;
           break;
         case 'r':
           e.preventDefault();
@@ -258,10 +258,10 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
       navigator.share({
         title: article.title,
         text: article.description,
-        url: window.location.origin + `/article/${article.id}`
+        url: window.location.origin + `/${article.source_id}/${article.slug}`
       });
     } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.origin + `/article/${article.id}`);
+      navigator.clipboard.writeText(window.location.origin + `/${article.source_id}/${article.slug}`);
     }
   }, []);
 
@@ -371,7 +371,7 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
                   {/* Actions */}
                   <div className="flex space-x-2">
                     <a
-                      href={`/article/${article.id}`}
+                      href={`/${article.source_id}/${article.slug}`}
                       className="inline-flex items-center space-x-1 px-4 py-2 bg-white/90 text-black hover:bg-white text-xs font-medium rounded-full transition-colors"
                     >
                       Read More

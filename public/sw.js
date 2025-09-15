@@ -58,23 +58,35 @@ const CACHE_STRATEGIES = {
   }
 };
 
-// Install event - cache static assets
+// Install event - cache static assets and fetch categories
 self.addEventListener('install', event => {
   console.log('[SW] Installing Service Worker...', CACHE_VERSION);
   
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then(cache => {
-        console.log('[SW] Caching static assets...');
-        return cache.addAll(STATIC_CACHE_URLS);
-      })
-      .then(() => {
-        console.log('[SW] Static assets cached successfully');
-        return self.skipWaiting();
-      })
-      .catch(error => {
-        console.error('[SW] Failed to cache static assets:', error);
-      })
+    Promise.all([
+      // Cache static assets
+      caches.open(STATIC_CACHE)
+        .then(cache => {
+          console.log('[SW] Caching static assets...');
+          return cache.addAll(STATIC_CACHE_URLS);
+        })
+        .then(() => {
+          console.log('[SW] Static assets cached successfully');
+        }),
+      
+      // Fetch categories on install
+      fetchCategories()
+        .then(categories => {
+          console.log('[SW] Initial categories fetch completed:', categories.length, 'categories');
+        })
+    ])
+    .then(() => {
+      console.log('[SW] Service Worker installation completed');
+      return self.skipWaiting();
+    })
+    .catch(error => {
+      console.error('[SW] Failed to install service worker:', error);
+    })
   );
 });
 
@@ -173,11 +185,12 @@ async function handleApiRequest(request) {
     
     // Return offline response for news feeds
     if (url.pathname.includes('/feeds') || url.pathname.includes('/categories')) {
+      const categories = await fetchCategories();
       return new Response(JSON.stringify({
         offline: true,
         message: 'You are currently offline. Showing cached content when available.',
         articles: [],
-        categories: getOfflineCategories()
+        categories: categories
       }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -313,6 +326,39 @@ function getPlaceholderImage() {
   });
 }
 
+// Dynamic categories cache
+let categoriesCache = null;
+let categoriesCacheTime = 0;
+const CATEGORIES_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+// Fetch categories from API with caching
+async function fetchCategories() {
+  const now = Date.now();
+  
+  // Return cached categories if still valid
+  if (categoriesCache && (now - categoriesCacheTime) < CATEGORIES_CACHE_TTL) {
+    return categoriesCache;
+  }
+  
+  try {
+    console.log('[SW] Fetching categories from API...');
+    const response = await fetch('/api/categories');
+    
+    if (response.ok) {
+      const data = await response.json();
+      categoriesCache = data.categories;
+      categoriesCacheTime = now;
+      console.log('[SW] Categories updated:', categoriesCache.length, 'categories');
+      return categoriesCache;
+    }
+  } catch (error) {
+    console.warn('[SW] Failed to fetch categories:', error);
+  }
+  
+  // Return fallback categories if API fails
+  return getOfflineCategories();
+}
+
 function getOfflineCategories() {
   return [
     { id: 'all', name: 'All News', emoji: '📰' },
@@ -328,11 +374,13 @@ function getOfflineCategories() {
 self.addEventListener('sync', event => {
   if (event.tag === 'background-sync') {
     event.waitUntil(refreshCacheOnReconnect());
+  } else if (event.tag === 'categories-sync') {
+    event.waitUntil(refreshCategories());
   }
 });
 
 async function refreshCacheOnReconnect() {
-  console.log('[SW] Background sync triggered - refreshing cache');
+  console.log('[SW] Background sync triggered - refreshing cache and categories');
   try {
     // Clear expired API cache entries
     const cache = await caches.open(API_CACHE);
@@ -347,8 +395,37 @@ async function refreshCacheOnReconnect() {
         console.log('[SW] Deleted expired cache entry:', request.url);
       }
     }
+    
+    // Refresh categories
+    await refreshCategories();
+    
   } catch (error) {
     console.error('[SW] Background sync failed:', error);
+  }
+}
+
+async function refreshCategories() {
+  console.log('[SW] Refreshing categories from database...');
+  try {
+    // Force refresh categories by clearing cache
+    categoriesCache = null;
+    categoriesCacheTime = 0;
+    
+    // Fetch fresh categories
+    const categories = await fetchCategories();
+    console.log('[SW] Categories refreshed:', categories.length, 'categories');
+    
+    // Schedule next category refresh (every 30 minutes)
+    setTimeout(() => {
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SCHEDULE_CATEGORIES_SYNC'
+        });
+      }
+    }, 30 * 60 * 1000);
+    
+  } catch (error) {
+    console.error('[SW] Categories refresh failed:', error);
   }
 }
 
@@ -361,9 +438,28 @@ self.addEventListener('message', event => {
   if (event.data && event.data.type === 'CACHE_UPDATE') {
     event.waitUntil(updateCache());
   }
+  
+  if (event.data && event.data.type === 'REFRESH_CATEGORIES') {
+    event.waitUntil(refreshCategories());
+  }
+  
+  if (event.data && event.data.type === 'SCHEDULE_CATEGORIES_SYNC') {
+    // Register background sync for categories
+    self.registration.sync.register('categories-sync');
+  }
 });
 
 async function updateCache() {
   console.log('[SW] Manual cache update requested');
-  // Implement manual cache refresh logic here
+  try {
+    // Clear all caches and refresh
+    await refreshCacheOnReconnect();
+    
+    // Also refresh categories
+    await refreshCategories();
+    
+    console.log('[SW] Manual cache update completed');
+  } catch (error) {
+    console.error('[SW] Manual cache update failed:', error);
+  }
 }

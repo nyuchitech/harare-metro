@@ -291,6 +291,31 @@ export class D1Service {
     }
   }
 
+  async getArticleBySourceSlug(sourceId, slug) {
+    try {
+      const result = await this.db.prepare(`
+        SELECT a.*, c.name as category_name, c.emoji as category_emoji, c.color as category_color
+        FROM articles a
+        LEFT JOIN categories c ON a.category_id = c.id
+        WHERE a.source_id = ? AND a.slug = ? AND a.status = 'published'
+        LIMIT 1
+      `).bind(sourceId, slug).first()
+      
+      if (!result) {
+        return null
+      }
+      
+      return {
+        ...result,
+        tags: result.tags ? JSON.parse(result.tags) : [],
+        priority: Boolean(result.priority)
+      }
+    } catch (error) {
+      console.error('[D1] Error getting article by source and slug:', error)
+      return null
+    }
+  }
+
   async getArticleCount(category = null) {
     try {
       let query = "SELECT COUNT(*) as count FROM articles WHERE status = 'published'"

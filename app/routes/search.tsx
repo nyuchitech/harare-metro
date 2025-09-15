@@ -22,13 +22,29 @@ export async function loader({ request }: Route.LoaderArgs) {
   const category = url.searchParams.get('category') || null;
   const limit = url.searchParams.get('limit') || '24';
   
-  if (!query) {
-    return {
-      results: [],
-      query: '',
-      total: 0,
-      categories: []
-    };
+  try {
+    // Always fetch categories from D1 database for suggestions
+    const categoriesUrl = buildApiUrl(request, '/api/categories');
+    const categoriesResponse = await fetch(categoriesUrl);
+    const categoriesData = await categoriesResponse.json();
+    
+    if (!query) {
+      return {
+        results: [],
+        query: '',
+        total: 0,
+        categories: categoriesData.categories || []
+      };
+    }
+  } catch (error) {
+    if (!query) {
+      return {
+        results: [],
+        query: '',
+        total: 0,
+        categories: []
+      };
+    }
   }
   
   try {
@@ -46,8 +62,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     const response = await fetch(apiUrl);
     const data = await response.json();
     
-    // Fetch categories for filter
-    const categoriesUrl = buildApiUrl(request, '/api/config/categories');
+    // Fetch categories for filter from D1 database
+    const categoriesUrl = buildApiUrl(request, '/api/categories');
     const categoriesResponse = await fetch(categoriesUrl);
     const categoriesData = await categoriesResponse.json();
     
@@ -204,13 +220,13 @@ export default function Search({ loaderData }: Route.ComponentProps) {
                 Find articles from trusted Zimbabwe news sources. Search by keywords, topics, or current events.
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
-                {['politics', 'economy', 'sports', 'technology'].map((topic) => (
+                {categories.slice(0, 6).map((category) => (
                   <a
-                    key={topic}
-                    href={`/search?q=${topic}`}
+                    key={category.id}
+                    href={`/search?q=${category.name.toLowerCase()}`}
                     className="px-3 py-1 bg-muted hover:bg-muted/80 text-foreground text-sm rounded-full transition-colors"
                   >
-                    {topic}
+                    {category.emoji} {category.name}
                   </a>
                 ))}
               </div>
@@ -278,7 +294,7 @@ export default function Search({ loaderData }: Route.ComponentProps) {
                   <div className="flex flex-col space-y-3">
                     <div className="flex items-center justify-between">
                       <a 
-                        href={`/article/${article.id}`}
+                        href={`/${article.source_id}/${article.slug}`}
                         className="inline-flex items-center space-x-1 text-zw-green text-sm font-medium hover:text-zw-green/80 transition-colors"
                       >
                         <span>Read More</span>

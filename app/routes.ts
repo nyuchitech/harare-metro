@@ -4,5 +4,5 @@ export default [
   index("routes/home.tsx"),
   route("search", "routes/search.tsx"),
   route("bytes", "routes/bytes.tsx"),
-  route("article/:id", "routes/article.tsx"),
+  route(":source/:slug", "routes/$source.$slug.tsx"),
 ] satisfies RouteConfig;
