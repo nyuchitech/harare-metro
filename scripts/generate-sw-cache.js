@@ -18,12 +18,24 @@ function getAllFiles(dirPath, arrayOfFiles = []) {
   return arrayOfFiles
 }
 
-// Generate cache manifest
+// Generate cache manifest for both build/client and dist directories
+const buildPath = path.resolve('./build/client')
 const distPath = path.resolve('./dist')
-const files = getAllFiles(distPath)
-  .map(file => file.replace(distPath, ''))
-  .map(file => file.replace(/\\/g, '/'))
-  .filter(file => !file.includes('sw.js'))
+let files = []
+
+// Check build directory first (React Router build)
+if (fs.existsSync(buildPath)) {
+  files = getAllFiles(buildPath)
+    .map(file => file.replace(buildPath, ''))
+    .map(file => file.replace(/\\/g, '/'))
+    .filter(file => !file.includes('sw.js') && !file.includes('.vite'))
+} else if (fs.existsSync(distPath)) {
+  // Fallback to dist directory
+  files = getAllFiles(distPath)
+    .map(file => file.replace(distPath, ''))
+    .map(file => file.replace(/\\/g, '/'))
+    .filter(file => !file.includes('sw.js'))
+}
 
 const cacheManifest = {
   static: files,
@@ -32,10 +44,12 @@ const cacheManifest = {
 
 console.log('📦 Generated cache manifest:', cacheManifest.static.length, 'files')
 
-// Update service worker with cache list
-const swPath = path.resolve('./dist/sw.js')
-if (fs.existsSync(swPath)) {
-  let swContent = fs.readFileSync(swPath, 'utf8')
+// Update service worker with cache list in both public and build directories
+const publicSwPath = path.resolve('./public/sw.js')
+const buildSwPath = path.resolve('./build/client/sw.js')
+
+if (fs.existsSync(publicSwPath)) {
+  let swContent = fs.readFileSync(publicSwPath, 'utf8')
   
   // Replace cache URLs
   swContent = swContent.replace(
@@ -43,6 +57,14 @@ if (fs.existsSync(swPath)) {
     `const STATIC_CACHE_URLS = ${JSON.stringify(['/', ...cacheManifest.static], null, 2)}`
   )
   
-  fs.writeFileSync(swPath, swContent)
-  console.log('✅ Service worker updated with cache manifest')
+  fs.writeFileSync(publicSwPath, swContent)
+  console.log('✅ Service worker updated at:', publicSwPath)
+  
+  // Also update build directory if it exists
+  if (fs.existsSync(path.dirname(buildSwPath))) {
+    fs.writeFileSync(buildSwPath, swContent)
+    console.log('✅ Service worker also updated at:', buildSwPath)
+  }
+} else {
+  console.log('⚠️ Service worker not found at:', publicSwPath)
 }

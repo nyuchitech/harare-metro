@@ -47,6 +47,9 @@
     "dev:backend": "cd backend && npm run dev",
     "install:backend": "cd backend && npm install",
     "deploy:frontend": "./scripts/deploy-all.sh frontend",
-    "deploy:test": "./scripts/deploy-all.sh test"
+    "deploy:test": "./scripts/deploy-all.sh test",
+    "generate:sitemap": "node scripts/generate-sitemap.js",
+    "generate:sw-cache": "node scripts/generate-sw-cache.js",
+    "generate:pwa": "npm run generate:sitemap && npm run generate:sw-cache"
   }
 }

@@ -11,23 +11,22 @@ const __dirname = path.dirname(__filename)
 
 const SITE_URL = 'https://www.hararemetro.co.zw'
 
-// All available categories from the app
+// All available categories from the app (from database/migrations/002_seed_initial_data.sql)
 const CATEGORIES = [
+  'all',
   'politics',
   'economy',
-  'business',
-  'sports',
-  'harare',
-  'agriculture',
   'technology',
+  'sports',
   'health',
   'education',
   'entertainment',
-  'environment',
-  'crime',
   'international',
-  'lifestyle',
-  'finance'
+  'general',
+  'harare',
+  'agriculture',
+  'crime',
+  'environment'
 ]
 
 function generateSitemap() {
@@ -61,12 +60,20 @@ ${CATEGORIES.map(category => `  <url>
   </url>
 </urlset>`
 
-  // Write sitemap to public directory
+  // Write sitemap to both public and build directories
   const publicDir = path.join(__dirname, '..', 'public')
+  const buildDir = path.join(__dirname, '..', 'build', 'client')
   const sitemapPath = path.join(publicDir, 'sitemap.xml')
+  const buildSitemapPath = path.join(buildDir, 'sitemap.xml')
   
   fs.writeFileSync(sitemapPath, sitemap, 'utf-8')
   console.log(`✅ Sitemap generated at: ${sitemapPath}`)
+  
+  // Also write to build directory if it exists
+  if (fs.existsSync(buildDir)) {
+    fs.writeFileSync(buildSitemapPath, sitemap, 'utf-8')
+    console.log(`✅ Sitemap also generated at: ${buildSitemapPath}`)
+  }
   
   // Also generate robots.txt
   const robotsTxt = `# Harare Metro Robots.txt
@@ -89,8 +96,16 @@ Crawl-delay: 1
 # international, lifestyle, finance`
 
   const robotsPath = path.join(publicDir, 'robots.txt')
+  const buildRobotsPath = path.join(buildDir, 'robots.txt')
+  
   fs.writeFileSync(robotsPath, robotsTxt, 'utf-8')
   console.log(`✅ robots.txt generated at: ${robotsPath}`)
+  
+  // Also write robots.txt to build directory if it exists
+  if (fs.existsSync(buildDir)) {
+    fs.writeFileSync(buildRobotsPath, robotsTxt, 'utf-8')
+    console.log(`✅ robots.txt also generated at: ${buildRobotsPath}`)
+  }
 }
 
 // Run the generator

@@ -1,0 +1,99 @@
+{
+  "name": "Harare Metro - Zimbabwe News",
+  "short_name": "Harare Metro",
+  "description": "Zimbabwe's premier news aggregation platform featuring politics, economy, sports, technology, and local news from trusted sources.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#00A651",
+  "theme_color": "#00A651",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["news", "politics", "business", "sports", "zimbabwe"],
+  "lang": "en-ZW",
+  "dir": "ltr",
+  "scope": "/",
+  "id": "harare-metro-zw",
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Politics",
+      "short_name": "Politics",
+      "description": "Latest political news from Zimbabwe",
+      "url": "/?category=politics",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Economy",
+      "short_name": "Economy",
+      "description": "Economic and business news",
+      "url": "/?category=economy",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Sports",
+      "short_name": "Sports",
+      "description": "Zimbabwe sports news and updates",
+      "url": "/?category=sports",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Harare",
+      "short_name": "Harare",
+      "description": "Local news from Harare city",
+      "url": "/?category=harare",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [],
+  "protocol_handlers": [],
+  "file_handlers": []
+}

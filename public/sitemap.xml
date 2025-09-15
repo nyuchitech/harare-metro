@@ -4,99 +4,93 @@
   <!-- Main page -->
   <url>
     <loc>https://www.hararemetro.co.zw/</loc>
-    <lastmod>2025-06-03</lastmod>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
   </url>
   
   <!-- Category pages -->
   <url>
+    <loc>https://www.hararemetro.co.zw/?category=all</loc>
+    <lastmod>2025-09-15</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://www.hararemetro.co.zw/?category=politics</loc>
-    <lastmod>2025-06-03</lastmod>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.hararemetro.co.zw/?category=economy</loc>
-    <lastmod>2025-06-03</lastmod>
-    <changefreq>hourly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.hararemetro.co.zw/?category=business</loc>
-    <lastmod>2025-06-03</lastmod>
-    <changefreq>hourly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.hararemetro.co.zw/?category=sports</loc>
-    <lastmod>2025-06-03</lastmod>
-    <changefreq>hourly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.hararemetro.co.zw/?category=harare</loc>
-    <lastmod>2025-06-03</lastmod>
-    <changefreq>hourly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.hararemetro.co.zw/?category=agriculture</loc>
-    <lastmod>2025-06-03</lastmod>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.hararemetro.co.zw/?category=technology</loc>
-    <lastmod>2025-06-03</lastmod>
+    <lastmod>2025-09-15</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.hararemetro.co.zw/?category=sports</loc>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.hararemetro.co.zw/?category=health</loc>
-    <lastmod>2025-06-03</lastmod>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.hararemetro.co.zw/?category=education</loc>
-    <lastmod>2025-06-03</lastmod>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.hararemetro.co.zw/?category=entertainment</loc>
-    <lastmod>2025-06-03</lastmod>
-    <changefreq>hourly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.hararemetro.co.zw/?category=environment</loc>
-    <lastmod>2025-06-03</lastmod>
-    <changefreq>hourly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.hararemetro.co.zw/?category=crime</loc>
-    <lastmod>2025-06-03</lastmod>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.hararemetro.co.zw/?category=international</loc>
-    <lastmod>2025-06-03</lastmod>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.hararemetro.co.zw/?category=lifestyle</loc>
-    <lastmod>2025-06-03</lastmod>
+    <loc>https://www.hararemetro.co.zw/?category=general</loc>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.hararemetro.co.zw/?category=finance</loc>
-    <lastmod>2025-06-03</lastmod>
+    <loc>https://www.hararemetro.co.zw/?category=harare</loc>
+    <lastmod>2025-09-15</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.hararemetro.co.zw/?category=agriculture</loc>
+    <lastmod>2025-09-15</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.hararemetro.co.zw/?category=crime</loc>
+    <lastmod>2025-09-15</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.hararemetro.co.zw/?category=environment</loc>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -104,7 +98,7 @@
   <!-- API Documentation -->
   <url>
     <loc>https://www.hararemetro.co.zw/api/schema</loc>
-    <lastmod>2025-06-03</lastmod>
+    <lastmod>2025-09-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
