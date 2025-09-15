@@ -65,7 +65,7 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
     if (diffInHours < 24) return `${diffInHours}h`;
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d`;
-    return date.toLocaleDateString();
+    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format consistently
   }, []);
 
   // Smooth snap scrolling to specific article

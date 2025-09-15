@@ -195,14 +195,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
                     <div className="flex justify-between">
                       <span className="text-gray-400">Member since</span>
                       <span className="text-white">
-                        {new Date(user.created_at).toLocaleDateString()}
+                        {new Date(user.created_at).toISOString().split('T')[0]}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Last sign in</span>
                       <span className="text-white">
                         {user.last_sign_in_at ? 
-                          new Date(user.last_sign_in_at).toLocaleDateString() : 
+                          new Date(user.last_sign_in_at).toISOString().split('T')[0] : 
                           'N/A'
                         }
                       </span>
@@ -235,7 +235,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
                         </p>
                         <div className="flex justify-between items-center text-xs text-gray-500">
                           <span>{bookmark.source}</span>
-                          <span>{new Date(bookmark.created_at).toLocaleDateString()}</span>
+                          <span>{new Date(bookmark.created_at).toISOString().split('T')[0]}</span>
                         </div>
                       </div>
                     ))}

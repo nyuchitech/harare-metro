@@ -115,7 +115,7 @@ export default function Article({ loaderData }: Route.ComponentProps) {
                   {article.source || 'Unknown'}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  {article.published_at ? new Date(article.published_at).toLocaleDateString() : 'Today'}
+                  {article.published_at ? new Date(article.published_at).toISOString().split('T')[0] : 'Today'}
                 </span>
               </div>
               
