@@ -42,6 +42,8 @@ jobs:
     - name: Test backend build
       run: |
         cd backend
+        # Clean up any conflicting wrangler configs
+        rm -rf ../.wrangler/deploy/ || true
         npm run test
 
   deploy-backend:
@@ -69,6 +71,8 @@ jobs:
     - name: Deploy backend to Cloudflare
       run: |
         cd backend
+        # Clean up any conflicting wrangler configs
+        rm -rf ../.wrangler/deploy/ || true
         # Set secrets before deploying
         echo "${{ secrets.SUPABASE_SERVICE_KEY }}" | wrangler secret put SUPABASE_SERVICE_KEY
         echo "${{ secrets.SUPABASE_URL }}" | wrangler secret put SUPABASE_URL
