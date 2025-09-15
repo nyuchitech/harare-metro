@@ -8,6 +8,7 @@ import {
   Home
 } from 'lucide-react'
 import Logo from './Logo'
+import type { User, Profile } from '~/types/api'
 
 interface HeaderNavigationProps {
   onSearchClick?: () => void
@@ -15,8 +16,8 @@ interface HeaderNavigationProps {
   onHomeClick?: () => void
   currentView?: string
   isAuthenticated?: boolean
-  user?: any
-  profile?: any
+  user?: User | null
+  profile?: Profile | null
   className?: string
 }
 

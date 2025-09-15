@@ -1,30 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-
-// Import Supabase types
-interface User {
-  id: string;
-  email?: string;
-  created_at: string;
-  last_sign_in_at?: string;
-}
-
-interface Session {
-  user: User;
-  access_token: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<any>;
-  signIn: (email: string, password: string) => Promise<any>;
-  signInWithOAuth: (provider: 'google' | 'github') => Promise<any>;
-  signOut: () => Promise<any>;
-  resetPassword: (email: string) => Promise<any>;
-  updatePassword: (password: string) => Promise<any>;
-  isConfigured: boolean;
-}
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import type { AuthContextType, User, Session, AuthResponse, AuthError } from '~/types/api';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -45,7 +20,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isConfigured, setIsConfigured] = useState(false);
-  const [supabaseClient, setSupabaseClient] = useState<any>(null);
+  const [supabaseClient, setSupabaseClient] = useState<{
+    supabase: any;
+    auth: any;
+  } | null>(null);
 
   useEffect(() => {
     // Only run on client side
@@ -101,81 +79,81 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initAuth();
   }, []);
 
-  const signUp = async (email: string, password: string, metadata?: Record<string, any>) => {
+  const signUp = async (email: string, password: string, metadata?: Record<string, unknown>): Promise<AuthResponse> => {
     if (!supabaseClient?.auth) {
-      return { data: null, error: { message: 'Supabase not initialized' } };
+      return { data: { user: null, session: null }, error: { message: 'Supabase not initialized' } as AuthError };
     }
     try {
       const result = await supabaseClient.auth.signUp(email, password, metadata);
       return result;
     } catch (error) {
       console.error('Error in signUp:', error);
-      return { data: null, error };
+      return { data: { user: null, session: null }, error: error as AuthError };
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<AuthResponse> => {
     if (!supabaseClient?.auth) {
-      return { data: null, error: { message: 'Supabase not initialized' } };
+      return { data: { user: null, session: null }, error: { message: 'Supabase not initialized' } as AuthError };
     }
     try {
       const result = await supabaseClient.auth.signIn(email, password);
       return result;
     } catch (error) {
       console.error('Error in signIn:', error);
-      return { data: null, error };
+      return { data: { user: null, session: null }, error: error as AuthError };
     }
   };
 
-  const signInWithOAuth = async (provider: 'google' | 'github') => {
+  const signInWithOAuth = async (provider: 'google' | 'github'): Promise<AuthResponse> => {
     if (!supabaseClient?.auth) {
-      return { data: null, error: { message: 'Supabase not initialized' } };
+      return { data: { user: null, session: null }, error: { message: 'Supabase not initialized' } as AuthError };
     }
     try {
       const result = await supabaseClient.auth.signInWithOAuth(provider);
       return result;
     } catch (error) {
       console.error('Error in signInWithOAuth:', error);
-      return { data: null, error };
+      return { data: { user: null, session: null }, error: error as AuthError };
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<{ error: AuthError | null }> => {
     if (!supabaseClient?.auth) {
-      return { error: { message: 'Supabase not initialized' } };
+      return { error: { message: 'Supabase not initialized' } as AuthError };
     }
     try {
       const result = await supabaseClient.auth.signOut();
       return result;
     } catch (error) {
       console.error('Error in signOut:', error);
-      return { error };
+      return { error: error as AuthError };
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = async (email: string): Promise<AuthResponse> => {
     if (!supabaseClient?.auth) {
-      return { data: null, error: { message: 'Supabase not initialized' } };
+      return { data: { user: null, session: null }, error: { message: 'Supabase not initialized' } as AuthError };
     }
     try {
       const result = await supabaseClient.auth.resetPassword(email);
       return result;
     } catch (error) {
       console.error('Error in resetPassword:', error);
-      return { data: null, error };
+      return { data: { user: null, session: null }, error: error as AuthError };
     }
   };
 
-  const updatePassword = async (password: string) => {
+  const updatePassword = async (password: string): Promise<AuthResponse> => {
     if (!supabaseClient?.auth) {
-      return { data: null, error: { message: 'Supabase not initialized' } };
+      return { data: { user: null, session: null }, error: { message: 'Supabase not initialized' } as AuthError };
     }
     try {
       const result = await supabaseClient.auth.updatePassword(password);
       return result;
     } catch (error) {
       console.error('Error in updatePassword:', error);
-      return { data: null, error };
+      return { data: { user: null, session: null }, error: error as AuthError };
     }
   };
 
