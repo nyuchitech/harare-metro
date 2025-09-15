@@ -32,12 +32,12 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if we're in the right directory
-if [ ! -f "package.json" ] || [ ! -d "../harare-metro-backend" ]; then
-    print_error "Please run this script from the harare-metro directory"
-    print_error "Expected structure:"
-    print_error "  harare-metro/ (frontend)"
-    print_error "  harare-metro-backend/ (backend)"
+# Check if we're in the right directory (monorepo structure)
+if [ ! -f "package.json" ] || [ ! -d "backend" ]; then
+    print_error "Please run this script from the harare-metro monorepo root directory"
+    print_error "Expected monorepo structure:"
+    print_error "  harare-metro/ (frontend - root)"
+    print_error "  harare-metro/backend/ (backend)"
     exit 1
 fi
 
@@ -45,7 +45,7 @@ fi
 deploy_backend() {
     print_status "Starting backend deployment..."
     
-    cd ../harare-metro-backend
+    cd backend
     
     print_status "Installing backend dependencies..."
     npm install
@@ -58,7 +58,7 @@ deploy_backend() {
     
     print_success "Backend deployed successfully!"
     
-    cd ../harare-metro
+    cd ..
 }
 
 # Function to deploy frontend
