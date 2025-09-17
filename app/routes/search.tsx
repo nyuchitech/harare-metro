@@ -26,7 +26,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     // Always fetch categories from D1 database for suggestions
     const categoriesUrl = buildApiUrl(request, '/api/categories');
     const categoriesResponse = await fetch(categoriesUrl);
-    const categoriesData = await categoriesResponse.json();
+    const categoriesData = await categoriesResponse.json() as { categories?: any[]; error?: string };
     
     if (!query) {
       return {
@@ -60,12 +60,12 @@ export async function loader({ request }: Route.LoaderArgs) {
     // Fetch search results from our D1 API
     const apiUrl = buildApiUrl(request, '/api/search', searchParams);
     const response = await fetch(apiUrl);
-    const data = await response.json();
+    const data = await response.json() as { results?: any[]; query?: string; total?: number; error?: string };
     
     // Fetch categories for filter from D1 database
     const categoriesUrl = buildApiUrl(request, '/api/categories');
     const categoriesResponse = await fetch(categoriesUrl);
-    const categoriesData = await categoriesResponse.json();
+    const categoriesData = await categoriesResponse.json() as { categories?: any[]; error?: string };
     
     return {
       results: data.results || [],
@@ -159,7 +159,7 @@ export default function Search({ loaderData }: Route.ComponentProps) {
               >
                 🏠 All Categories
               </a>
-              {categories.map((category, index) => {
+              {categories.map((category: any, index: number) => {
                 const mineralColorPairs = [
                   { bg: 'bg-mineral-gold', border: 'border-mineral-gold' },
                   { bg: 'bg-mineral-chrome', border: 'border-mineral-chrome' },
@@ -220,7 +220,7 @@ export default function Search({ loaderData }: Route.ComponentProps) {
                 Find articles from trusted Zimbabwe news sources. Search by keywords, topics, or current events.
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
-                {categories.slice(0, 6).map((category) => (
+                {categories.slice(0, 6).map((category: any) => (
                   <a
                     key={category.id}
                     href={`/search?q=${category.name.toLowerCase()}`}
@@ -256,7 +256,7 @@ export default function Search({ loaderData }: Route.ComponentProps) {
         {/* Search Results Masonry Grid */}
         {results.length > 0 && (
           <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-3 sm:gap-4 space-y-0">
-            {results.map((article, index) => (
+            {results.map((article: any, index: number) => (
               <article 
                 key={article.id || index}
                 className="bg-card border border-border rounded-xl overflow-hidden hover:border-border/80 transition-all duration-200 hover:shadow-lg break-inside-avoid mb-6"

@@ -21,10 +21,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     // Fetch articles with images for bytes view
     const apiUrl = buildApiUrl(request, '/api/feeds', new URLSearchParams({ limit: '50', with_images: 'true' }));
     const response = await fetch(apiUrl);
-    const data = await response.json();
+    const data = await response.json() as { articles?: any[]; error?: string };
     
     // Filter articles that have images
-    const articlesWithImages = (data.articles || []).filter(article => 
+    const articlesWithImages = (data.articles || []).filter((article: any) => 
       article.image_url
     );
     
@@ -310,7 +310,7 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
         className="h-screen overflow-y-auto snap-y snap-mandatory scrollbar-hide"
         style={{ scrollBehavior: 'smooth' }}
       >
-        {articles.map((article, index) => (
+        {articles.map((article: any, index: number) => (
           <div
             key={`${article.id}-${index}`}
             ref={(el) => {
