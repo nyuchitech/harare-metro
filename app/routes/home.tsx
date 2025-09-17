@@ -25,9 +25,19 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const limit = url.searchParams.get('limit') || '24';
   
   try {
-    // Fetch articles from backend API
+    // Fetch articles from backend API with timeout
     const apiUrl = buildApiUrl(request, '/api/feeds', new URLSearchParams({ category, limit }));
-    const response = await fetch(apiUrl);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch(apiUrl, { 
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      }
+    });
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       throw new Error(`API responded with ${response.status}: ${response.statusText}`);
@@ -35,9 +45,19 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     
     const data = await response.json() as { articles?: any[]; total?: number; error?: string };
     
-    // Fetch categories from backend API
+    // Fetch categories from backend API with timeout
     const categoriesUrl = buildApiUrl(request, '/api/categories');
-    const categoriesResponse = await fetch(categoriesUrl);
+    const categoriesController = new AbortController();
+    const categoriesTimeoutId = setTimeout(() => categoriesController.abort(), 5000);
+    
+    const categoriesResponse = await fetch(categoriesUrl, {
+      signal: categoriesController.signal,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      }
+    });
+    clearTimeout(categoriesTimeoutId);
     
     if (!categoriesResponse.ok) {
       throw new Error(`Categories API responded with ${categoriesResponse.status}: ${categoriesResponse.statusText}`);
@@ -53,13 +73,35 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     };
   } catch (error) {
     console.error('Failed to load data:', error);
-    // Return fallback data
+    
+    // Return mock data for development when backend is not available
+    const mockArticles = [
+      {
+        id: '1',
+        title: 'Welcome to Harare Metro',
+        description: 'Your premier source for Zimbabwe news and updates. Backend service is currently unavailable.',
+        url: '#',
+        source: 'Harare Metro',
+        category: 'General',
+        published_at: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      }
+    ];
+    
+    const mockCategories = [
+      { name: 'Politics', count: 0 },
+      { name: 'Business', count: 0 },
+      { name: 'Sports', count: 0 },
+      { name: 'Technology', count: 0 }
+    ];
+    
+    // Return fallback data with mock content for development
     return {
-      articles: [],
-      categories: [],
-      selectedCategory: 'all',
-      total: 0,
-      error: 'Failed to load articles. Please check if backend service is running.'
+      articles: mockArticles,
+      categories: mockCategories,
+      selectedCategory: category || 'all',
+      total: mockArticles.length,
+      error: 'Backend service unavailable. Showing mock data for development.'
     };
   }
 }
