@@ -27,7 +27,8 @@
     "ROLES_ENABLED": "true",
     "DEFAULT_ROLE": "creator",
     "ADMIN_ROLES": "admin,super_admin,moderator",
-    "CREATOR_ROLES": "creator,business-creator,author"
+    "CREATOR_ROLES": "creator,business-creator,author",
+    "BACKEND_URL": "https://admin.hararemetro.co.zw"
   },
 
   /**

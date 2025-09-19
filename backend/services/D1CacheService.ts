@@ -301,6 +301,20 @@ export class D1CacheService {
     }
   }
 
+  // Get last fetch time for a source
+  async getLastFetch(sourceId: string): Promise<string | null> {
+    try {
+      const result = await this.d1.db.prepare(`
+        SELECT last_fetched_at FROM rss_sources WHERE id = ?
+      `).bind(sourceId).first() as any;
+      
+      return result?.last_fetched_at || null;
+    } catch (error) {
+      console.error(`[D1-CACHE] Error getting last fetch for ${sourceId}:`, error);
+      return null;
+    }
+  }
+
   // =============================================================================
   // CACHE MANAGEMENT
   // =============================================================================

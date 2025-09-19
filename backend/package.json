@@ -2,7 +2,7 @@
   "name": "harare-metro-backend",
   "version": "1.0.0",
   "description": "Backend API and Admin Interface for Harare Metro",
-  "main": "src/index.ts",
+  "main": "index.ts",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "npm run clean && npm run build && wrangler deploy",

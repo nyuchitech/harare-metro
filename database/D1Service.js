@@ -315,13 +315,24 @@ export class D1Service {
       return null
     }
   }
-
-  async getArticleCount(category = null) {
+  async getArticleCount(options = null) {
     try {
       let query = "SELECT COUNT(*) as count FROM articles WHERE status = 'published'"
       const params = []
       
-      if (category && category !== 'all') {
+      // Handle both old category parameter and new options object
+      const category = typeof options === 'string' ? options : options?.category_id || options?.source_id;
+      
+      if (options && typeof options === 'object') {
+        if (options.category_id && options.category_id !== 'all') {
+          query += ' AND category_id = ?'
+          params.push(options.category_id)
+        }
+        if (options.source_id) {
+          query += ' AND source_id = ?'
+          params.push(options.source_id)
+        }
+      } else if (category && category !== 'all') {
         query += ' AND category_id = ?'
         params.push(category)
       }

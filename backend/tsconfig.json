@@ -13,6 +13,6 @@
     "strict": true,
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["src/**/*", "worker/**/*", "workers/**/*", "services", "admin", "index.ts"],
+  "include": ["*.ts", "**/*.ts", "services", "admin", "durable-objects"],
   "exclude": ["node_modules", "build"]
 }

@@ -4,21 +4,21 @@ import { logger } from "hono/logger";
 
 // Import all business logic services - backend does the heavy lifting
 import { D1Service } from "../database/D1Service.js";
-import { D1ConfigService } from "./services/D1ConfigService.ts";
-import { D1CacheService } from "./services/D1CacheService.ts";
-import { AnalyticsEngineService } from "./services/AnalyticsEngineService.ts";
-import { ArticleService } from "./services/ArticleService.ts";
-import { ArticleAIService } from "./services/ArticleAIService.ts";
-import { ContentProcessingPipeline } from "./services/ContentProcessingPipeline.ts";
-import { AuthorProfileService } from "./services/AuthorProfileService.ts";
-import { NewsSourceService } from "./services/NewsSourceService.ts";
-import { NewsSourceManager } from "./services/NewsSourceManager.ts";
-import { RSSFeedService } from "./services/RSSFeedService.ts";
-import { OpenAuthService } from "./services/OpenAuthService.ts";
-import { RealtimeAnalyticsDO } from "./durable-objects/RealtimeAnalyticsDO.ts";
-import { ArticleInteractionsDO } from "./durable-objects/ArticleInteractionsDO.ts";
-import { UserBehaviorDO } from "./durable-objects/UserBehaviorDO.ts";
-import { RealtimeCountersDO } from "./durable-objects/RealtimeCountersDO.ts";
+import { D1ConfigService } from "./services/D1ConfigService.js";
+import { D1CacheService } from "./services/D1CacheService.js";
+import { AnalyticsEngineService } from "./services/AnalyticsEngineService.js";
+import { ArticleService } from "./services/ArticleService.js";
+import { ArticleAIService } from "./services/ArticleAIService.js";
+import { ContentProcessingPipeline } from "./services/ContentProcessingPipeline.js";
+import { AuthorProfileService } from "./services/AuthorProfileService.js";
+import { NewsSourceService } from "./services/NewsSourceService.js";
+import { NewsSourceManager } from "./services/NewsSourceManager.js";
+import { RSSFeedService } from "./services/RSSFeedService.js";
+import { OpenAuthService } from "./services/OpenAuthService.js";
+import { RealtimeAnalyticsDO } from "./durable-objects/RealtimeAnalyticsDO.js";
+import { ArticleInteractionsDO } from "./durable-objects/ArticleInteractionsDO.js";
+import { UserBehaviorDO } from "./durable-objects/UserBehaviorDO.js";
+import { RealtimeCountersDO } from "./durable-objects/RealtimeCountersDO.js";
 
 // Import admin interface
 import { getAdminHTML } from "./admin/index.js";
@@ -67,8 +67,8 @@ function initializeServices(env: Bindings) {
   const articleAIService = new ArticleAIService(env.AI, null, d1Service); // Vectorize disabled for now
   const contentPipeline = new ContentProcessingPipeline(d1Service, articleAIService);
   const authorProfileService = new AuthorProfileService(d1Service);
-  const articleService = new ArticleService(d1Service, cacheService, analyticsService);
-  const newsSourceService = new NewsSourceService(d1Service, configService);
+  const articleService = new ArticleService(env.DB); // Fix: ArticleService takes database directly
+  const newsSourceService = new NewsSourceService(); // Fix: NewsSourceService takes no parameters
   const newsSourceManager = new NewsSourceManager(env.DB);
   const rssService = new RSSFeedService(d1Service);
 
@@ -601,7 +601,7 @@ app.get("/api/article/by-source-slug", async (c) => {
     const services = initializeServices(c.env);
     
     // Use article service for enhanced retrieval with caching
-    const article = await services.articleService.getArticleBySourceSlug(source, slug);
+    const article = await services.articleService.getArticleBySlug(slug);
     
     if (!article) {
       return c.json({ error: "Article not found" }, 404);

@@ -1,5 +1,34 @@
 // worker/services/NewsSourceService.js - News source profiles and logo management
+
+interface SourceProfile {
+  name: string;
+  shortName: string;
+  logo?: string;
+  favicon?: string;
+  domain: string;
+  description: string;
+  established: number;
+  category: string;
+  credibility: 'high' | 'medium' | 'low' | 'unknown';
+  colors: {
+    primary: string;
+    secondary: string;
+  };
+  socialMedia?: {
+    twitter?: string;
+    facebook?: string;
+  };
+  initials?: string;
+}
+
+interface Article {
+  link?: string;
+  [key: string]: any;
+}
+
 export class NewsSourceService {
+  private sourceProfiles: Record<string, SourceProfile>;
+
   constructor() {
     this.sourceProfiles = {
       'New Zimbabwe': {
@@ -128,24 +157,23 @@ export class NewsSourceService {
       }
     }
   }
-
   // Get source profile by name
-  getSourceProfile(sourceName) {
+  getSourceProfile(sourceName: string): SourceProfile {
     return this.sourceProfiles[sourceName] || this.createFallbackProfile(sourceName)
   }
 
   // Create fallback profile for unknown sources
-  createFallbackProfile(sourceName) {
-    const initials = sourceName?.split(' ').map(word => word[0]).join('').toUpperCase() || 'N'
+  createFallbackProfile(sourceName: string): SourceProfile {
+    const initials = sourceName?.split(' ').map((word: string) => word[0]).join('').toUpperCase() || 'N'
     
     return {
       name: sourceName || 'Unknown Source',
       shortName: sourceName || 'Unknown',
-      logo: null,
-      favicon: null,
-      domain: null,
+      logo: undefined,
+      favicon: undefined,
+      domain: '',
       description: 'News source',
-      established: null,
+      established: 0,
       category: 'general',
       credibility: 'unknown',
       colors: {
@@ -157,7 +185,7 @@ export class NewsSourceService {
   }
 
   // Get logo URL with fallbacks
-  async getSourceLogo(sourceName, article = null) {
+  async getSourceLogo(sourceName: string, article: Article | null = null): Promise<string | null> {
     const profile = this.getSourceProfile(sourceName)
     
     // Try profile logo first
@@ -194,45 +222,52 @@ export class NewsSourceService {
 
     return null // No logo found, will use initials
   }
-
   // Check if image is accessible
-  async isImageAccessible(url) {
+  async isImageAccessible(url: string): Promise<boolean> {
     try {
       const response = await fetch(url, { 
         method: 'HEAD',
-        timeout: 3000,
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; Harare Metro; +https://hararemetro.co.zw)'
         }
       })
-      return response.ok && response.headers.get('content-type')?.startsWith('image/')
+      return response.ok && response.headers.get('content-type')?.startsWith('image/') || false
     } catch {
       return false
     }
   }
 
   // Get all source profiles
-  getAllSourceProfiles() {
+  getAllSourceProfiles(): Record<string, SourceProfile> {
     return this.sourceProfiles
   }
 
   // Get sources by category
-  getSourcesByCategory(category) {
-    return Object.values(this.sourceProfiles).filter(profile => 
+  getSourcesByCategory(category: string): SourceProfile[] {
+    return Object.values(this.sourceProfiles).filter((profile: SourceProfile) => 
       profile.category === category
     )
   }
 
   // Get source credibility score
-  getCredibilityScore(sourceName) {
+  getCredibilityScore(sourceName: string): number {
     const profile = this.getSourceProfile(sourceName)
-    const scores = {
+    const scores: Record<string, number> = {
       'high': 0.9,
       'medium': 0.7,
       'low': 0.4,
       'unknown': 0.5
     }
     return scores[profile.credibility] || 0.5
+  }
+
+  // Get all sources (for compatibility with backend)
+  async getAllSources(): Promise<Array<SourceProfile & { id: string }>> {
+    // Return the source profiles as an array with id field
+    return Object.entries(this.sourceProfiles).map(([key, profile]) => ({
+      id: key.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'),
+      ...profile
+    }))
   }
 }
 

@@ -1,10 +1,12 @@
 import { Hono } from "hono";
+import { createRequestHandler } from "react-router";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { createRequestHandler } from "react-router";
+
+// Import the React Router build
+import * as build from "../build/server/index.js";
 
 // Import only database service for basic SSR data needs
-// @ts-ignore - D1Service is a JS file
 import { D1Service } from "../database/D1Service.js";
 
 // Types for Cloudflare bindings
@@ -15,7 +17,6 @@ type Bindings = {
   SEARCH_QUERIES: AnalyticsEngineDataset;
   NODE_ENV: string;
   LOG_LEVEL: string;
-  BACKEND_URL: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -39,7 +40,7 @@ app.get("/api/health", async (c) => {
       },
       environment: c.env.NODE_ENV || "production"
     });
-  } catch (error: any) {
+  } catch (error) {
     return c.json({
       status: "unhealthy",
       error: error.message,
@@ -60,10 +61,10 @@ app.get("/api/feeds", async (c) => {
     const articles = await d1Service.getArticles({ 
       limit, 
       offset, 
-      category: category === 'all' ? null : category
+      category_id: category === 'all' ? null : category,
+      source_id: source 
     });
     
-    // @ts-ignore - D1Service method signature
     const total = await d1Service.getArticleCount({
       category_id: category === 'all' ? null : category,
       source_id: source
@@ -76,7 +77,7 @@ app.get("/api/feeds", async (c) => {
       offset,
       hasMore: offset + limit < total
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching feeds:", error);
     return c.json({ error: "Failed to fetch feeds" }, 500);
   }
@@ -89,9 +90,9 @@ app.get("/api/categories", async (c) => {
     const categories = await d1Service.getCategories();
     
     return c.json({
-      categories: categories.filter((cat: any) => cat.enabled)
+      categories: categories.filter(cat => cat.enabled)
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching categories:", error);
     return c.json({ error: "Failed to fetch categories" }, 500);
   }
@@ -107,7 +108,7 @@ app.get("/api/article/by-source-slug", async (c) => {
   }
 
   try {
-    const d1Service = new D1Service(c.env.DB);
+    const d1Service = new D1Service(c.env.ARTICLES_DB);
     const article = await d1Service.getArticleBySourceSlug(source, slug);
     
     if (!article) {
@@ -115,7 +116,7 @@ app.get("/api/article/by-source-slug", async (c) => {
     }
 
     return c.json({ article });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching article:", error);
     return c.json({ error: "Failed to fetch article" }, 500);
   }
@@ -128,9 +129,9 @@ app.get("/api/manifest.json", async (c) => {
     const categories = await d1Service.getCategories();
     
     const shortcuts = categories
-      .filter((cat: any) => cat.id !== 'all' && cat.enabled)
+      .filter(cat => cat.id !== 'all' && cat.enabled)
       .slice(0, 4) // PWA spec recommends max 4 shortcuts
-      .map((category: any) => ({
+      .map(category => ({
         name: `${category.emoji || '📰'} ${category.name}`,
         url: `/?category=${category.id}`,
         description: `Browse ${category.name.toLowerCase()} news`
@@ -166,30 +167,19 @@ app.get("/api/manifest.json", async (c) => {
     c.header("Content-Type", "application/manifest+json");
     c.header("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
     return c.json(manifest);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error generating manifest:", error);
     return c.json({ error: "Failed to generate manifest" }, 500);
   }
 });
 
 // React Router SSR handler - handle all other routes
-app.get("*", async (c) => {
-  try {
-    const requestHandler = createRequestHandler(
-      () => import("virtual:react-router/server-build"),
-      import.meta.env.MODE || "production",
-    );
-    
-    return await requestHandler(c.req.raw, {
-      cloudflare: { 
-        env: c.env, 
-        ctx: c.executionCtx 
-      }
-    });
-  } catch (error: any) {
-    console.error("React Router error:", error);
-    return c.text("Internal Server Error", 500);
-  }
-});
+app.use("*", createRequestHandler({
+  getLoadContext: (c) => ({
+    env: c.env,
+    // Only pass essential context, not services
+    d1: c.env.DB
+  })
+}));
 
 export default app;

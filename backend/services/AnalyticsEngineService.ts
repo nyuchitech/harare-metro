@@ -1,6 +1,18 @@
 // worker/services/AnalyticsEngineService.js
+
+interface AnalyticsDatasets {
+  NEWS_ANALYTICS: AnalyticsEngineDataset;
+  SEARCH_ANALYTICS: AnalyticsEngineDataset;
+  CATEGORY_ANALYTICS: AnalyticsEngineDataset;
+  USER_ANALYTICS: AnalyticsEngineDataset;
+  PERFORMANCE_ANALYTICS: AnalyticsEngineDataset;
+}
+
 export class AnalyticsEngineService {
-  constructor(env) {
+  private env: any;
+  private datasets: AnalyticsDatasets;
+
+  constructor(env: any) {
     this.env = env
     this.datasets = {
       NEWS_ANALYTICS: env.NEWS_ANALYTICS,
@@ -517,5 +529,31 @@ export class AnalyticsEngineService {
     }
     
     return descriptions[datasetName] || 'Analytics dataset'
+  }
+
+  // Get insights for analytics endpoint
+  async getInsights(options: { timeframe?: string; category?: string } = {}): Promise<any> {
+    const { timeframe = '7d', category } = options;
+    
+    try {
+      // This would normally query the analytics datasets
+      // For now, return a placeholder response
+      return {
+        timeframe,
+        category,
+        totalViews: 0,
+        uniqueUsers: 0,
+        topArticles: [],
+        categoryBreakdown: {},
+        trafficSources: {},
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('[Analytics] Error getting insights:', error);
+      return {
+        error: 'Failed to fetch analytics insights',
+        timestamp: new Date().toISOString()
+      };
+    }
   }
 }
