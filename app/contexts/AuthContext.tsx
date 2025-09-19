@@ -35,7 +35,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initAuth = async () => {
       try {
         // Dynamically import Supabase client only on client side
-        const { supabase, auth, isSupabaseConfigured } = await import('../lib/supabase.client');
+        const module = await import('../lib/supabase.client');
+        const { supabase, auth, isSupabaseConfigured } = module;
         
         if (!isSupabaseConfigured()) {
           setLoading(false);
@@ -46,7 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSupabaseClient({ supabase, auth });
 
         // Get initial session
-        const { data: session, error } = await auth.getSession();
+        const { data: { session }, error } = await auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
         } else {
