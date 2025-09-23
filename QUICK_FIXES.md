@@ -143,30 +143,69 @@ async function exportData() {
     }
 }
 
+// Add this HTML to your admin page (e.g., near the sources list):
+/*
+<div id="addSourceModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+  <div style="background:#fff; padding:24px; border-radius:8px; min-width:300px;">
+    <h3>Add RSS Source</h3>
+    <form id="addSourceForm">
+      <label>
+        Name:<br>
+        <input type="text" id="sourceName" required>
+      </label><br><br>
+      <label>
+        URL:<br>
+        <input type="url" id="sourceUrl" required>
+      </label><br><br>
+      <button type="submit">Add Source</button>
+      <button type="button" onclick="closeAddSourceModal()">Cancel</button>
+    </form>
+  </div>
+</div>
+*/
+
+// Show the modal when "Add Source" is clicked
+function showAddSourceModal() {
+    document.getElementById('addSourceModal').style.display = 'flex';
+}
+function closeAddSourceModal() {
+    document.getElementById('addSourceModal').style.display = 'none';
+}
+
 // Replace addSource function (around line 514):
-async function addSource() {
-    const name = prompt('RSS Source Name:');
-    const url = prompt('RSS Feed URL:');
-    
-    if (name && url) {
-        try {
-            const response = await fetch('/api/admin/add-source', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, url, enabled: true })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                alert(`Source "${name}" added successfully!`);
-                loadSources();
-            } else {
-                alert('Failed to add source: ' + data.message);
-            }
-        } catch (error) {
-            alert('Add source failed: ' + error.message);
+document.getElementById('addSourceForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('sourceName').value.trim();
+    const url = document.getElementById('sourceUrl').value.trim();
+
+    // Basic validation
+    if (!name) {
+        alert('Source name is required.');
+        return;
+    }
+    try {
+        new URL(url);
+    } catch {
+        alert('Please enter a valid URL.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/admin/add-source', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, url, enabled: true })
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(`Source "${name}" added successfully!`);
+            closeAddSourceModal();
+            loadSources();
+        } else {
+            alert('Failed to add source: ' + data.message);
         }
+    } catch (error) {
+        alert('Add source failed: ' + error.message);
     }
 }
 
