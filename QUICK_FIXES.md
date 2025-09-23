@@ -305,6 +305,7 @@ app.post("/api/admin/cleanup-articles", requireAuth, requireAdmin, async (c) => 
     const result = await c.env.DB.prepare(`
       DELETE FROM articles 
       WHERE published_at < ? 
+      LIMIT 1000
     `).bind(cutoffDate.toISOString()).run();
     
     return c.json({ 
