@@ -8,7 +8,7 @@ This document provides minimal code changes to fix the identified critical issue
 
 **Option A: Copy service from backend to workers**
 ```bash
-cp backend/services/CloudflareImagesService.ts workers/services/CloudflareImagesService.js
+tsc backend/services/CloudflareImagesService.ts --outDir workers/services --esModuleInterop
 ```
 
 **Option B: Fix import paths to reference backend service**
