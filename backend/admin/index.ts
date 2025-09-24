@@ -202,6 +202,110 @@ export function getAdminHTML(): string {
             margin-top: 20px;
         }
         
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #1a1a1a;
+            border-radius: 16px;
+            border: 1px solid #444;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+        }
+        
+        .modal h3 {
+            font-family: Georgia, 'Times New Roman', serif;
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #ccc;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background: #2a2a2a;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #00A651;
+            box-shadow: 0 0 0 2px rgba(0, 166, 81, 0.2);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+        
+        .btn-primary {
+            background: #00A651;
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background: #008A44;
+        }
+        
+        .btn-secondary {
+            background: #333;
+            color: #fff;
+        }
+        
+        .btn-secondary:hover {
+            background: #555;
+        }
+        
+        .confirmation-text {
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .warning-text {
+            color: #FDD116;
+            font-weight: 600;
+        }
+        
+        .error-text {
+            color: #EF3340;
+            font-weight: 600;
+        }
+        
         .sources-table {
             width: 100%;
             border-collapse: collapse;
@@ -364,6 +468,66 @@ export function getAdminHTML(): string {
         </div>
     </div>
 
+    <!-- Add RSS Source Modal -->
+    <div id="addSourceModal" class="modal">
+        <div class="modal-content">
+            <h3>Add RSS Source</h3>
+            <form id="addSourceForm">
+                <div class="form-group">
+                    <label for="sourceName">RSS Source Name:</label>
+                    <input type="text" id="sourceName" name="sourceName" required 
+                           placeholder="e.g., The Herald Zimbabwe">
+                </div>
+                <div class="form-group">
+                    <label for="sourceUrl">RSS Feed URL:</label>
+                    <input type="url" id="sourceUrl" name="sourceUrl" required 
+                           placeholder="https://example.com/rss">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addSourceModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Source</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Clear Cache Confirmation Modal -->
+    <div id="clearCacheModal" class="modal">
+        <div class="modal-content">
+            <h3>Clear Cache</h3>
+            <div class="confirmation-text">
+                <p class="warning-text">⚠️ Warning</p>
+                <p>Are you sure you want to clear the cache? This action will:</p>
+                <ul style="margin: 10px 0; padding-left: 20px; color: #ccc;">
+                    <li>Remove all cached RSS feed data</li>
+                    <li>Force fresh fetching of all content</li>
+                    <li>May temporarily slow down the application</li>
+                </ul>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('clearCacheModal')">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmClearCache()">Yes, Clear Cache</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cleanup Articles Confirmation Modal -->
+    <div id="cleanupArticlesModal" class="modal">
+        <div class="modal-content">
+            <h3>Cleanup Old Articles</h3>
+            <div class="confirmation-text">
+                <p class="error-text">⚠️ Destructive Action</p>
+                <p>This will <strong>permanently remove</strong> articles older than 30 days from the database.</p>
+                <p><strong>This action cannot be undone.</strong></p>
+                <p>Are you sure you want to continue?</p>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('cleanupArticlesModal')">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmCleanupArticles()">Yes, Delete Old Articles</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global state
         let currentSection = 'dashboard';
@@ -502,9 +666,12 @@ export function getAdminHTML(): string {
         }
         
         function clearCache() {
-            if (confirm('Are you sure you want to clear the cache?')) {
-                alert('Cache clearing functionality will be implemented soon.');
-            }
+            openModal('clearCacheModal');
+        }
+        
+        function confirmClearCache() {
+            closeModal('clearCacheModal');
+            alert('Cache clearing functionality will be implemented soon.');
         }
         
         function exportData() {
@@ -512,18 +679,64 @@ export function getAdminHTML(): string {
         }
         
         function addSource() {
-            const name = prompt('RSS Source Name:');
-            const url = prompt('RSS Feed URL:');
-            if (name && url) {
-                alert('Add source functionality will be implemented soon.');
-            }
+            openModal('addSourceModal');
         }
         
         function cleanupArticles() {
-            if (confirm('This will remove articles older than 30 days. Continue?')) {
-                alert('Article cleanup functionality will be implemented soon.');
+            openModal('cleanupArticlesModal');
+        }
+        
+        function confirmCleanupArticles() {
+            closeModal('cleanupArticlesModal');
+            alert('Article cleanup functionality will be implemented soon.');
+        }
+        
+        // Modal management functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('show');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+            
+            // Reset form if it's the add source modal
+            if (modalId === 'addSourceModal') {
+                document.getElementById('addSourceForm').reset();
             }
         }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('show');
+                
+                // Reset form if it's the add source modal
+                if (event.target.id === 'addSourceModal') {
+                    document.getElementById('addSourceForm').reset();
+                }
+            }
+        }
+        
+        // Handle add source form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('addSourceForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('sourceName').value.trim();
+                const url = document.getElementById('sourceUrl').value.trim();
+                
+                if (name && url) {
+                    // Close modal first
+                    closeModal('addSourceModal');
+                    
+                    // Show success message (functionality to be implemented)
+                    alert(\`RSS Source "\${name}" will be added soon.\\nURL: \${url}\`);
+                    
+                    // TODO: Implement actual RSS source addition API call
+                    console.log('Adding RSS source:', { name, url });
+                }
+            });
+        });
         
         // Utility functions
         function formatBytes(bytes) {
