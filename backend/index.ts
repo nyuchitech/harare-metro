@@ -87,13 +87,44 @@ function initializeServices(env: Bindings) {
   };
 }
 
-// Admin dashboard - serve the HTML interface
-app.get("/", (c) => {
+// Initialize authentication service
+let authService: OpenAuthService;
+
+function initializeAuth(env: Bindings) {
+  if (!authService) {
+    authService = new OpenAuthService({
+      DB: env.DB,
+      AUTH_STORAGE: env.AUTH_STORAGE
+    });
+  }
+  return authService;
+}
+
+// Authentication middleware
+const requireAuth = async (c: any, next: any) => {
+  const auth = initializeAuth(c.env);
+  const authResult = await auth.handleAuth(c.req.raw);
+  
+  if (!authResult.ok) {
+    return c.json({ error: 'Authentication required' }, 401);
+  }
+  
+  c.set('user', authResult.user);
+  await next();
+};
+
+const requireAdmin = async (c: any, next: any) => {
+  const auth = initializeAuth(c.env);
+  return auth.requireRole(['admin', 'super_admin', 'moderator'])(c, next);
+};
+
+// Admin dashboard - serve the HTML interface (protected)
+app.get("/", requireAuth, requireAdmin, (c) => {
   c.header("Content-Type", "text/html");
   return c.html(getAdminHTML());
 });
 
-app.get("/admin", (c) => {
+app.get("/admin", requireAuth, requireAdmin, (c) => {
   c.header("Content-Type", "text/html");
   return c.html(getAdminHTML());
 });
@@ -125,8 +156,8 @@ app.get("/api/health", async (c) => {
   }
 });
 
-// Comprehensive admin stats endpoint
-app.get("/api/admin/stats", async (c) => {
+// Comprehensive admin stats endpoint (protected)
+app.get("/api/admin/stats", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     
@@ -235,8 +266,8 @@ app.get("/api/feeds", async (c) => {
   }
 });
 
-// RSS refresh endpoint with AI-powered content processing pipeline
-app.post("/api/admin/refresh-rss", async (c) => {
+// RSS refresh endpoint with AI-powered content processing pipeline (protected)
+app.post("/api/admin/refresh-rss", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     const startTime = Date.now();
@@ -355,8 +386,8 @@ app.post("/api/admin/refresh-rss", async (c) => {
 
 // ===== BULK PULL ENDPOINTS FOR INITIAL SETUP AND TESTING =====
 
-// Initial bulk pull with enhanced field testing
-app.post("/api/admin/bulk-pull", async (c) => {
+// Initial bulk pull with enhanced field testing (protected)
+app.post("/api/admin/bulk-pull", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     const body = await c.req.json().catch(() => ({}));
@@ -398,8 +429,8 @@ app.post("/api/admin/bulk-pull", async (c) => {
   }
 });
 
-// Add new Zimbabwe sources
-app.post("/api/admin/add-zimbabwe-sources", async (c) => {
+// Add new Zimbabwe sources (protected)
+app.post("/api/admin/add-zimbabwe-sources", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     
@@ -432,8 +463,8 @@ app.post("/api/admin/add-zimbabwe-sources", async (c) => {
   }
 });
 
-// Get RSS configuration and source limits
-app.get("/api/admin/rss-config", async (c) => {
+// Get RSS configuration and source limits (protected)
+app.get("/api/admin/rss-config", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     
@@ -490,8 +521,8 @@ app.get("/api/admin/rss-config", async (c) => {
   }
 });
 
-// Update RSS source configuration
-app.put("/api/admin/rss-source/:sourceId", async (c) => {
+// Update RSS source configuration (protected)
+app.put("/api/admin/rss-source/:sourceId", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     const sourceId = c.req.param("sourceId");
@@ -540,8 +571,8 @@ app.put("/api/admin/rss-source/:sourceId", async (c) => {
   }
 });
 
-// Admin sources management with full service integration
-app.get("/api/admin/sources", async (c) => {
+// Admin sources management with full service integration (protected)
+app.get("/api/admin/sources", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     
@@ -570,8 +601,8 @@ app.get("/api/admin/sources", async (c) => {
   }
 });
 
-// Analytics insights endpoint - backend heavy lifting
-app.get("/api/admin/analytics", async (c) => {
+// Analytics insights endpoint - backend heavy lifting (protected)
+app.get("/api/admin/analytics", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     
@@ -622,8 +653,8 @@ app.get("/api/article/by-source-slug", async (c) => {
   }
 });
 
-// AI Pipeline monitoring and author recognition endpoints
-app.get("/api/admin/ai-pipeline-status", async (c) => {
+// AI Pipeline monitoring and author recognition endpoints (protected)
+app.get("/api/admin/ai-pipeline-status", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     
@@ -702,8 +733,8 @@ app.get("/api/admin/ai-pipeline-status", async (c) => {
   }
 });
 
-// Author recognition and journalism tracking
-app.get("/api/admin/authors", async (c) => {
+// Author recognition and journalism tracking (protected)
+app.get("/api/admin/authors", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     const limit = parseInt(c.req.query("limit") || "20");
@@ -758,8 +789,8 @@ app.get("/api/admin/authors", async (c) => {
   }
 });
 
-// Content quality insights  
-app.get("/api/admin/content-quality", async (c) => {
+// Content quality insights (protected)
+app.get("/api/admin/content-quality", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     
@@ -954,8 +985,8 @@ app.get("/api/search/authors", async (c) => {
   }
 });
 
-// Enhanced author management for admin (with cross-outlet view)
-app.get("/api/admin/authors/detailed", async (c) => {
+// Enhanced author management for admin (with cross-outlet view) (protected)
+app.get("/api/admin/authors/detailed", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     const limit = parseInt(c.req.query("limit") || "50");
@@ -1037,8 +1068,8 @@ app.get("/api/admin/authors/detailed", async (c) => {
   }
 });
 
-// Category management with author expertise tracking
-app.get("/api/admin/categories/with-authors", async (c) => {
+// Category management with author expertise tracking (protected)
+app.get("/api/admin/categories/with-authors", requireAuth, requireAdmin, async (c) => {
   try {
     const services = initializeServices(c.env);
     
