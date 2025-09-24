@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSupabaseClient({ supabase, auth });
 
         // Get initial session
-        const { data: session, error } = await auth.getSession();
+        const { data: { session }, error } = await auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
         } else {

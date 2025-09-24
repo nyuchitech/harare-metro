@@ -33,7 +33,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       throw new Error(`API responded with ${response.status}: ${response.statusText}`);
     }
     
-    const data = await response.json();
+    const data = await response.json() as { articles?: any[]; total?: number; error?: string };
     
     // Fetch categories from backend API
     const categoriesUrl = buildApiUrl(request, '/api/categories');
@@ -43,7 +43,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       throw new Error(`Categories API responded with ${categoriesResponse.status}: ${categoriesResponse.statusText}`);
     }
     
-    const categoriesData = await categoriesResponse.json();
+    const categoriesData = await categoriesResponse.json() as { categories?: any[]; error?: string };
     
     return {
       articles: data.articles || [],
@@ -115,7 +115,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               >
                 🏠 All
               </a>
-              {categories.slice(0, 15).map((category, index) => {
+              {categories.slice(0, 15).map((category: any, index: number) => {
                 // Assign mineral colors cyclically with matching borders
                 const mineralColorPairs = [
                   { bg: 'bg-mineral-gold', border: 'border-mineral-gold' },

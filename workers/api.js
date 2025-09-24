@@ -49,6 +49,33 @@ export async function handleApiRequest(request, env, ctx) {
     // Only log API requests, not every debug detail
     Logger.info(`API ${method} /${path}`)
 
+    // API Key authentication for protected endpoints (except health and admin)
+    if (!path.startsWith('admin/') && path !== 'health') {
+      const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '');
+      
+      if (!apiKey && env.API_KEY) {
+        return new Response(JSON.stringify({
+          error: 'API key required',
+          message: 'This endpoint requires authentication. Include X-API-Key header or Authorization: Bearer <key>',
+          timestamp: new Date().toISOString()
+        }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (env.API_KEY && apiKey !== env.API_KEY) {
+        return new Response(JSON.stringify({
+          error: 'Invalid API key',
+          message: 'The provided API key is not valid',
+          timestamp: new Date().toISOString()
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     // Test service initialization early
     try {
       const services = initializeServices(env)

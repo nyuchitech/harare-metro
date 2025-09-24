@@ -38,7 +38,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
 
       // Load likes
       const { data: likesData } = await db.likes.get(user.id);
-      setLikes(likesData || []);
+      setLikes((likesData || []).map((like: any) => like.article_id));
 
     } catch (error) {
       console.error('Error loading user data:', error);

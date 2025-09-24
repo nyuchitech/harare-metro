@@ -24,7 +24,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     // Fetch single article from our D1 API using source_id and slug
     const apiUrl = buildApiUrl(request, `/api/article/by-source-slug`, new URLSearchParams({ source, slug }));
     const response = await fetch(apiUrl);
-    const data = await response.json();
+    const data = await response.json() as { article?: any; error?: string };
     
     if (!data.article) {
       throw new Error('Article not found');
