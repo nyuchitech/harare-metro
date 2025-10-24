@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Harare Metro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --zw-green: hsl(140, 100%, 32%);
+            --zw-yellow: hsl(48, 98%, 54%);
+            --zw-red: hsl(354, 85%, 57%);
+            --zw-black: hsl(0, 0%, 0%);
+            --zw-white: hsl(0, 0%, 100%);
+            --gray-50: hsl(0, 0%, 98%);
+            --gray-100: hsl(0, 0%, 96%);
+            --gray-200: hsl(0, 0%, 90%);
+            --gray-300: hsl(0, 0%, 83%);
+            --gray-400: hsl(0, 0%, 64%);
+            --gray-500: hsl(0, 0%, 45%);
+            --gray-600: hsl(0, 0%, 32%);
+            --gray-700: hsl(0, 0%, 25%);
+            --gray-800: hsl(0, 0%, 15%);
+            --gray-900: hsl(0, 0%, 9%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--gray-50);
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
+        /* Zimbabwe Flag Strip */
+        .zimbabwe-flag-strip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 100vh;
+            z-index: 1000;
+            background: linear-gradient(to bottom,
+                var(--zw-green) 0% 20%,
+                var(--zw-yellow) 20% 40%,
+                var(--zw-red) 40% 60%,
+                var(--zw-black) 60% 80%,
+                var(--zw-white) 80% 100%
+            );
+        }
+
+        .header {
+            background: var(--zw-white);
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo h1 {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .logout-button {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--zw-red);
+            background: transparent;
+            border: 1px solid var(--zw-red);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .logout-button:hover {
+            background: var(--zw-red);
+            color: var(--zw-white);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .profile-header {
+            background: var(--zw-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--zw-green);
+            color: var(--zw-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .profile-details h2 {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 1.5rem;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-details p {
+            color: var(--gray-500);
+            font-size: 0.875rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--gray-50);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-card p {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+        }
+
+        .section {
+            background: var(--zw-white);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h3 {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 1.25rem;
+            color: var(--gray-900);
+            margin-bottom: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray-500);
+        }
+
+        .error {
+            background: var(--zw-red);
+            color: var(--zw-white);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .edit-button {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--zw-white);
+            background: var(--zw-green);
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .edit-button:hover {
+            background: hsl(140, 100%, 28%);
+        }
+
+        @media (max-width: 640px) {
+            .profile-info {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="zimbabwe-flag-strip"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <h1>Harare Metro</h1>
+            </div>
+            <button class="logout-button" id="logout-button">Logout</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="error-message" class="error" style="display: none;"></div>
+
+        <div id="loading" class="loading">
+            Loading profile...
+        </div>
+
+        <div id="profile-content" style="display: none;">
+            <div class="profile-header">
+                <div class="profile-info">
+                    <div class="avatar" id="avatar"></div>
+                    <div class="profile-details">
+                        <h2 id="display-name"></h2>
+                        <p id="email"></p>
+                        <p id="joined-date"></p>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 id="stat-reads">0</h3>
+                        <p>Articles Read</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="stat-bookmarks">0</h3>
+                        <p>Bookmarks</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="stat-likes">0</h3>
+                        <p>Likes</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="stat-comments">0</h3>
+                        <p>Comments</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Account Settings</h3>
+                <p style="color: var(--gray-500); margin-bottom: 1rem;">
+                    Manage your account settings and preferences
+                </p>
+                <button class="edit-button">Edit Profile</button>
+            </div>
+
+            <div class="section">
+                <h3>Reading History</h3>
+                <p style="color: var(--gray-500);">
+                    View your complete reading history on Harare Metro
+                </p>
+            </div>
+
+            <div class="section">
+                <h3>Notifications</h3>
+                <p style="color: var(--gray-500);">
+                    Manage your notification preferences
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loading = document.getElementById('loading');
+        const profileContent = document.getElementById('profile-content');
+        const errorMessage = document.getElementById('error-message');
+        const logoutButton = document.getElementById('logout-button');
+
+        // Check authentication
+        const token = localStorage.getItem('token');
+        const session_id = localStorage.getItem('session_id');
+
+        if (!token || !session_id) {
+            window.location.href = '/login';
+        }
+
+        // Load profile data
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/user/me/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('session_id');
+                        window.location.href = '/login';
+                        return;
+                    }
+                    throw new Error('Failed to load profile');
+                }
+
+                const profile = await response.json();
+
+                // Update UI
+                const initials = (profile.display_name || profile.email)
+                    .split(' ')
+                    .map(word => word[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2);
+
+                document.getElementById('avatar').textContent = initials;
+                document.getElementById('display-name').textContent = profile.display_name || 'Anonymous';
+                document.getElementById('email').textContent = profile.email;
+                document.getElementById('joined-date').textContent = `Joined ${new Date(profile.created_at).toLocaleDateString()}`;
+
+                if (profile.stats) {
+                    document.getElementById('stat-reads').textContent = profile.stats.total_reads;
+                    document.getElementById('stat-bookmarks').textContent = profile.stats.total_bookmarks;
+                    document.getElementById('stat-likes').textContent = profile.stats.total_likes;
+                    document.getElementById('stat-comments').textContent = profile.stats.total_comments;
+                }
+
+                loading.style.display = 'none';
+                profileContent.style.display = 'block';
+            } catch (error) {
+                loading.style.display = 'none';
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        // Logout
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                localStorage.removeItem('token');
+                localStorage.removeItem('session_id');
+                window.location.href = '/login';
+            }
+        });
+
+        // Load profile on page load
+        loadProfile();
+    </script>
+</body>
+</html>
