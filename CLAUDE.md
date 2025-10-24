@@ -5,116 +5,326 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Development Environment
-- `npm run dev` - Start Cloudflare Worker dev server (port 8787)
-- `npm run dev:local` - Start Vite dev server (port 5173) 
-- `npm run dev:full` - Start both servers concurrently
-- `./scripts/dev-local.sh` - Helper script to start development with port cleanup
-
-### Build and Deployment
-- `npm run build` - Build both frontend and worker
-- `npm run build:frontend` - Build React app using Vite
-- `npm run build:worker` - Prepare worker files
+- `npm run dev` - Start React Router dev server with Vite
+- `npm run dev:backend` - Start backend worker dev server (in backend directory)
 - `npm run preview` - Preview production build locally
 
-### Testing and Linting
-- No specific test commands are configured yet
-- Use `eslint` for linting (ESLint 9+ with React plugins)
-- `npm run analyze:bundle` - Analyze bundle size with Vite
+### Build and Deployment
+- `npm run build` - Build React Router frontend application
+- `npm run deploy` - Deploy frontend worker to www.hararemetro.co.zw
+- `npm run deploy:backend` - Deploy backend worker to admin.hararemetro.co.zw
+- `npm run deploy:all` - Deploy both frontend and backend workers
+- `npm run typecheck` - Run TypeScript type checking
 
-### Worker Management
-- `npm run worker:refresh-config` - Refresh worker configuration
-- `npm run worker:clear-cache` - Clear worker cache
-- `npm run worker:health` - Check worker health
+### Testing and Utilities
+- `npm run test` - Run build as test (no automated tests configured)
+- `npm run cf-typegen` - Generate Cloudflare Worker types from wrangler.jsonc
+- `npm run clean` - Clean build artifacts and caches
+- `npm run validate` - Run typecheck and build
 
 ## Architecture Overview
 
 ### Core Platform
-**Harare Metro** is a modern news aggregation platform built as a hybrid React SPA + Cloudflare Worker application:
+**Harare Metro** is a modern news aggregation platform built with a **dual-worker architecture**:
 
-- **Frontend**: React 18 SPA with Tailwind CSS and shadcn/ui components
-- **Backend**: Cloudflare Worker serving both static assets and API endpoints
-- **Database**: Supabase for authentication and user data storage
-- **Caching**: Cloudflare KV for RSS feed caching and configuration
-- **Deployment**: Single Cloudflare Worker at www.hararemetro.co.zw
+- **Frontend Worker** (www.hararemetro.co.zw): React Router 7 SSR application with minimal API endpoints
+- **Backend Worker** (admin.hararemetro.co.zw): Comprehensive admin panel and RSS processing engine
+- **Database**: Cloudflare D1 (single database shared across both workers)
+- **Analytics**: Cloudflare Analytics Engine for user interaction tracking
+- **AI Processing**: Cloudflare Workers AI for content enhancement and author recognition
+- **Deployment**: Two separate Cloudflare Workers on custom domains
 
 ### Key Technologies
-- **Build Tool**: Vite for fast development and optimized builds
-- **UI Framework**: React with Tailwind CSS and Radix UI primitives
-- **Authentication**: Supabase Auth with OAuth support (Google, GitHub)
-- **Data Fetching**: Custom hooks with React Query patterns
-- **Icons**: Lucide React and Heroicons
+- **Frontend Framework**: React 19 with React Router 7 (SSR-enabled)
+- **Build Tool**: Vite with Cloudflare plugin
+- **Backend Framework**: Hono (lightweight web framework for Cloudflare Workers)
+- **UI Framework**: Tailwind CSS 4.x with custom Zimbabwe flag color palette
+- **Icons**: Lucide React
 - **RSS Processing**: fast-xml-parser for feed parsing
+- **AI Services**: Cloudflare Workers AI for author extraction and content classification
+- **Database**: Cloudflare D1 (SQLite-based edge database)
+- **TypeScript**: Full type safety across both workers
+
+### Dual-Worker Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  www.hararemetro.co.zw                      │
+│              Frontend Worker (workers/app.ts)                │
+│  • React Router 7 SSR                                       │
+│  • Basic API endpoints (/api/feeds, /api/categories)        │
+│  • Static asset serving                                      │
+│  • Scheduled cron handler (calls backend for RSS refresh)   │
+│  • PWA manifest generation                                   │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+                    Hourly Cron Trigger
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                admin.hararemetro.co.zw                      │
+│              Backend Worker (backend/index.ts)               │
+│  • Admin dashboard UI                                        │
+│  • RSS feed processing with AI pipeline                     │
+│  • Author recognition and profile generation                │
+│  • Content quality scoring                                   │
+│  • News source management                                    │
+│  • Analytics and insights                                    │
+│  • Category and keyword management                           │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+                    Shared D1 Database
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                  Cloudflare D1 Database                      │
+│                    (hararemetro_db)                          │
+│  • Articles, categories, news sources                        │
+│  • Authors, keywords, article relationships                  │
+│  • User data, authentication                                 │
+│  • System configuration                                      │
+│  • Analytics and processing logs                             │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ### Project Structure
 
 ```
-src/
-├── components/           # React components
-│   ├── auth/            # Authentication components (AuthModal, UserProfile)
-│   ├── ui/              # shadcn/ui components and custom UI utilities
-│   └── *.jsx           # Feature components (HeaderNavigation, ArticleCard, etc.)
-├── contexts/           # React contexts (AuthContext)
-├── hooks/              # Custom React hooks (useAuth, useFeeds, useAnalytics)
-│   ├── useDirectFeeds.js      # Direct feed fetching (bypass worker)
-│   ├── useOptimizedFeeds.js   # Optimized feed management
-│   └── useUserData.js         # User data management
-├── lib/                # Utilities (supabase.js, utils.js, userService.js)
-├── services/           # Client-side services
-│   ├── CloudflareDirectClient.js    # Direct Cloudflare API access
-│   ├── DirectDataService.js         # Direct data service
-│   └── MultiTierCacheManager.js     # Multi-tier caching
-└── App.jsx             # Main application component
-
-worker/
-├── index.js            # Cloudflare Worker entry point
-├── api.js              # API endpoints
-└── services/           # Worker services
-    ├── ArticleService.js           # Article processing service
-    ├── AnalyticsEngineService.js   # Analytics tracking
-    ├── CacheService.js             # KV caching layer
-    ├── ConfigService.js            # Configuration management
-    ├── RSSFeedService.js           # RSS processing
-    └── D1UserService.js            # Database user operations
-
-scripts/
-├── dev-local.sh        # Development helper script
-├── build.sh            # Build script
-└── deploy.sh           # Deployment script
+/harare-metro                    # Monorepo root (frontend)
+├── workers/
+│   ├── app.ts                   # ✅ Frontend worker entry point (Hono + React Router SSR)
+│   ├── app-old.ts              # Legacy worker (not used)
+│   ├── index.js                # Legacy worker (not used)
+│   ├── index-d1.js             # Legacy worker (not used)
+│   ├── api.js                  # Legacy API file (not used)
+│   └── utils/
+│       └── logger.js           # Shared logging utility
+│
+├── app/                        # React Router 7 application
+│   ├── root.tsx                # Root layout
+│   ├── routes/                 # Route components
+│   └── components/             # React components
+│
+├── database/
+│   ├── D1Service.js            # D1 database service (shared)
+│   └── schema.sql              # Database schema
+│
+├── backend/                    # ✅ Backend worker (separate deployment)
+│   ├── index.ts                # Backend worker entry point (Hono app)
+│   ├── wrangler.jsonc          # Backend worker configuration
+│   ├── package.json            # Backend dependencies
+│   ├── admin/
+│   │   └── index.js            # Admin dashboard HTML
+│   ├── services/               # ✅ All business logic services
+│   │   ├── RSSFeedService.ts            # RSS feed fetching and parsing
+│   │   ├── ArticleService.ts            # Article CRUD operations
+│   │   ├── ArticleAIService.ts          # AI content processing
+│   │   ├── AuthorProfileService.ts      # Author recognition and profiles
+│   │   ├── NewsSourceManager.ts         # News source management
+│   │   ├── ContentProcessingPipeline.ts # AI processing pipeline
+│   │   ├── D1ConfigService.ts           # Configuration management
+│   │   ├── D1CacheService.ts            # D1-based caching
+│   │   ├── AnalyticsEngineService.ts    # Analytics tracking
+│   │   ├── CategoryManager.ts           # Category management
+│   │   ├── AuthService.ts               # Authentication
+│   │   └── ObservabilityService.ts      # Logging and monitoring
+│   └── durable-objects/         # Durable Objects (disabled for now)
+│       ├── ArticleInteractionsDO.ts
+│       ├── UserBehaviorDO.ts
+│       └── RealtimeAnalyticsDO.ts
+│
+├── wrangler.jsonc              # ✅ Frontend worker configuration
+├── package.json                # Frontend dependencies
+└── guides/                     # Documentation
 ```
 
 ### Data Flow Architecture
 
-**RSS Feed Processing**:
-1. Cloudflare Worker fetches RSS feeds from Zimbabwe news sources
-2. Feeds are processed and cached in KV storage with HM- prefixed namespaces
-3. Cron triggers refresh feeds every hour
-4. React frontend can access feeds via worker API or direct client access
-5. Multi-tier caching ensures optimal performance
+**RSS Feed Processing Flow:**
 
-**User Data Flow**:
-1. Supabase handles authentication and user profiles
-2. User interactions (bookmarks, likes, reading history) stored in Supabase
-3. Analytics events tracked via Cloudflare Analytics Engine
-4. Real-time state management through custom React hooks
+```
+1. Cron Trigger (Every hour: 0 * * * *)
+   ↓
+2. Frontend Worker (workers/app.ts)
+   - scheduled() handler triggered
+   ↓
+3. HTTP POST to Backend
+   - https://admin.hararemetro.co.zw/api/admin/refresh-rss
+   ↓
+4. Backend Worker (backend/index.ts)
+   - Calls RSSFeedService.initialBulkPull()
+   ↓
+5. RSS Processing Pipeline
+   - Fetch feeds from Zimbabwe news sources
+   - Parse XML with fast-xml-parser
+   ↓
+6. AI Processing Pipeline (ContentProcessingPipeline)
+   - Author extraction and recognition
+   - Content cleaning (remove image URLs, noise)
+   - Keyword classification (256-keyword taxonomy)
+   - Quality scoring
+   - Category assignment
+   ↓
+7. D1 Database Storage
+   - Insert/update articles
+   - Link authors to articles
+   - Update statistics
+   ↓
+8. Response to Frontend Worker
+   - Success/failure status
+   - Article counts
+   - Processing time
+   ↓
+9. Analytics Tracking
+   - Log cron execution in Analytics Engine
+```
 
-**Content Architecture**:
-- **Articles**: RSS feed items with standardized schema
-- **Categories**: Auto-extracted from RSS feeds (politics, business, sports, etc.)
-- **Sources**: Zimbabwe news outlets (Herald, NewsDay, Chronicle, etc.)
-- **User Content**: Bookmarks, likes, reading history, preferences
+**User Request Flow:**
 
-### Authentication System
-- **Provider**: Supabase Auth with email/password and OAuth
-- **User Roles**: Role-based access control (admin, creator, user)
-- **Profile Management**: Complete user profiles with preferences
-- **Session Handling**: Automatic token refresh and secure logout
+```
+1. User visits www.hararemetro.co.zw
+   ↓
+2. Frontend Worker (workers/app.ts)
+   - React Router SSR renders HTML
+   - Hydrates React application
+   ↓
+3. Client-side data fetching
+   - GET /api/feeds (from frontend worker)
+   ↓
+4. Frontend Worker reads from D1
+   - Direct database query
+   - Returns articles JSON
+   ↓
+5. React hydrates and displays articles
+```
 
-### Caching Strategy
-- **RSS Feeds**: Cached in Cloudflare KV with 1-hour TTL
-- **Static Assets**: Served via Cloudflare CDN
-- **API Responses**: Conditional caching based on content type
-- **Client-side**: Multi-tier cache manager with localStorage and memory caching
-- **Worker Cache**: Service worker caching for offline support
+**Admin Dashboard Flow:**
+
+```
+1. Admin visits admin.hararemetro.co.zw
+   ↓
+2. Backend Worker (backend/index.ts)
+   - Serves admin dashboard HTML
+   ↓
+3. Admin actions (manual refresh, source management, etc.)
+   - POST /api/admin/refresh-rss
+   - GET /api/admin/stats
+   - PUT /api/admin/rss-source/:id
+   ↓
+4. Backend services process requests
+   - RSSFeedService, NewsSourceManager, etc.
+   ↓
+5. D1 database operations
+   ↓
+6. Analytics tracking
+```
+
+### Database Architecture
+
+**Single D1 Database (hararemetro_db):**
+
+Binding name: `DB` (used by both workers)
+
+Key tables:
+- `articles` - News articles with full content
+- `categories` - Article categories (politics, business, sports, etc.)
+- `news_sources` - Zimbabwe news outlets (RSS feed URLs)
+- `authors` - Journalist profiles (auto-extracted)
+- `keywords` - Content classification keywords
+- `article_authors` - Many-to-many article-author relationships
+- `article_keywords` - Many-to-many article-keyword relationships
+- `system_config` - Platform configuration
+- `users` - User accounts and authentication
+- `user_preferences` - User settings
+- `daily_source_stats` - RSS fetch statistics
+- `ai_processing_log` - AI pipeline execution logs
+
+**No KV Storage** - All caching and storage uses D1 database.
+
+**No Supabase** - All authentication and user data in D1.
+
+### Cloudflare Configuration
+
+**Frontend Worker (wrangler.jsonc):**
+```jsonc
+{
+  "name": "harare-metro-frontend",
+  "main": "./workers/app.ts",
+  "routes": ["www.hararemetro.co.zw/*"],
+  "d1_databases": [
+    { "binding": "DB", "database_name": "hararemetro_db" }
+  ],
+  "analytics_engine_datasets": [
+    { "binding": "CATEGORY_CLICKS", "dataset": "category_clicks" },
+    { "binding": "NEWS_INTERACTIONS", "dataset": "news_interactions" },
+    { "binding": "SEARCH_QUERIES", "dataset": "search_queries" }
+  ],
+  "triggers": {
+    "crons": ["0 * * * *"]  // Hourly RSS refresh
+  }
+}
+```
+
+**Backend Worker (backend/wrangler.jsonc):**
+```jsonc
+{
+  "name": "harare-metro-backend",
+  "main": "./index.ts",
+  "routes": ["admin.hararemetro.co.zw/*"],
+  "d1_databases": [
+    { "binding": "DB", "database_name": "hararemetro_db" }
+  ],
+  "analytics_engine_datasets": [
+    { "binding": "NEWS_ANALYTICS", "dataset": "news_analytics" },
+    { "binding": "SEARCH_ANALYTICS", "dataset": "search_analytics" },
+    { "binding": "CATEGORY_ANALYTICS", "dataset": "category_analytics" },
+    { "binding": "USER_ANALYTICS", "dataset": "user_analytics" },
+    { "binding": "PERFORMANCE_ANALYTICS", "dataset": "performance_analytics" }
+  ],
+  "ai": { "binding": "AI" },
+  "vectorize": [
+    { "binding": "VECTORIZE_INDEX", "index_name": "harare-metro-articles" }
+  ],
+  "kv_namespaces": [
+    { "binding": "AUTH_STORAGE", "id": "..." }
+  ]
+}
+```
+
+**Environment Variables:**
+- `NODE_ENV`: "production"
+- `BACKEND_URL`: "https://admin.hararemetro.co.zw"
+- `LOG_LEVEL`: "info"
+- `ROLES_ENABLED`: "true"
+- `DEFAULT_ROLE`: "creator"
+
+### Cron Job Implementation
+
+**Frontend Worker Scheduled Handler (workers/app.ts:200-287):**
+
+```typescript
+export default {
+  fetch: app.fetch,
+
+  async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    // Calls backend RSS refresh endpoint
+    const backendUrl = env.BACKEND_URL || 'https://admin.hararemetro.co.zw';
+    const response = await fetch(`${backendUrl}/api/admin/refresh-rss`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    // Logs results and tracks analytics
+  }
+};
+```
+
+**Trigger:** Every hour at minute 0 (0 * * * *)
+
+**Flow:**
+1. Cloudflare triggers scheduled event on frontend worker
+2. Frontend worker's scheduled() handler executes
+3. Makes HTTP POST to backend worker's refresh endpoint
+4. Backend worker processes RSS feeds through AI pipeline
+5. Results tracked in Analytics Engine
 
 ## Design System & Branding
 
@@ -165,19 +375,13 @@ scripts/
   flex-direction: column;
   background: linear-gradient(to bottom,
     hsl(var(--zw-green)) 0% 20%,
-    hsl(var(--zw-yellow)) 20% 40%, 
+    hsl(var(--zw-yellow)) 20% 40%,
     hsl(var(--zw-red)) 40% 60%,
     hsl(var(--zw-black)) 60% 80%,
     hsl(var(--zw-white)) 80% 100%
   );
 }
 ```
-
-**Purpose**: 
-- Brand recognition and immediate Zimbabwe connection
-- Cultural pride and African heritage celebration
-- Consistent presence across all pages and views
-- Visual anchor point for users
 
 ### Mobile-First Design Patterns
 
@@ -191,142 +395,167 @@ scripts/
 6. **Bottom navigation** for primary actions
 7. **Pull-to-refresh** patterns where applicable
 
-### Component Design Guidelines
+## Development Guidelines
 
-**AuthModal** (`src/components/auth/AuthModal.jsx`):
-- Full-screen overlay with Zimbabwe flag strip
-- Tabbed interface (Sign In/Sign Up/Reset)
-- Large rounded inputs (h-14, rounded-2xl)
-- Touch-friendly buttons with loading states
-- Backdrop blur effects for modern feel
-- Success states with Zimbabwe green accent
+### Frontend Worker Development (workers/app.ts)
 
-**ProfilePage** (`src/components/ProfilePage.jsx`):
-- Mobile-first design (max-width constrained)
-- Instagram-like stats grid (Read, Liked, Saved, Streak)
-- Achievement cards using Zimbabwe colors
-- Clean navigation between Profile/Edit/Settings views
-- Avatar with gradient background using flag colors
-- Touch-friendly action buttons
+**Purpose:** Minimal SSR worker with basic API endpoints
 
-**General Component Patterns**:
+**Responsibilities:**
+- Serve React Router SSR application
+- Provide basic API endpoints (`/api/feeds`, `/api/categories`, `/api/health`)
+- Handle cron triggers (call backend for RSS refresh)
+- Generate PWA manifest
+
+**DO NOT:**
+- Add complex business logic
+- Add RSS processing code
+- Add AI processing
+- Query database excessively
+
+**Database Access:**
+- Use `D1Service` for simple queries only
+- Keep queries fast and efficient
+- Prefer reading cached data
+
+### Backend Worker Development (backend/index.ts)
+
+**Purpose:** Comprehensive admin panel and RSS processing engine
+
+**Responsibilities:**
+- Admin dashboard serving
+- RSS feed fetching and processing
+- AI content enhancement pipeline
+- Author recognition and profile generation
+- News source management
+- Analytics and insights
+- Bulk operations
+
+**Services Architecture:**
+All business logic should be in `backend/services/`:
+
+- `RSSFeedService.ts` - RSS fetching and parsing
+- `ArticleService.ts` - Article CRUD
+- `ArticleAIService.ts` - AI processing (Workers AI)
+- `ContentProcessingPipeline.ts` - Full AI pipeline orchestration
+- `AuthorProfileService.ts` - Author recognition
+- `NewsSourceManager.ts` - Source management
+- `D1ConfigService.ts` - Configuration
+- `D1CacheService.ts` - Caching layer
+- `AnalyticsEngineService.ts` - Analytics tracking
+
+### Code Conventions
+
+**TypeScript:**
+- All new code should use TypeScript
+- Use proper types from `worker-configuration.d.ts`
+- Avoid `any` types where possible
+- Use `@ts-ignore` only when absolutely necessary (with comments)
+
+**Imports:**
+```typescript
+// External packages first
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+
+// Internal services
+import { D1Service } from "../database/D1Service.js";
+import { RSSFeedService } from "./services/RSSFeedService.js";
+
+// Types
+type Bindings = { ... };
+```
+
+**Error Handling:**
+```typescript
+try {
+  // Operation
+} catch (error: any) {
+  console.error('[CONTEXT] Error message:', error);
+  return c.json({ error: "User-friendly message" }, 500);
+}
+```
+
+**Logging Conventions:**
+- Use `[CRON]` prefix for cron-related logs
+- Use `[API]` prefix for API endpoint logs
+- Use `[SERVICE]` prefix for service-level logs
+- Use `[ERROR]` prefix for errors
+- Use `[WORKER]` prefix for worker initialization
+
+### Design System Usage
+
+**Component Patterns:**
 - Always use `font-serif` class for headings
 - Use `bg-zw-green`, `bg-zw-yellow`, etc. for colored elements
 - Implement proper loading and error states
 - Include proper accessibility attributes
 - Follow mobile-first responsive design
 
-## Environment Configuration
+**Font System:**
+1. **Headings**: Always use `font-serif` class
+2. **Body text**: Always use `font-sans` class
+3. **Never** introduce additional fonts
 
-### Required Environment Variables (.env.local)
-```
-VITE_SUPABASE_URL=https://oybatvdffsbaxwuxfetz.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95YmF0dmRmZnNiYXh3dXhmZXR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1OTA2MjgsImV4cCI6MjA3MzE2NjYyOH0.tLr6-BXM9LvrpmR99ZPcDP_8I0p5EfNvnpX0QAl6plo
-```
-
-### Cloudflare Configuration (wrangler.toml)
-- **KV Namespaces**: All prefixed with HM- (HM-CONFIG-STORAGE-PROD, HM-CACHE-STORAGE-PROD, etc.)
-- **D1 Database**: hararemetro_users for user data
-- **Analytics Engine**: Three datasets for tracking user interactions  
-- **Cron Triggers**: Hourly RSS feed refresh
-- **Domain**: www.hararemetro.co.zw
-
-### Database Schema (Supabase)
-Key tables: profiles, bookmarks, likes, reading_history, analytics_events
-All tables have Row Level Security (RLS) enabled with user-specific policies.
-
-## Development Guidelines
-
-### Component Architecture
-- Use functional components with hooks
-- Follow existing patterns for new components (check AuthModal.jsx, ProfilePage.jsx)
-- Leverage shadcn/ui components from `src/components/ui/`
-- **ALWAYS** maintain Zimbabwe flag color consistency
-- **ALWAYS** use the dual-font system (Georgia for headings, Inter for body)
-
-### State Management
-- **Global State**: React Context for authentication (AuthContext)
-- **Server State**: Custom hooks with React Query patterns (useFeeds, useAnalytics, useDirectFeeds, useOptimizedFeeds)
-- **Local State**: useState for component-specific state
-- **Persistent State**: localStorage with harare-metro_ prefixed keys for user preferences
-- **User Data**: Centralized through useUserData hook
-
-### API Integration
-- Worker API endpoints follow REST conventions
-- Public endpoints: `/api/feeds`, `/api/health`
-- Authenticated endpoints: `/api/user/*`, `/api/analytics/track`
-- Direct Cloudflare access via CloudflareDirectClient
-- Error handling with consistent response formats
-- Multi-tier caching for optimal performance
-
-### Code Conventions
-- Use JSX for React components
-- Follow existing import ordering and file structure
-- Implement proper error boundaries and loading states
-- Use TypeScript-style prop validation where applicable
-- **NEVER** use custom fonts other than Georgia (headings) and Inter (body)
-- **ALWAYS** include Zimbabwe flag strip in full-page components
-- **ALWAYS** use Zimbabwe flag colors for theming
-
-### Performance Considerations
-- Infinite scrolling for article feeds
-- Image optimization via Cloudflare Images (when enabled)
-- Bundle optimization with Vite
-- Efficient re-renders with proper dependency arrays in hooks
-- Multi-tier caching strategy
-- Service worker for offline functionality
-- Lazy loading of non-critical components
-
-### Mobile Optimization
-- **Touch Targets**: Minimum 44px for interactive elements
-- **Input Fields**: Large height (h-12 to h-14) with rounded corners
-- **Buttons**: Full-width where appropriate, touch-friendly sizing
-- **Navigation**: Bottom-mounted mobile navigation
-- **Modals**: Full-screen on mobile with proper header controls
-- **Cards**: Rounded corners with proper spacing and shadows
-- **Typography**: Optimized sizes for mobile readability
-
-## Critical Implementation Notes
-
-### Font System Implementation
-When implementing new components or modifying existing ones:
-
-1. **Headings**: Always use `font-serif` class or `Georgia, 'Times New Roman', serif`
-2. **Body text**: Always use `font-sans` class or `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif`
-3. **Never** introduce additional fonts without updating this documentation
-
-### Zimbabwe Branding Implementation
-When creating or modifying UI elements:
-
+**Branding:**
 1. **Primary actions**: Use `bg-zw-green` class
-2. **Warning states**: Use `bg-zw-yellow` class  
+2. **Warning states**: Use `bg-zw-yellow` class
 3. **Error states**: Use `bg-zw-red` class
-4. **Text colors**: Use `text-zw-green`, `text-zw-yellow`, `text-zw-red` as appropriate
-5. **Always** include the Zimbabwe flag strip in full-page layouts
-6. **Never** use arbitrary colors without justification
+4. **Always** include the Zimbabwe flag strip in full-page layouts
 
-### Authentication Flow
-- AuthModal handles all authentication states
-- Supabase integration through useAuth hook
-- Role-based access control implemented
-- Profile management integrated with user preferences
+## API Endpoints Reference
 
-### Data Management
-- RSS feeds processed through worker services
-- User data managed via Supabase with RLS
-- Analytics tracked via Cloudflare Analytics Engine
-- Multi-tier caching for optimal performance
-- Direct client access for enhanced reliability
+### Frontend Worker (www.hararemetro.co.zw)
+
+**Public Endpoints:**
+- `GET /api/health` - Health check
+- `GET /api/feeds?limit=20&offset=0&category=politics` - Get articles
+- `GET /api/categories` - Get all categories
+- `GET /api/article/by-source-slug?source=herald&slug=article-slug` - Get single article
+- `GET /api/manifest.json` - PWA manifest
+
+### Backend Worker (admin.hararemetro.co.zw)
+
+**Admin Endpoints:**
+- `GET /` or `/admin` - Admin dashboard
+- `GET /api/health` - Health check with full service status
+- `GET /api/admin/stats` - Platform statistics
+- `POST /api/admin/refresh-rss` - Manual RSS refresh (also called by cron)
+- `POST /api/admin/bulk-pull` - Initial bulk article fetch
+- `POST /api/admin/add-zimbabwe-sources` - Add Zimbabwe news sources
+- `GET /api/admin/rss-config` - RSS configuration and source limits
+- `PUT /api/admin/rss-source/:sourceId` - Update source configuration
+- `GET /api/admin/sources` - Get all news sources with stats
+- `GET /api/admin/ai-pipeline-status` - AI processing statistics
+- `GET /api/admin/authors` - Get author profiles
+- `GET /api/admin/authors/detailed` - Detailed authors with cross-outlet tracking
+- `GET /api/admin/content-quality` - Content quality insights
+- `GET /api/admin/categories/with-authors` - Categories with author expertise
+
+**Public Endpoints:**
+- `GET /api/feeds` - Get articles (enhanced with caching)
+- `GET /api/categories` - Get categories
+- `GET /api/author/:slug` - Author profile page
+- `POST /api/author/:authorId/follow` - Follow/unfollow author
+- `GET /api/featured-authors` - Featured journalists
+- `GET /api/trending-authors` - Trending authors
+- `GET /api/search/authors?q=query` - Search authors across outlets
 
 ## Important Reminders
 
-1. **Typography**: Georgia for headings, Inter for body - NO EXCEPTIONS
-2. **Colors**: Zimbabwe flag palette only - maintain consistency
-3. **Mobile**: Mobile-first design with TikTok-like experience
-4. **Branding**: Zimbabwe flag strip must be present on all full-page views
-5. **Performance**: Multi-tier caching and optimization strategies implemented
-6. **Authentication**: Supabase-based with role management
-7. **Analytics**: Cloudflare Analytics Engine for user tracking
-8. **Accessibility**: Proper ARIA labels and touch targets
-9. **Error Handling**: Consistent error boundaries and user feedback
-10. **Testing**: Manual testing required - no automated tests currently configured
+1. **Dual-Worker Architecture**: Frontend and backend are separate workers
+2. **Database Binding**: Always use `DB` (not `ARTICLES_DB`)
+3. **Services Location**: All business logic in `backend/services/`
+4. **Cron Implementation**: Frontend calls backend via HTTP POST
+5. **No KV Storage**: Everything uses D1 database
+6. **No Supabase**: All user data in D1
+7. **Typography**: Georgia for headings, Inter for body - NO EXCEPTIONS
+8. **Colors**: Zimbabwe flag palette only - maintain consistency
+9. **Mobile**: Mobile-first design with TikTok-like experience
+10. **Branding**: Zimbabwe flag strip must be present on all full-page views
+11. **TypeScript**: Use TypeScript for all new code
+12. **Logging**: Use proper log prefixes for debugging
+13. **Error Handling**: Consistent error boundaries and user feedback
+14. **Testing**: Manual testing required - no automated tests currently configured
+15. **AI Features**: Content cleaning, author extraction, keyword classification, quality scoring
+16. **Author Recognition**: Celebrate Zimbabwe journalism through author profiles

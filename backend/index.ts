@@ -15,10 +15,11 @@ import { NewsSourceService } from "./services/NewsSourceService.js";
 import { NewsSourceManager } from "./services/NewsSourceManager.js";
 import { RSSFeedService } from "./services/RSSFeedService.js";
 import { OpenAuthService } from "./services/OpenAuthService.js";
-import { RealtimeAnalyticsDO } from "./durable-objects/RealtimeAnalyticsDO.js";
-import { ArticleInteractionsDO } from "./durable-objects/ArticleInteractionsDO.js";
-import { UserBehaviorDO } from "./durable-objects/UserBehaviorDO.js";
-import { RealtimeCountersDO } from "./durable-objects/RealtimeCountersDO.js";
+// Durable Objects temporarily disabled - uncomment when needed
+// import { RealtimeAnalyticsDO } from "./durable-objects/RealtimeAnalyticsDO.js";
+// import { ArticleInteractionsDO } from "./durable-objects/ArticleInteractionsDO.js";
+// import { UserBehaviorDO } from "./durable-objects/UserBehaviorDO.js";
+// import { RealtimeCountersDO } from "./durable-objects/RealtimeCountersDO.js";
 
 // Import admin interface
 import { getAdminHTML } from "./admin/index.js";
@@ -1192,10 +1193,10 @@ app.get("/api/manifest.json", async (c) => {
 
 export default app;
 
-// Export Durable Object classes for Cloudflare Workers
-export { 
-  ArticleInteractionsDO,
-  UserBehaviorDO, 
-  RealtimeCountersDO,
-  RealtimeAnalyticsDO 
-};
+// Export Durable Object classes for Cloudflare Workers (disabled for now)
+// export {
+//   ArticleInteractionsDO,
+//   UserBehaviorDO,
+//   RealtimeCountersDO,
+//   RealtimeAnalyticsDO
+// };
