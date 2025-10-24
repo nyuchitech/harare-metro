@@ -665,6 +665,268 @@ app.get("/api/article/by-source-slug", async (c) => {
   }
 });
 
+// ===== PHASE 1: PUBLIC USER-FACING ENDPOINTS =====
+
+// News Bytes - Articles with images only (TikTok-like feed)
+app.get("/api/news-bytes", async (c) => {
+  try {
+    const limit = parseInt(c.req.query("limit") || "20");
+    const offset = parseInt(c.req.query("offset") || "0");
+    const category = c.req.query("category");
+
+    let query = `
+      SELECT id, title, slug, description, content_snippet, author, source,
+             published_at, image_url, original_url, category_id, view_count,
+             like_count, bookmark_count
+      FROM articles
+      WHERE status = 'published'
+      AND image_url IS NOT NULL
+      AND image_url != ''
+    `;
+
+    let countQuery = `
+      SELECT COUNT(*) as total FROM articles
+      WHERE status = 'published'
+      AND image_url IS NOT NULL
+      AND image_url != ''
+    `;
+
+    if (category && category !== 'all') {
+      query += ` AND category_id = ?`;
+      countQuery += ` AND category_id = ?`;
+    }
+
+    query += ` ORDER BY published_at DESC LIMIT ? OFFSET ?`;
+
+    const articlesResult = category && category !== 'all' ?
+      await c.env.DB.prepare(query).bind(category, limit, offset).all() :
+      await c.env.DB.prepare(query).bind(limit, offset).all();
+
+    const totalResult = category && category !== 'all' ?
+      await c.env.DB.prepare(countQuery).bind(category).first() :
+      await c.env.DB.prepare(countQuery).first();
+
+    const totalCount = totalResult.total || 0;
+
+    return c.json({
+      articles: articlesResult.results,
+      total: totalCount,
+      limit,
+      offset,
+      hasMore: offset + limit < totalCount
+    });
+  } catch (error) {
+    console.error("Error fetching news bytes:", error);
+    return c.json({ error: "Failed to fetch news bytes" }, 500);
+  }
+});
+
+// Search endpoint - Full-text search with keywords
+app.get("/api/search", async (c) => {
+  try {
+    const query = c.req.query("q");
+    const category = c.req.query("category");
+    const limit = parseInt(c.req.query("limit") || "50");
+
+    if (!query || query.trim().length === 0) {
+      return c.json({ error: "Search query is required" }, 400);
+    }
+
+    const searchTerm = `%${query.trim()}%`;
+
+    // Search in title, description, and keywords
+    let searchQuery = `
+      SELECT DISTINCT a.id, a.title, a.slug, a.description, a.content_snippet,
+             a.author, a.source, a.published_at, a.image_url, a.original_url,
+             a.category_id, a.view_count, a.like_count, a.bookmark_count
+      FROM articles a
+      LEFT JOIN article_keywords ak ON a.id = ak.article_id
+      WHERE a.status = 'published'
+      AND (
+        a.title LIKE ? OR
+        a.description LIKE ? OR
+        a.content LIKE ? OR
+        a.content_snippet LIKE ? OR
+        ak.keyword LIKE ?
+      )
+    `;
+
+    const params = [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm];
+
+    if (category && category !== 'all') {
+      searchQuery += ` AND a.category_id = ?`;
+      params.push(category);
+    }
+
+    searchQuery += ` ORDER BY a.published_at DESC LIMIT ?`;
+    params.push(limit);
+
+    const results = await c.env.DB.prepare(searchQuery).bind(...params).all();
+
+    // Log search query for analytics
+    try {
+      await c.env.DB.prepare(`
+        INSERT INTO search_logs (query, category_filter, results_count, session_id, created_at)
+        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      `).bind(
+        query.trim(),
+        category || null,
+        results.results.length,
+        c.req.header('x-session-id') || 'anonymous'
+      ).run();
+    } catch (logError) {
+      console.error("Failed to log search:", logError);
+      // Don't fail the search if logging fails
+    }
+
+    return c.json({
+      results: results.results,
+      query: query.trim(),
+      count: results.results.length,
+      category: category || 'all'
+    });
+  } catch (error) {
+    console.error("Error searching articles:", error);
+    return c.json({ error: "Failed to search articles" }, 500);
+  }
+});
+
+// Public Authors endpoint (for user discovery)
+app.get("/api/authors", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const limit = parseInt(c.req.query("limit") || "20");
+    const outlet = c.req.query("outlet");
+
+    // Get authors from the service (same logic as admin endpoint)
+    const authors = await services.authorProfileService.getAuthors({
+      limit,
+      outlet
+    });
+
+    return c.json({
+      authors,
+      total: authors.length,
+      limit
+    });
+  } catch (error) {
+    console.error("Error fetching authors:", error);
+    return c.json({ error: "Failed to fetch authors" }, 500);
+  }
+});
+
+// Public Sources endpoint (for following)
+app.get("/api/sources", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+
+    // Get active news sources
+    const sources = await c.env.DB.prepare(`
+      SELECT id, name, url, category, priority, metadata,
+             last_fetched_at, fetch_count, error_count
+      FROM rss_sources
+      WHERE enabled = 1
+      ORDER BY priority DESC, name ASC
+    `).all();
+
+    // Get article counts for each source
+    const sourcesWithCounts = await Promise.all(
+      sources.results.map(async (source) => {
+        const countResult = await c.env.DB.prepare(`
+          SELECT COUNT(*) as count FROM articles WHERE source_id = ?
+        `).bind(source.id).first();
+
+        return {
+          ...source,
+          article_count: countResult.count || 0
+        };
+      })
+    );
+
+    return c.json({
+      sources: sourcesWithCounts,
+      total: sourcesWithCounts.length
+    });
+  } catch (error) {
+    console.error("Error fetching sources:", error);
+    return c.json({ error: "Failed to fetch sources" }, 500);
+  }
+});
+
+// User-triggered refresh endpoint (with rate limiting)
+// Simple in-memory rate limiter (use KV or D1 for production)
+const refreshRateLimiter = new Map();
+
+app.post("/api/refresh", async (c) => {
+  try {
+    // Get user identifier (session ID or user ID)
+    const userId = c.req.header('x-session-id') || c.req.header('x-user-id') || 'anonymous';
+
+    // Check rate limit (5 minutes between refreshes)
+    const lastRefresh = refreshRateLimiter.get(userId);
+    const now = Date.now();
+    const rateLimitMs = 5 * 60 * 1000; // 5 minutes
+
+    if (lastRefresh && (now - lastRefresh) < rateLimitMs) {
+      const remainingMs = rateLimitMs - (now - lastRefresh);
+      const remainingSec = Math.ceil(remainingMs / 1000);
+
+      return c.json({
+        error: "Rate limit exceeded",
+        message: `Please wait ${remainingSec} seconds before refreshing again`,
+        retryAfter: remainingSec
+      }, 429);
+    }
+
+    // Update rate limiter
+    refreshRateLimiter.set(userId, now);
+
+    // Clean up old entries (older than 10 minutes)
+    for (const [key, timestamp] of refreshRateLimiter.entries()) {
+      if (now - timestamp > 10 * 60 * 1000) {
+        refreshRateLimiter.delete(key);
+      }
+    }
+
+    // Trigger RSS refresh by calling the admin endpoint internally
+    const services = initializeServices(c.env);
+    console.log('[USER_REFRESH] User-triggered refresh initiated by:', userId);
+
+    // Call RSS service directly instead of HTTP request
+    const result = await services.rssService.refreshAllSources({
+      limit: 5 // Limit to 5 articles per source for user refresh
+    });
+
+    // Track refresh in analytics
+    if (c.env.NEWS_INTERACTIONS) {
+      try {
+        c.env.NEWS_INTERACTIONS.writeDataPoint({
+          blobs: ['user_refresh', 'success', userId],
+          doubles: [result.newArticles || 0],
+          indexes: ['refresh_trigger']
+        });
+      } catch (analyticsError) {
+        console.error('[USER_REFRESH] Analytics tracking failed:', analyticsError);
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: "Refresh completed",
+      newArticles: result.newArticles || 0,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("[USER_REFRESH] Error during user refresh:", error);
+    return c.json({
+      error: "Failed to refresh",
+      message: "An error occurred while refreshing articles"
+    }, 500);
+  }
+});
+
+// ===== ADMIN ENDPOINTS (PROTECTED - TODO: Re-enable auth) =====
+
 // AI Pipeline monitoring and author recognition endpoints
 // TODO: Add authentication back when OpenAuthService is fixed
 app.get("/api/admin/ai-pipeline-status", async (c) => {
