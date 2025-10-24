@@ -6,203 +6,320 @@ export function getAdminHTML(): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Harare Metro Admin</title>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             background: #000000;
             min-height: 100vh;
-            padding: 20px;
-            position: relative;
             color: #ffffff;
         }
-        
-        /* Zimbabwe Flag Strip - Core Brand Element */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 8px;
-            height: 100vh;
-            z-index: 1000;
-            background: linear-gradient(to bottom,
-                #00A651 0% 20%,
-                #FDD116 20% 40%, 
-                #EF3340 40% 60%,
-                #000000 60% 80%,
-                #FFFFFF 80% 100%
-            );
-        }
-        
+
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            margin-left: calc(50% - 600px + 12px); /* Account for flag strip */
+            padding: 20px;
+        }
+
+        .header {
             background: #1a1a1a;
             border-radius: 16px;
-            border: 1px solid #333;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: #000000;
-            color: white;
             padding: 30px;
-            text-align: center;
-            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+            border: 1px solid #333;
         }
-        
+
         .header h1 {
             font-family: Georgia, 'Times New Roman', serif;
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-        
-        .nav {
-            display: flex;
-            background: #2a2a2a;
-            border-bottom: 1px solid #333;
-        }
-        
-        .nav-item {
-            flex: 1;
-            text-align: center;
-            padding: 15px;
-            cursor: pointer;
-            transition: background 0.3s;
-            border: none;
-            background: none;
-            font-size: 1rem;
-            color: #ccc;
-        }
-        
-        .nav-item:hover {
-            background: #333;
+            margin-bottom: 8px;
             color: #fff;
         }
-        
+
+        .header p {
+            color: #999;
+            font-size: 0.95rem;
+        }
+
+        .nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .nav-item {
+            background: #1a1a1a;
+            color: #999;
+            border: 1px solid #333;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-item:hover {
+            background: #2a2a2a;
+            color: #fff;
+            border-color: #555;
+        }
+
         .nav-item.active {
             background: #fff;
             color: #000;
+            border-color: #fff;
         }
-        
+
         .content {
-            padding: 30px;
+            min-height: 400px;
         }
-        
+
         .section {
             display: none;
         }
-        
+
         .section.active {
             display: block;
         }
-        
+
         .card {
-            background: #2a2a2a;
-            border-radius: 12px;
+            background: #1a1a1a;
+            border-radius: 16px;
             padding: 25px;
             margin-bottom: 20px;
-            border: 1px solid #444;
+            border: 1px solid #333;
         }
-        
+
         .card h3 {
             font-family: Georgia, 'Times New Roman', serif;
             color: #fff;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        
+
         .btn {
             background: #fff;
             color: #000;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            border: 1px solid #fff;
+            padding: 10px 20px;
+            border-radius: 9999px;
             cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s;
-            margin-right: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-        
+
         .btn:hover {
-            background: #ccc;
+            background: #e5e5e5;
+            transform: translateY(-1px);
         }
-        
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #fff;
+            border: 1px solid #555;
+        }
+
+        .btn-secondary:hover {
+            background: #2a2a2a;
+            border-color: #777;
+        }
+
         .btn-danger {
             background: #333;
             color: #fff;
+            border: 1px solid #555;
         }
-        
+
         .btn-danger:hover {
-            background: #555;
+            background: #444;
         }
-        
-        .btn-warning {
-            background: #666;
-            color: #fff;
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
         }
-        
-        .btn-warning:hover {
-            background: #888;
-        }
-        
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 15px;
+            margin-bottom: 20px;
         }
-        
+
         .stat-card {
-            background: #333;
+            background: #2a2a2a;
             border-radius: 12px;
             padding: 20px;
-            text-align: center;
-            border: 2px solid #555;
-            transition: transform 0.3s;
+            border: 1px solid #444;
+            transition: transform 0.2s;
         }
-        
+
         .stat-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-3px);
         }
-        
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
         .stat-number {
             font-size: 2rem;
             font-weight: bold;
             color: #fff;
+            margin-bottom: 5px;
         }
-        
+
         .stat-label {
-            color: #ccc;
-            margin-top: 5px;
+            color: #999;
+            font-size: 0.9rem;
         }
-        
-        .log {
-            background: #000;
-            color: #00ff00;
-            padding: 20px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            height: 300px;
-            overflow-y: auto;
+
+        /* Data Tables */
+        .data-table-container {
+            overflow-x: auto;
             margin-top: 20px;
         }
-        
-        /* Modal Styles */
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .data-table th {
+            background: #2a2a2a;
+            color: #fff;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 2px solid #444;
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #333;
+            color: #e5e5e5;
+        }
+
+        .data-table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .data-table tbody tr:hover {
+            background: #2a2a2a;
+        }
+
+        .data-table input,
+        .data-table select {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            width: 100%;
+        }
+
+        .data-table input:focus,
+        .data-table select:focus {
+            outline: none;
+            border-color: #fff;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-active {
+            background: #fff;
+            color: #000;
+        }
+
+        .badge-inactive {
+            background: #333;
+            color: #999;
+        }
+
+        .badge-success {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #555;
+        }
+
+        .badge-error {
+            background: #2a2a2a;
+            color: #999;
+            border: 1px solid #444;
+        }
+
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -211,533 +328,871 @@ export function getAdminHTML(): string {
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.8);
+            background-color: rgba(0,0,0,0.85);
             backdrop-filter: blur(8px);
         }
-        
+
         .modal.show {
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        
+
         .modal-content {
             background: #1a1a1a;
             border-radius: 16px;
             border: 1px solid #444;
             padding: 30px;
-            max-width: 500px;
+            max-width: 600px;
             width: 90%;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+            max-height: 85vh;
+            overflow-y: auto;
         }
-        
+
         .modal h3 {
             font-family: Georgia, 'Times New Roman', serif;
             color: #fff;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             font-size: 1.4rem;
         }
-        
+
         .form-group {
             margin-bottom: 20px;
         }
-        
+
         .form-group label {
             display: block;
             color: #ccc;
             margin-bottom: 8px;
             font-weight: 500;
+            font-size: 0.9rem;
         }
-        
-        .form-group input {
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #444;
             border-radius: 8px;
             background: #2a2a2a;
             color: #fff;
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
-        
-        .form-group input:focus {
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
-            border-color: #00A651;
-            box-shadow: 0 0 0 2px rgba(0, 166, 81, 0.2);
+            border-color: #fff;
         }
-        
+
         .modal-buttons {
             display: flex;
             gap: 10px;
             justify-content: flex-end;
             margin-top: 25px;
         }
-        
-        .btn-primary {
-            background: #00A651;
-            color: #fff;
-        }
-        
-        .btn-primary:hover {
-            background: #008A44;
-        }
-        
-        .btn-secondary {
-            background: #333;
-            color: #fff;
-        }
-        
-        .btn-secondary:hover {
-            background: #555;
-        }
-        
-        .confirmation-text {
-            color: #ccc;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-        
-        .warning-text {
-            color: #FDD116;
-            font-weight: 600;
-        }
-        
-        .error-text {
-            color: #EF3340;
-            font-weight: 600;
-        }
-        
-        .sources-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        
-        .sources-table th,
-        .sources-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #444;
-            color: #fff;
-        }
-        
-        .sources-table th {
-            background: #333;
-            color: #fff;
-            font-weight: bold;
-        }
-        
-        .status-active {
-            color: #00ff00;
-            font-weight: bold;
-        }
-        
-        .status-inactive {
-            color: #ff6666;
-            font-weight: bold;
-        }
-        
-        .loading {
+
+        .loading-spinner {
             display: inline-block;
-            animation: spin 1s linear infinite;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #333;
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
-        
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #555;
+        }
+
+        .alert-error {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            opacity: 0.3;
+        }
+
+        code {
+            background: #2a2a2a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #e5e5e5;
+        }
+
+        pre {
+            background: #0a0a0a;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-                <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 2.5rem; font-weight: bold; color: #fff;">
-                    Harare Metro
-                </div>
-                <div style="font-size: 1.5rem;">🇿🇼</div>
-            </div>
-            <div style="margin-top: 10px; font-size: 1.1rem; opacity: 0.9; color: #ccc;">
-                Backend Management & Analytics Dashboard
-            </div>
+            <h1>Harare Metro Admin</h1>
+            <p>Backend Management & Analytics Dashboard</p>
         </div>
-        
+
         <div class="nav">
-            <button class="nav-item active" onclick="showSection('dashboard')">Dashboard</button>
-            <button class="nav-item" onclick="showSection('rss')">RSS Sources</button>
-            <button class="nav-item" onclick="showSection('articles')">Articles</button>
-            <button class="nav-item" onclick="showSection('analytics')">Analytics</button>
-            <button class="nav-item" onclick="showSection('system')">System</button>
+            <button class="nav-item active" onclick="showSection('dashboard')">
+                <i data-lucide="layout-dashboard"></i> Dashboard
+            </button>
+            <button class="nav-item" onclick="showSection('sources')">
+                <i data-lucide="rss"></i> RSS Sources
+            </button>
+            <button class="nav-item" onclick="showSection('articles')">
+                <i data-lucide="newspaper"></i> Articles
+            </button>
+            <button class="nav-item" onclick="showSection('authors')">
+                <i data-lucide="users"></i> Authors
+            </button>
+            <button class="nav-item" onclick="showSection('categories')">
+                <i data-lucide="folder"></i> Categories
+            </button>
+            <button class="nav-item" onclick="showSection('analytics')">
+                <i data-lucide="bar-chart-3"></i> Analytics
+            </button>
+            <button class="nav-item" onclick="showSection('system')">
+                <i data-lucide="settings"></i> System
+            </button>
         </div>
-        
+
         <div class="content">
             <!-- Dashboard Section -->
             <div id="dashboard" class="section active">
                 <div class="stats-grid">
                     <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-lucide="file-text" stroke="#000"></i>
+                        </div>
                         <div class="stat-number" id="totalArticles">-</div>
                         <div class="stat-label">Total Articles</div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-lucide="rss" stroke="#000"></i>
+                        </div>
                         <div class="stat-number" id="activeSources">-</div>
                         <div class="stat-label">Active Sources</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number" id="lastRefresh">-</div>
-                        <div class="stat-label">Last RSS Refresh</div>
+                        <div class="stat-icon">
+                            <i data-lucide="folder" stroke="#000"></i>
+                        </div>
+                        <div class="stat-number" id="totalCategories">-</div>
+                        <div class="stat-label">Categories</div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-lucide="database" stroke="#000"></i>
+                        </div>
                         <div class="stat-number" id="dbSize">-</div>
                         <div class="stat-label">Database Size</div>
                     </div>
                 </div>
-                
+
                 <div class="card">
-                    <h3>Quick Actions</h3>
-                    <button class="btn" onclick="refreshRSS()">🔄 Refresh RSS Feeds</button>
-                    <button class="btn btn-warning" onclick="clearCache()">🗑️ Clear Cache</button>
-                    <button class="btn btn-danger" onclick="exportData()">📊 Export Data</button>
+                    <h3><i data-lucide="zap"></i> Quick Actions</h3>
+                    <div class="btn-group">
+                        <button class="btn" onclick="refreshRSS()">
+                            <i data-lucide="refresh-cw"></i> Refresh RSS Feeds
+                        </button>
+                        <button class="btn btn-secondary" onclick="bulkPull()">
+                            <i data-lucide="download"></i> Bulk Pull Articles
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewLogs()">
+                            <i data-lucide="terminal"></i> View Logs
+                        </button>
+                    </div>
+                    <div id="actionResult"></div>
                 </div>
             </div>
-            
+
             <!-- RSS Sources Section -->
-            <div id="rss" class="section">
+            <div id="sources" class="section">
                 <div class="card">
-                    <h3>RSS Source Management</h3>
-                    <button class="btn" onclick="loadSources()">🔄 Refresh Sources</button>
-                    <button class="btn" onclick="addSource()">➕ Add Source</button>
-                    
-                    <table class="sources-table" id="sourcesTable">
-                        <thead>
-                            <tr>
-                                <th>Source</th>
-                                <th>URL</th>
-                                <th>Status</th>
-                                <th>Last Fetch</th>
-                                <th>Articles</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="6">Loading sources...</td></tr>
-                        </tbody>
-                    </table>
+                    <h3><i data-lucide="rss"></i> RSS Source Management</h3>
+                    <div class="btn-group">
+                        <button class="btn" onclick="loadSources()">
+                            <i data-lucide="refresh-cw"></i> Refresh
+                        </button>
+                        <button class="btn btn-secondary" onclick="addSource()">
+                            <i data-lucide="plus"></i> Add Source
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table" id="sourcesTable">
+                            <thead>
+                                <tr>
+                                    <th>Source Name</th>
+                                    <th>URL</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Articles</th>
+                                    <th>Last Fetch</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="7" style="text-align: center; padding: 40px;">Loading sources...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            
+
             <!-- Articles Section -->
             <div id="articles" class="section">
                 <div class="card">
-                    <h3>Article Management</h3>
-                    <button class="btn" onclick="loadArticles()">🔄 Refresh Articles</button>
-                    <button class="btn btn-warning" onclick="cleanupArticles()">🧹 Cleanup Old Articles</button>
-                    
-                    <div id="articlesContainer">
-                        <p>Loading articles...</p>
+                    <h3><i data-lucide="newspaper"></i> Article Management</h3>
+                    <div class="btn-group">
+                        <button class="btn" onclick="loadArticles()">
+                            <i data-lucide="refresh-cw"></i> Refresh
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportArticles()">
+                            <i data-lucide="download"></i> Export
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table" id="articlesTable">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Source</th>
+                                    <th>Author</th>
+                                    <th>Published</th>
+                                    <th>Views</th>
+                                    <th>Likes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="7" style="text-align: center; padding: 40px;">Loading articles...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Authors Section -->
+            <div id="authors" class="section">
+                <div class="card">
+                    <h3><i data-lucide="users"></i> Author Profiles</h3>
+                    <div class="btn-group">
+                        <button class="btn" onclick="loadAuthors()">
+                            <i data-lucide="refresh-cw"></i> Refresh
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table" id="authorsTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Outlet</th>
+                                    <th>Articles</th>
+                                    <th>Recognition Score</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="5" style="text-align: center; padding: 40px;">Loading authors...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div id="categories" class="section">
+                <div class="card">
+                    <h3><i data-lucide="folder"></i> Category Management</h3>
+                    <div class="btn-group">
+                        <button class="btn" onclick="loadCategories()">
+                            <i data-lucide="refresh-cw"></i> Refresh
+                        </button>
+                        <button class="btn btn-secondary" onclick="addCategory()">
+                            <i data-lucide="plus"></i> Add Category
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table" id="categoriesTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Slug</th>
+                                    <th>Articles</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="5" style="text-align: center; padding: 40px;">Loading categories...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Analytics Section -->
             <div id="analytics" class="section">
                 <div class="card">
-                    <h3>Analytics & Insights</h3>
-                    <button class="btn" onclick="loadAnalytics()">📊 Load Analytics</button>
-                    
+                    <h3><i data-lucide="bar-chart-3"></i> Analytics & Insights</h3>
+                    <div class="btn-group">
+                        <button class="btn" onclick="loadAnalytics()">
+                            <i data-lucide="refresh-cw"></i> Load Analytics
+                        </button>
+                    </div>
+
                     <div id="analyticsContainer">
-                        <p>Analytics data will appear here...</p>
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i data-lucide="bar-chart-3"></i>
+                            </div>
+                            <p>Click "Load Analytics" to view insights</p>
+                        </div>
                     </div>
                 </div>
             </div>
-            
+
             <!-- System Section -->
             <div id="system" class="section">
                 <div class="card">
-                    <h3>System Health</h3>
-                    <button class="btn" onclick="checkHealth()">🏥 Health Check</button>
-                    <button class="btn" onclick="viewLogs()">📋 View Logs</button>
-                    
-                    <div id="healthStatus">
-                        <p>Click "Health Check" to view system status...</p>
+                    <h3><i data-lucide="activity"></i> System Health</h3>
+                    <div class="btn-group">
+                        <button class="btn" onclick="checkHealth()">
+                            <i data-lucide="heart-pulse"></i> Health Check
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewAPIEndpoints()">
+                            <i data-lucide="list"></i> API Endpoints
+                        </button>
                     </div>
-                    
-                    <div class="log" id="systemLogs" style="display: none;">
-                        <div>System logs will appear here...</div>
-                    </div>
+
+                    <div id="healthStatus"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Add RSS Source Modal -->
-    <div id="addSourceModal" class="modal">
+    <!-- Add/Edit RSS Source Modal -->
+    <div id="sourceModal" class="modal">
         <div class="modal-content">
-            <h3>Add RSS Source</h3>
-            <form id="addSourceForm">
+            <h3 id="sourceModalTitle">Add RSS Source</h3>
+            <form id="sourceForm">
+                <input type="hidden" id="sourceId">
+
                 <div class="form-group">
-                    <label for="sourceName">RSS Source Name:</label>
-                    <input type="text" id="sourceName" name="sourceName" required 
-                           placeholder="e.g., The Herald Zimbabwe">
+                    <label for="sourceName">Source Name</label>
+                    <input type="text" id="sourceName" required placeholder="e.g., The Herald Zimbabwe">
                 </div>
+
                 <div class="form-group">
-                    <label for="sourceUrl">RSS Feed URL:</label>
-                    <input type="url" id="sourceUrl" name="sourceUrl" required 
-                           placeholder="https://example.com/rss">
+                    <label for="sourceUrl">RSS Feed URL</label>
+                    <input type="url" id="sourceUrl" required placeholder="https://example.com/rss">
                 </div>
+
+                <div class="form-group">
+                    <label for="sourceCategory">Category</label>
+                    <input type="text" id="sourceCategory" placeholder="news">
+                </div>
+
+                <div class="form-group">
+                    <label for="sourcePriority">Priority (1-10)</label>
+                    <input type="number" id="sourcePriority" min="1" max="10" value="5">
+                </div>
+
                 <div class="modal-buttons">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('addSourceModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Source</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('sourceModal')">Cancel</button>
+                    <button type="submit" class="btn">Save Source</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Clear Cache Confirmation Modal -->
-    <div id="clearCacheModal" class="modal">
-        <div class="modal-content">
-            <h3>Clear Cache</h3>
-            <div class="confirmation-text">
-                <p class="warning-text">⚠️ Warning</p>
-                <p>Are you sure you want to clear the cache? This action will:</p>
-                <ul style="margin: 10px 0; padding-left: 20px; color: #ccc;">
-                    <li>Remove all cached RSS feed data</li>
-                    <li>Force fresh fetching of all content</li>
-                    <li>May temporarily slow down the application</li>
-                </ul>
-            </div>
-            <div class="modal-buttons">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('clearCacheModal')">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmClearCache()">Yes, Clear Cache</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Cleanup Articles Confirmation Modal -->
-    <div id="cleanupArticlesModal" class="modal">
-        <div class="modal-content">
-            <h3>Cleanup Old Articles</h3>
-            <div class="confirmation-text">
-                <p class="error-text">⚠️ Destructive Action</p>
-                <p>This will <strong>permanently remove</strong> articles older than 30 days from the database.</p>
-                <p><strong>This action cannot be undone.</strong></p>
-                <p>Are you sure you want to continue?</p>
-            </div>
-            <div class="modal-buttons">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('cleanupArticlesModal')">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmCleanupArticles()">Yes, Delete Old Articles</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Global state
-        let currentSection = 'dashboard';
-        
+        // Initialize Lucide icons
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadDashboard();
+        });
+
         // Navigation
         function showSection(sectionId) {
-            // Hide all sections
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            
-            // Show selected section
+
             document.getElementById(sectionId).classList.add('active');
-            event.target.classList.add('active');
-            currentSection = sectionId;
-            
+            event.target.closest('.nav-item').classList.add('active');
+
             // Load section data
             if (sectionId === 'dashboard') loadDashboard();
-            if (sectionId === 'rss') loadSources();
-            if (sectionId === 'articles') loadArticles();
-            if (sectionId === 'analytics') loadAnalytics();
+            else if (sectionId === 'sources') loadSources();
+            else if (sectionId === 'articles') loadArticles();
+            else if (sectionId === 'authors') loadAuthors();
+            else if (sectionId === 'categories') loadCategories();
+
+            // Reinitialize icons
+            lucide.createIcons();
         }
-        
-        // Dashboard functions
+
+        // Dashboard
         async function loadDashboard() {
             try {
                 const response = await fetch('/api/admin/stats');
                 const data = await response.json();
-                
+
                 document.getElementById('totalArticles').textContent = data.database?.total_articles || '0';
                 document.getElementById('activeSources').textContent = data.database?.active_sources || '0';
+                document.getElementById('totalCategories').textContent = data.database?.categories || '0';
                 document.getElementById('dbSize').textContent = formatBytes(data.database?.size || 0);
-                
-                // Load last refresh time
-                const lastRefresh = localStorage.getItem('lastRSSRefresh') || 'Never';
-                document.getElementById('lastRefresh').textContent = formatTime(lastRefresh);
             } catch (error) {
                 console.error('Failed to load dashboard:', error);
             }
         }
-        
-        // RSS Functions
+
         async function refreshRSS() {
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = '🔄 Refreshing...';
+            const button = event.target.closest('button');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<span class="loading-spinner"></span> Refreshing...';
             button.disabled = true;
-            
+
             try {
                 const response = await fetch('/api/admin/refresh-rss', { method: 'POST' });
                 const data = await response.json();
-                
+
+                const resultDiv = document.getElementById('actionResult');
                 if (data.success) {
-                    alert(\`RSS Refresh completed! \\n\${data.results.newArticles} new articles added.\`);
-                    localStorage.setItem('lastRSSRefresh', new Date().toISOString());
+                    resultDiv.innerHTML = \`
+                        <div class="alert alert-success">
+                            <i data-lucide="check-circle"></i>
+                            <div>
+                                <strong>Success!</strong> Added \${data.results?.newArticles || 0} new articles.
+                            </div>
+                        </div>
+                    \`;
                     loadDashboard();
                 } else {
-                    alert('RSS Refresh failed: ' + data.message);
+                    resultDiv.innerHTML = \`
+                        <div class="alert alert-error">
+                            <i data-lucide="x-circle"></i>
+                            <div><strong>Error:</strong> \${data.message}</div>
+                        </div>
+                    \`;
                 }
+                lucide.createIcons();
+
+                setTimeout(() => resultDiv.innerHTML = '', 5000);
             } catch (error) {
-                alert('RSS Refresh failed: ' + error.message);
+                document.getElementById('actionResult').innerHTML = \`
+                    <div class="alert alert-error">
+                        <i data-lucide="x-circle"></i>
+                        <div><strong>Error:</strong> \${error.message}</div>
+                    </div>
+                \`;
+                lucide.createIcons();
             } finally {
-                button.textContent = originalText;
+                button.innerHTML = originalHTML;
                 button.disabled = false;
+                lucide.createIcons();
             }
         }
-        
+
+        async function bulkPull() {
+            if (!confirm('This will fetch all articles from all sources. Continue?')) return;
+
+            const button = event.target.closest('button');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<span class="loading-spinner"></span> Pulling...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/api/admin/bulk-pull', { method: 'POST' });
+                const data = await response.json();
+
+                const resultDiv = document.getElementById('actionResult');
+                resultDiv.innerHTML = \`
+                    <div class="alert alert-success">
+                        <i data-lucide="check-circle"></i>
+                        <div><strong>Bulk pull completed!</strong> Check system logs for details.</div>
+                    </div>
+                \`;
+                lucide.createIcons();
+
+                setTimeout(() => resultDiv.innerHTML = '', 5000);
+                loadDashboard();
+            } catch (error) {
+                document.getElementById('actionResult').innerHTML = \`
+                    <div class="alert alert-error">
+                        <i data-lucide="x-circle"></i>
+                        <div><strong>Error:</strong> \${error.message}</div>
+                    </div>
+                \`;
+                lucide.createIcons();
+            } finally {
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
+        // RSS Sources
         async function loadSources() {
             try {
                 const response = await fetch('/api/admin/sources');
                 const data = await response.json();
-                // Implement sources table population
+
+                const tbody = document.querySelector('#sourcesTable tbody');
+
+                if (data.sources && data.sources.length > 0) {
+                    tbody.innerHTML = data.sources.map(source => \`
+                        <tr>
+                            <td><strong>\${source.name}</strong></td>
+                            <td><code>\${truncate(source.url, 50)}</code></td>
+                            <td>
+                                <span class="badge \${source.enabled ? 'badge-active' : 'badge-inactive'}">
+                                    \${source.enabled ? 'Active' : 'Inactive'}
+                                </span>
+                            </td>
+                            <td>\${source.priority || '-'}</td>
+                            <td>\${source.article_count || 0}</td>
+                            <td>\${source.last_fetched_at ? formatDate(source.last_fetched_at) : 'Never'}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="icon-btn" onclick="editSource(\${source.id})" title="Edit">
+                                        <i data-lucide="edit"></i>
+                                    </button>
+                                    <button class="icon-btn" onclick="toggleSource(\${source.id}, \${source.enabled})" title="Toggle">
+                                        <i data-lucide="\${source.enabled ? 'eye-off' : 'eye'}"></i>
+                                    </button>
+                                    <button class="icon-btn" onclick="deleteSource(\${source.id})" title="Delete">
+                                        <i data-lucide="trash-2"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    \`).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">No sources found</td></tr>';
+                }
+
+                lucide.createIcons();
             } catch (error) {
                 console.error('Failed to load sources:', error);
             }
         }
-        
+
+        function addSource() {
+            document.getElementById('sourceModalTitle').textContent = 'Add RSS Source';
+            document.getElementById('sourceForm').reset();
+            document.getElementById('sourceId').value = '';
+            openModal('sourceModal');
+        }
+
+        async function editSource(id) {
+            // TODO: Fetch source details and populate form
+            console.log('Edit source:', id);
+            alert('Edit functionality coming soon');
+        }
+
+        async function toggleSource(id, currentStatus) {
+            // TODO: Implement toggle
+            console.log('Toggle source:', id, currentStatus);
+            alert('Toggle functionality coming soon');
+        }
+
+        async function deleteSource(id) {
+            if (!confirm('Are you sure you want to delete this source?')) return;
+            // TODO: Implement delete
+            console.log('Delete source:', id);
+            alert('Delete functionality coming soon');
+        }
+
+        // Articles
         async function loadArticles() {
             try {
                 const response = await fetch('/api/feeds?limit=50');
                 const data = await response.json();
-                
-                const container = document.getElementById('articlesContainer');
+
+                const tbody = document.querySelector('#articlesTable tbody');
+
                 if (data.articles && data.articles.length > 0) {
-                    container.innerHTML = \`
-                        <p><strong>\${data.total} articles</strong> in database</p>
-                        <div style="max-height: 400px; overflow-y: auto; margin-top: 15px;">
-                            \${data.articles.map(article => \`
-                                <div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
-                                    <strong>\${article.title}</strong><br>
-                                    <small style="color: #6c757d;">
-                                        \${article.source} • \${new Date(article.published_at).toLocaleDateString()}
-                                    </small>
+                    tbody.innerHTML = data.articles.map(article => \`
+                        <tr>
+                            <td><strong>\${truncate(article.title, 60)}</strong></td>
+                            <td>\${article.source || '-'}</td>
+                            <td>\${article.author || '-'}</td>
+                            <td>\${formatDate(article.published_at)}</td>
+                            <td>\${article.view_count || 0}</td>
+                            <td>\${article.like_count || 0}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="icon-btn" onclick="viewArticle('\${article.id}')" title="View">
+                                        <i data-lucide="eye"></i>
+                                    </button>
+                                    <button class="icon-btn" onclick="editArticle('\${article.id}')" title="Edit">
+                                        <i data-lucide="edit"></i>
+                                    </button>
                                 </div>
-                            \`).join('')}
-                        </div>
-                    \`;
+                            </td>
+                        </tr>
+                    \`).join('');
                 } else {
-                    container.innerHTML = '<p>No articles found.</p>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">No articles found</td></tr>';
                 }
+
+                lucide.createIcons();
             } catch (error) {
-                document.getElementById('articlesContainer').innerHTML = '<p>Failed to load articles.</p>';
+                console.error('Failed to load articles:', error);
             }
         }
-        
-        async function loadAnalytics() {
-            document.getElementById('analyticsContainer').innerHTML = '<p>Analytics feature coming soon...</p>';
+
+        function viewArticle(id) {
+            window.open(\`/api/article/\${id}\`, '_blank');
         }
-        
+
+        function editArticle(id) {
+            alert('Edit article functionality coming soon');
+        }
+
+        function exportArticles() {
+            alert('Export functionality coming soon');
+        }
+
+        // Authors
+        async function loadAuthors() {
+            try {
+                const response = await fetch('/api/admin/authors');
+                const data = await response.json();
+
+                const tbody = document.querySelector('#authorsTable tbody');
+
+                if (data.authors && data.authors.length > 0) {
+                    tbody.innerHTML = data.authors.map(author => \`
+                        <tr>
+                            <td><strong>\${author.name}</strong></td>
+                            <td>\${author.primary_outlet || '-'}</td>
+                            <td>\${author.total_articles || 0}</td>
+                            <td>\${(author.recognition_score * 100).toFixed(1)}%</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="icon-btn" onclick="viewAuthor('\${author.slug}')" title="View">
+                                        <i data-lucide="eye"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    \`).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #666;">No authors found</td></tr>';
+                }
+
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Failed to load authors:', error);
+            }
+        }
+
+        function viewAuthor(slug) {
+            window.open(\`/api/author/\${slug}\`, '_blank');
+        }
+
+        // Categories
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/categories');
+                const data = await response.json();
+
+                const tbody = document.querySelector('#categoriesTable tbody');
+
+                if (data.categories && data.categories.length > 0) {
+                    tbody.innerHTML = data.categories.map(category => \`
+                        <tr>
+                            <td><strong>\${category.name}</strong></td>
+                            <td><code>\${category.slug}</code></td>
+                            <td>\${category.article_count || 0}</td>
+                            <td>
+                                <span class="badge \${category.enabled ? 'badge-active' : 'badge-inactive'}">
+                                    \${category.enabled ? 'Active' : 'Inactive'}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="icon-btn" onclick="editCategory(\${category.id})" title="Edit">
+                                        <i data-lucide="edit"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    \`).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #666;">No categories found</td></tr>';
+                }
+
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Failed to load categories:', error);
+            }
+        }
+
+        function addCategory() {
+            alert('Add category functionality coming soon');
+        }
+
+        function editCategory(id) {
+            alert('Edit category functionality coming soon');
+        }
+
+        // Analytics
+        async function loadAnalytics() {
+            const container = document.getElementById('analyticsContainer');
+            container.innerHTML = '<div style="text-align: center; padding: 40px;"><span class="loading-spinner"></span> Loading analytics...</div>';
+
+            try {
+                const response = await fetch('/api/admin/analytics');
+                const data = await response.json();
+
+                container.innerHTML = \`
+                    <pre>\${JSON.stringify(data, null, 2)}</pre>
+                \`;
+            } catch (error) {
+                container.innerHTML = \`
+                    <div class="alert alert-error">
+                        <i data-lucide="x-circle"></i>
+                        <div><strong>Error:</strong> Failed to load analytics</div>
+                    </div>
+                \`;
+                lucide.createIcons();
+            }
+        }
+
+        // System
         async function checkHealth() {
+            const statusDiv = document.getElementById('healthStatus');
+            statusDiv.innerHTML = '<div style="text-align: center; padding: 40px;"><span class="loading-spinner"></span> Checking system health...</div>';
+
             try {
                 const response = await fetch('/api/health');
                 const data = await response.json();
-                
-                document.getElementById('healthStatus').innerHTML = \`
-                    <div style="background: \${data.status === 'healthy' ? '#d4edda' : '#f8d7da'}; 
-                                border-radius: 8px; padding: 15px; margin-top: 15px;">
-                        <strong>Status:</strong> \${data.status}<br>
-                        <strong>Database:</strong> \${data.services.database}<br>
-                        <strong>Analytics:</strong> \${data.services.analytics ? 'enabled' : 'disabled'}<br>
-                        <strong>Environment:</strong> \${data.environment}<br>
-                        <strong>Timestamp:</strong> \${data.timestamp}
+
+                const isHealthy = data.status === 'healthy';
+
+                statusDiv.innerHTML = \`
+                    <div class="alert \${isHealthy ? 'alert-success' : 'alert-error'}">
+                        <i data-lucide="\${isHealthy ? 'check-circle' : 'x-circle'}"></i>
+                        <div>
+                            <strong>System Status: \${data.status.toUpperCase()}</strong>
+                            <pre style="margin-top: 15px;">\${JSON.stringify(data, null, 2)}</pre>
+                        </div>
                     </div>
                 \`;
+
+                lucide.createIcons();
             } catch (error) {
-                document.getElementById('healthStatus').innerHTML = \`
-                    <div style="background: #f8d7da; border-radius: 8px; padding: 15px; margin-top: 15px;">
-                        <strong>Health check failed:</strong> \${error.message}
+                statusDiv.innerHTML = \`
+                    <div class="alert alert-error">
+                        <i data-lucide="x-circle"></i>
+                        <div><strong>Health check failed:</strong> \${error.message}</div>
                     </div>
                 \`;
+                lucide.createIcons();
             }
         }
-        
+
         function viewLogs() {
-            const logsDiv = document.getElementById('systemLogs');
-            logsDiv.style.display = logsDiv.style.display === 'none' ? 'block' : 'none';
+            alert('Log viewing functionality coming soon');
         }
-        
-        function clearCache() {
-            openModal('clearCacheModal');
+
+        function viewAPIEndpoints() {
+            const statusDiv = document.getElementById('healthStatus');
+            statusDiv.innerHTML = \`
+                <div class="card" style="background: #0a0a0a; margin-top: 20px;">
+                    <h4 style="margin-bottom: 15px;">Available API Endpoints</h4>
+
+                    <strong>Public Endpoints:</strong>
+                    <ul style="margin: 10px 0 20px 20px; color: #999;">
+                        <li><code>GET /api/health</code> - System health check</li>
+                        <li><code>GET /api/feeds</code> - Get articles</li>
+                        <li><code>GET /api/categories</code> - Get categories</li>
+                        <li><code>GET /api/news-bytes</code> - Articles with images</li>
+                        <li><code>GET /api/search</code> - Search articles</li>
+                        <li><code>GET /api/authors</code> - Get authors</li>
+                        <li><code>GET /api/sources</code> - Get news sources</li>
+                        <li><code>POST /api/refresh</code> - User-triggered refresh</li>
+                    </ul>
+
+                    <strong>Admin Endpoints:</strong>
+                    <ul style="margin: 10px 0 20px 20px; color: #999;">
+                        <li><code>GET /api/admin/stats</code> - Platform statistics</li>
+                        <li><code>GET /api/admin/sources</code> - RSS sources with stats</li>
+                        <li><code>GET /api/admin/authors</code> - Author profiles</li>
+                        <li><code>GET /api/admin/analytics</code> - Analytics data</li>
+                        <li><code>POST /api/admin/refresh-rss</code> - Manual RSS refresh</li>
+                        <li><code>POST /api/admin/bulk-pull</code> - Bulk article fetch</li>
+                        <li><code>PUT /api/admin/rss-source/:id</code> - Update RSS source</li>
+                    </ul>
+                </div>
+            \`;
         }
-        
-        function confirmClearCache() {
-            closeModal('clearCacheModal');
-            alert('Cache clearing functionality will be implemented soon.');
-        }
-        
-        function exportData() {
-            alert('Data export functionality will be implemented soon.');
-        }
-        
-        function addSource() {
-            openModal('addSourceModal');
-        }
-        
-        function cleanupArticles() {
-            openModal('cleanupArticlesModal');
-        }
-        
-        function confirmCleanupArticles() {
-            closeModal('cleanupArticlesModal');
-            alert('Article cleanup functionality will be implemented soon.');
-        }
-        
-        // Modal management functions
+
+        // Modal management
         function openModal(modalId) {
             document.getElementById(modalId).classList.add('show');
         }
-        
+
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('show');
-            
-            // Reset form if it's the add source modal
-            if (modalId === 'addSourceModal') {
-                document.getElementById('addSourceForm').reset();
-            }
         }
-        
-        // Close modal when clicking outside
+
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.classList.remove('show');
-                
-                // Reset form if it's the add source modal
-                if (event.target.id === 'addSourceModal') {
-                    document.getElementById('addSourceForm').reset();
-                }
             }
         }
-        
-        // Handle add source form submission
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('addSourceForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const name = document.getElementById('sourceName').value.trim();
-                const url = document.getElementById('sourceUrl').value.trim();
-                
-                if (name && url) {
-                    // Close modal first
-                    closeModal('addSourceModal');
-                    
-                    // Show success message (functionality to be implemented)
-                    alert(\`RSS Source "\${name}" will be added soon.\\nURL: \${url}\`);
-                    
-                    // TODO: Implement actual RSS source addition API call
-                    console.log('Adding RSS source:', { name, url });
-                }
-            });
-        });
-        
+
         // Utility functions
         function formatBytes(bytes) {
             if (bytes === 0) return '0 B';
@@ -746,20 +1201,19 @@ export function getAdminHTML(): string {
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
-        
-        function formatTime(isoString) {
-            if (isoString === 'Never') return 'Never';
+
+        function formatDate(isoString) {
             try {
-                return new Date(isoString).toLocaleString();
+                const date = new Date(isoString);
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             } catch {
                 return 'Invalid date';
             }
         }
-        
-        // Initialize dashboard on load
-        window.addEventListener('load', () => {
-            loadDashboard();
-        });
+
+        function truncate(str, length) {
+            return str.length > length ? str.substring(0, length) + '...' : str;
+        }
     </script>
 </body>
 </html>
