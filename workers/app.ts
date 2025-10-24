@@ -179,11 +179,11 @@ app.get("*", async (c) => {
       () => import("virtual:react-router/server-build"),
       import.meta.env.MODE || "production",
     );
-    
+
     return await requestHandler(c.req.raw, {
-      cloudflare: { 
-        env: c.env, 
-        ctx: c.executionCtx 
+      cloudflare: {
+        env: c.env,
+        ctx: c.executionCtx
       }
     });
   } catch (error: any) {
@@ -192,4 +192,96 @@ app.get("*", async (c) => {
   }
 });
 
-export default app;
+// Export worker with both fetch and scheduled handlers
+export default {
+  fetch: app.fetch,
+
+  // Scheduled handler for cron triggers (runs hourly)
+  async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    const startTime = Date.now();
+
+    try {
+      console.log('[CRON] Scheduled RSS refresh triggered at', new Date().toISOString());
+      console.log('[CRON] Cron schedule:', event.cron);
+
+      // Get backend URL from environment (defaults to production)
+      const backendUrl = env.BACKEND_URL || 'https://admin.hararemetro.co.zw';
+      const refreshEndpoint = `${backendUrl}/api/admin/refresh-rss`;
+
+      console.log('[CRON] Calling backend refresh endpoint:', refreshEndpoint);
+
+      // Call backend RSS refresh endpoint
+      const response = await fetch(refreshEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Harare-Metro-Cron/1.0'
+        }
+      });
+
+      const duration = Date.now() - startTime;
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[CRON] Backend refresh failed:', response.status, errorText);
+        console.error('[CRON] Duration:', duration, 'ms');
+        return;
+      }
+
+      const result = await response.json();
+
+      console.log('[CRON] RSS refresh completed successfully');
+      console.log('[CRON] Duration:', duration, 'ms');
+      console.log('[CRON] Result:', JSON.stringify(result, null, 2));
+
+      // Track success in analytics if available
+      if (env.NEWS_INTERACTIONS) {
+        try {
+          env.NEWS_INTERACTIONS.writeDataPoint({
+            blobs: [
+              'scheduled_rss_refresh',
+              'success',
+              event.cron
+            ],
+            doubles: [
+              duration,
+              result.results?.newArticles || 0
+            ],
+            indexes: [
+              'cron_trigger'
+            ]
+          });
+        } catch (analyticsError) {
+          console.error('[CRON] Analytics tracking failed:', analyticsError);
+        }
+      }
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      console.error('[CRON] Scheduled event handler failed:', error);
+      console.error('[CRON] Error message:', error.message);
+      console.error('[CRON] Duration:', duration, 'ms');
+
+      // Track failure in analytics if available
+      if (env.NEWS_INTERACTIONS) {
+        try {
+          env.NEWS_INTERACTIONS.writeDataPoint({
+            blobs: [
+              'scheduled_rss_refresh',
+              'error',
+              error.message || 'unknown_error'
+            ],
+            doubles: [
+              duration
+            ],
+            indexes: [
+              'cron_trigger'
+            ]
+          });
+        } catch (analyticsError) {
+          console.error('[CRON] Analytics tracking failed:', analyticsError);
+        }
+      }
+    }
+  }
+};
