@@ -617,17 +617,58 @@ app.get("/api/admin/sources", async (c) => {
 app.get("/api/admin/analytics", async (c) => {
   try {
     const services = initializeServices(c.env);
-    
+
     // Get comprehensive analytics data
     const analytics = await services.analyticsService.getInsights({
       timeframe: c.req.query("timeframe") || "7d",
       category: c.req.query("category")
     });
-    
+
     return c.json(analytics);
   } catch (error) {
     console.error("Error fetching analytics:", error);
     return c.json({ error: "Failed to fetch analytics" }, 500);
+  }
+});
+
+// Cron job logs endpoint - view recent cron executions
+app.get("/api/admin/cron-logs", async (c) => {
+  try {
+    const limit = parseInt(c.req.query("limit") || "50");
+    const offset = parseInt(c.req.query("offset") || "0");
+
+    const logs = await c.env.DB.prepare(`
+      SELECT
+        id,
+        cron_type,
+        status,
+        trigger_time,
+        completed_at,
+        duration_ms,
+        articles_processed,
+        articles_new,
+        sources_processed,
+        sources_failed,
+        error_message,
+        created_at
+      FROM cron_logs
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(limit, offset).all();
+
+    const totalResult = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM cron_logs
+    `).first();
+
+    return c.json({
+      logs: logs.results,
+      total: totalResult.count,
+      limit,
+      offset
+    });
+  } catch (error) {
+    console.error("Error fetching cron logs:", error);
+    return c.json({ error: "Failed to fetch cron logs" }, 500);
   }
 });
 

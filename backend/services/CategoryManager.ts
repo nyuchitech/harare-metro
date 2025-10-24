@@ -349,7 +349,7 @@ export class CategoryManager {
         .prepare(`
           SELECT id, name, keywords
           FROM categories
-          WHERE keywords IS NOT NULL AND keywords != ''
+          WHERE keywords IS NOT NULL AND keywords != '' AND keywords != '[]'
           ORDER BY sort_order
         `)
         .all();
@@ -361,28 +361,40 @@ export class CategoryManager {
       }>;
 
       const content = `${title} ${description || ''}`.toLowerCase();
-      
+
       let bestMatch = 'general';
       let bestScore = 0;
 
       for (const category of categories) {
         if (category.id === 'all' || category.id === 'general') continue;
 
-        const keywords = category.keywords.split(',').map(k => k.trim().toLowerCase());
-        const score = keywords.reduce((acc, keyword) => {
-          if (content.includes(keyword)) {
-            return acc + (keyword.length > 3 ? 2 : 1); // Weight longer keywords higher
+        try {
+          // Parse JSON keywords array
+          let keywords: string[] = [];
+          if (category.keywords.startsWith('[')) {
+            keywords = JSON.parse(category.keywords).map((k: string) => k.toLowerCase());
+          } else {
+            // Fallback to comma-separated for backward compatibility
+            keywords = category.keywords.split(',').map(k => k.trim().toLowerCase());
           }
-          return acc;
-        }, 0);
 
-        if (score > bestScore) {
-          bestScore = score;
-          bestMatch = category.id;
+          const score = keywords.reduce((acc, keyword) => {
+            if (content.includes(keyword)) {
+              return acc + (keyword.length > 3 ? 2 : 1); // Weight longer keywords higher
+            }
+            return acc;
+          }, 0);
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = category.id;
+          }
+        } catch (parseError) {
+          console.warn(`[CategoryManager] Error parsing keywords for category ${category.id}:`, parseError);
         }
       }
 
-      console.log(`[CategoryManager] Classified content as '${bestMatch}' (score: ${bestScore})`);
+      console.log(`[CategoryManager] Classified "${title.substring(0, 50)}..." as '${bestMatch}' (score: ${bestScore})`);
       return bestMatch;
     } catch (error) {
       console.error('[CategoryManager] Error classifying content:', error);

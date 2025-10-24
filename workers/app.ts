@@ -199,10 +199,28 @@ export default {
   // Scheduled handler for cron triggers (runs hourly)
   async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
     const startTime = Date.now();
+    const triggerTime = new Date().toISOString();
+    let cronLogId: number | null = null;
 
     try {
-      console.log('[CRON] Scheduled RSS refresh triggered at', new Date().toISOString());
+      console.log('[CRON] Scheduled RSS refresh triggered at', triggerTime);
       console.log('[CRON] Cron schedule:', event.cron);
+
+      // Log cron start to database
+      try {
+        const logResult = await env.DB.prepare(`
+          INSERT INTO cron_logs (cron_type, status, trigger_time, metadata)
+          VALUES (?, ?, ?, ?)
+        `).bind(
+          'rss_refresh',
+          'started',
+          triggerTime,
+          JSON.stringify({ schedule: event.cron })
+        ).run();
+        cronLogId = logResult.meta.last_row_id;
+      } catch (dbError) {
+        console.warn('[CRON] Failed to log cron start to database:', dbError);
+      }
 
       // Get backend URL from environment (defaults to production)
       const backendUrl = env.BACKEND_URL || 'https://admin.hararemetro.co.zw';
@@ -220,11 +238,25 @@ export default {
       });
 
       const duration = Date.now() - startTime;
+      const completedAt = new Date().toISOString();
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[CRON] Backend refresh failed:', response.status, errorText);
         console.error('[CRON] Duration:', duration, 'ms');
+
+        // Log cron failure to database
+        if (cronLogId) {
+          try {
+            await env.DB.prepare(`
+              UPDATE cron_logs
+              SET status = ?, completed_at = ?, duration_ms = ?, error_message = ?
+              WHERE id = ?
+            `).bind('error', completedAt, duration, `HTTP ${response.status}: ${errorText}`, cronLogId).run();
+          } catch (dbError) {
+            console.warn('[CRON] Failed to update cron log:', dbError);
+          }
+        }
         return;
       }
 
@@ -233,6 +265,30 @@ export default {
       console.log('[CRON] RSS refresh completed successfully');
       console.log('[CRON] Duration:', duration, 'ms');
       console.log('[CRON] Result:', JSON.stringify(result, null, 2));
+
+      // Log cron success to database
+      if (cronLogId) {
+        try {
+          await env.DB.prepare(`
+            UPDATE cron_logs
+            SET status = ?, completed_at = ?, duration_ms = ?,
+                articles_processed = ?, articles_new = ?,
+                sources_processed = ?, sources_failed = ?
+            WHERE id = ?
+          `).bind(
+            'success',
+            completedAt,
+            duration,
+            result.results?.processed || 0,
+            result.results?.newArticles || 0,
+            result.results?.sources || 0,
+            result.results?.errors?.length || 0,
+            cronLogId
+          ).run();
+        } catch (dbError) {
+          console.warn('[CRON] Failed to update cron log:', dbError);
+        }
+      }
 
       // Track success in analytics if available
       if (env.NEWS_INTERACTIONS) {
@@ -258,9 +314,31 @@ export default {
 
     } catch (error: any) {
       const duration = Date.now() - startTime;
+      const completedAt = new Date().toISOString();
       console.error('[CRON] Scheduled event handler failed:', error);
       console.error('[CRON] Error message:', error.message);
       console.error('[CRON] Duration:', duration, 'ms');
+
+      // Log cron error to database
+      if (cronLogId) {
+        try {
+          await env.DB.prepare(`
+            UPDATE cron_logs
+            SET status = ?, completed_at = ?, duration_ms = ?,
+                error_message = ?, error_stack = ?
+            WHERE id = ?
+          `).bind(
+            'error',
+            completedAt,
+            duration,
+            error.message || 'Unknown error',
+            error.stack || '',
+            cronLogId
+          ).run();
+        } catch (dbError) {
+          console.warn('[CRON] Failed to update cron log:', dbError);
+        }
+      }
 
       // Track failure in analytics if available
       if (env.NEWS_INTERACTIONS) {
