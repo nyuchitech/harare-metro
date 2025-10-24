@@ -4,7 +4,7 @@ import {
   Search,
   Sun,
   Moon,
-  User,
+  User as UserIcon,
   Home
 } from 'lucide-react'
 import Logo from './Logo'
@@ -170,16 +170,16 @@ const HeaderNavigation: React.FC<HeaderNavigationProps> = ({
                 ${currentView === 'profile' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
               `}
               aria-label={isAuthenticated ? "View Profile" : "Sign In"}
-              title={isAuthenticated ? `Profile: ${profile?.username || user?.email?.split('@')[0] || 'User'}` : "Sign In"}
+              title={isAuthenticated ? `Profile: ${profile?.full_name || user?.email?.split('@')[0] || 'User'}` : "Sign In"}
             >
               {isAuthenticated ? (
                 <div className="relative">
-                  <User className="h-5 w-5" />
+                  <UserIcon className="h-5 w-5" />
                   {/* Online indicator */}
                   <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-zw-green rounded-full border border-background"></div>
                 </div>
               ) : (
-                <User className="h-5 w-5" />
+                <UserIcon className="h-5 w-5" />
               )}
             </button>
           </div>
