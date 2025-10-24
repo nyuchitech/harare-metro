@@ -73,12 +73,6 @@ jobs:
         cd backend
         # Clean up any conflicting wrangler configs
         rm -rf ../.wrangler/deploy/ || true
-        # Set secrets before deploying
-        echo "${{ secrets.SUPABASE_SERVICE_KEY }}" | npx wrangler secret put SUPABASE_SERVICE_KEY
-        echo "${{ secrets.SUPABASE_URL }}" | npx wrangler secret put SUPABASE_URL
-        if [ -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
-          echo "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" | npx wrangler secret put CLOUDFLARE_ACCOUNT_ID
-        fi
         npm run deploy
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
