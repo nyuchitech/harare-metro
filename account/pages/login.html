@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Harare Metro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --zw-green: hsl(140, 100%, 32%);
+            --zw-yellow: hsl(48, 98%, 54%);
+            --zw-red: hsl(354, 85%, 57%);
+            --zw-black: hsl(0, 0%, 0%);
+            --zw-white: hsl(0, 0%, 100%);
+            --gray-50: hsl(0, 0%, 98%);
+            --gray-100: hsl(0, 0%, 96%);
+            --gray-200: hsl(0, 0%, 90%);
+            --gray-300: hsl(0, 0%, 83%);
+            --gray-400: hsl(0, 0%, 64%);
+            --gray-500: hsl(0, 0%, 45%);
+            --gray-600: hsl(0, 0%, 32%);
+            --gray-700: hsl(0, 0%, 25%);
+            --gray-800: hsl(0, 0%, 15%);
+            --gray-900: hsl(0, 0%, 9%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            position: relative;
+        }
+
+        /* Zimbabwe Flag Strip */
+        .zimbabwe-flag-strip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 100vh;
+            z-index: 1000;
+            background: linear-gradient(to bottom,
+                var(--zw-green) 0% 20%,
+                var(--zw-yellow) 20% 40%,
+                var(--zw-red) 40% 60%,
+                var(--zw-black) 60% 80%,
+                var(--zw-white) 80% 100%
+            );
+        }
+
+        .login-container {
+            background: var(--zw-white);
+            border-radius: 1.5rem;
+            padding: 2.5rem 2rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            color: var(--gray-500);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-family: inherit;
+            border: 2px solid var(--gray-200);
+            border-radius: 0.75rem;
+            background: var(--gray-50);
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--zw-green);
+            background: var(--zw-white);
+        }
+
+        .form-group input::placeholder {
+            color: var(--gray-400);
+        }
+
+        .error-message {
+            background: var(--zw-red);
+            color: var(--zw-white);
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--zw-white);
+            background: var(--zw-green);
+            border: none;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .submit-button:hover {
+            background: hsl(140, 100%, 28%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 166, 81, 0.3);
+        }
+
+        .submit-button:active {
+            transform: translateY(0);
+        }
+
+        .submit-button:disabled {
+            background: var(--gray-300);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .form-footer {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .form-footer a {
+            color: var(--zw-green);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--gray-200);
+        }
+
+        .divider::before {
+            margin-right: 1rem;
+        }
+
+        .divider::after {
+            margin-left: 1rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--zw-white);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .logo h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="zimbabwe-flag-strip"></div>
+
+    <div class="login-container">
+        <div class="logo">
+            <h1>Harare Metro</h1>
+            <p>Welcome back</p>
+        </div>
+
+        <div class="error-message" id="error-message"></div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    required
+                    autocomplete="email"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    required
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <button type="submit" class="submit-button" id="submit-button">
+                Sign In
+            </button>
+        </form>
+
+        <div class="form-footer">
+            <p style="margin-bottom: 0.5rem;">
+                <a href="/forgot-password">Forgot password?</a>
+            </p>
+            <div class="divider">OR</div>
+            <p>
+                Don't have an account? <a href="/register">Create one</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const submitButton = document.getElementById('submit-button');
+        const errorMessage = document.getElementById('error-message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Hide error message
+            errorMessage.classList.remove('show');
+
+            // Disable submit button and show loading
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="loading-spinner"></span>Signing in...';
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Login failed');
+                }
+
+                // Store token and session
+                localStorage.setItem('session_id', data.session_id);
+                localStorage.setItem('token', data.token);
+
+                // Redirect to main site
+                window.location.href = 'https://www.hararemetro.co.zw';
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.classList.add('show');
+
+                // Re-enable submit button
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Sign In';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "name": "harare-metro-account",
+  "main": "./index.ts",
+  "compatibility_date": "2024-01-01",
+  "node_compat": true,
+
+  "routes": [
+    {
+      "pattern": "account.hararemetro.co.zw/*",
+      "zone_name": "hararemetro.co.zw"
+    }
+  ],
+
+  "d1_databases": [
+    {
+      "binding": "USERS_DB",
+      "database_name": "hararemetro_users_db",
+      "database_id": "TBD"
+    },
+    {
+      "binding": "CONTENT_DB",
+      "database_name": "hararemetro_db",
+      "database_id": "TBD"
+    }
+  ],
+
+  "kv_namespaces": [
+    {
+      "binding": "AUTH_SESSIONS",
+      "id": "TBD"
+    }
+  ],
+
+  "vars": {
+    "NODE_ENV": "production",
+    "LOG_LEVEL": "info",
+    "JWT_SECRET": "REPLACE_IN_PRODUCTION",
+    "SESSION_TTL_DAYS": "30",
+    "ADMIN_WORKER_URL": "https://admin.hararemetro.co.zw",
+    "FRONTEND_WORKER_URL": "https://www.hararemetro.co.zw"
+  },
+
+  "build": {
+    "command": "npm run build"
+  }
+}
