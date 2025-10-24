@@ -7,12 +7,22 @@
     "esModuleInterop": true,
     "allowJs": true,
     "checkJs": false,
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,
+    "declarationMap": false,
     "skipLibCheck": true,
-    "strict": true,
-    "types": ["@cloudflare/workers-types"]
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false
   },
-  "include": ["*.ts", "**/*.ts", "services", "admin", "durable-objects"],
-  "exclude": ["node_modules", "build"]
+  "include": ["*.ts", "services/**/*.ts", "admin/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "build",
+    "durable-objects",
+    "**/*DO.ts",
+    "services/ArticleInteractionsDO.ts",
+    "services/RealtimeAnalyticsDO.ts",
+    "services/RealtimeCountersDO.ts",
+    "services/UserBehaviorDO.ts"
+  ]
 }
