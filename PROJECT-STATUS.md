@@ -1,142 +1,215 @@
 # Harare Metro - Project Status
 
 **Last Updated**: 2025-10-24
-**Current Phase**: Phase 2 (In Progress)
-**Overall Completion**: ~35%
+**Current Phase**: Phase 2 (User Engagement APIs)
+**Overall Completion**: ~45%
 
 ---
 
-## 📋 Phase Overview
+## 🎯 Project Vision
 
-### ✅ Phase 1: API Restructure & Core Fixes (COMPLETED)
-**Status**: Merged to main
-**PR**: #12
-**Completion**: 100%
+**Goal**: Zimbabwe's premier news aggregation platform with RSS feeds aggregated into a main feed, categorized by keywords/hashtags, with full user engagement (likes, saves, comments, follows).
 
-**Completed**:
-- ✅ Fixed RSS feed cron jobs (scheduled handler was missing)
-- ✅ Added 5 new public user-facing API endpoints
-  - `/api/news-bytes` - Articles with images only (TikTok-like feed)
-  - `/api/search` - Full-text search with keyword support
-  - `/api/authors` - Public journalist discovery
-  - `/api/sources` - Public news sources listing
-  - `/api/refresh` - User-triggered refresh with rate limiting (5 min cooldown)
-- ✅ Fixed backend TypeScript compilation issues
-- ✅ Updated all documentation (CLAUDE.md, README.md, backend/README.md)
-- ✅ Fixed deployment workflows
-- ✅ Removed deprecated Supabase references
-
-**Files Modified**:
-- `backend/index.ts` (668-926): Added 5 public endpoints
-- `workers/app.ts` (200-287): Added scheduled() handler
-- `backend/tsconfig.json`: Fixed TypeScript config
-- `.github/workflows/deploy.yml`: Removed Supabase secrets
-- All documentation files
+**Key Features**:
+- Background cron jobs populate database from RSS sources
+- Users pull from database (fast)
+- User-triggered pull-to-refresh
+- Articles categorized with keywords
+- Users can like, save, read, comment
+- Users follow sources/journalists
+- Analytics track user preferences and engagement
 
 ---
 
-### ✅ Phase 1.5: Admin Panel Redesign (COMPLETED)
-**Status**: Merged to main
-**PR**: #13
-**Completion**: 100%
+## 📋 Phase Overview (CORRECTED)
 
-**Completed**:
-- ✅ Replaced all emojis with Lucide icons
-- ✅ Converted all tables to proper data tables
-- ✅ Updated buttons to pill-shaped design (border-radius: 9999px)
-- ✅ Removed Zimbabwe flag colors (now pure black/white theme)
-- ✅ Removed Zimbabwe flag strip from admin
-- ✅ Added proper API integrations for all sections
-- ✅ Implemented loading states and error handling
-- ✅ Added sections: Dashboard, Sources, Articles, Authors, Categories, Analytics, System
+### ✅ Phase 1: API Structure & Critical Fixes (95% COMPLETE)
+**Status**: Mostly merged to main
+**PRs**: #12, #13, #14
+**Completion**: 95%
 
-**Files Modified**:
-- `backend/admin/index.ts`: Complete rewrite (1,221 lines)
-
----
-
-### 🔄 Phase 2: Critical Bug Fixes (IN PROGRESS)
-**Status**: Partially completed
-**PR**: #14
-**Completion**: 50%
+**Objective**: Fix API structure - move endpoints out of `/admin/` and make them accessible to users
 
 #### ✅ Completed
-1. **Article Categorization Fixed**
-   - CategoryManager now parses JSON keyword arrays correctly
-   - Articles properly categorized (was defaulting to 'general')
-   - File: `backend/services/CategoryManager.ts:345-403`
+1. **RSS Feed Cron Jobs** - Fixed scheduled handler
+2. **Public API Endpoints** (moved from /api/admin/):
+   - ✅ `/api/news-bytes` - Articles with images only
+   - ✅ `/api/search` - Full-text search with keywords
+   - ✅ `/api/authors` - Public journalist discovery
+   - ✅ `/api/sources` - Public news sources listing
+   - ✅ `/api/refresh` - User-triggered refresh (rate-limited, 5 min)
+3. **Article Categorization** - Fixed JSON keyword parsing
+4. **Cron Logging** - D1 logging system for RSS refresh tracking
+5. **Admin Panel** - Black/white redesign with Lucide icons
 
-2. **Cron Job Logging System**
-   - Created `cron_logs` table (migration 006)
-   - Frontend worker logs all executions to D1
-   - Added `/api/admin/cron-logs` endpoint
-   - Full visibility into RSS refresh performance
-   - Files: `database/migrations/006_cron_logging.sql`, `workers/app.ts`, `backend/index.ts`
+#### 🚧 Remaining (5%)
+- ⏳ Admin sidebar navigation (currently tabs)
+- ⏳ Sources table optimization (pagination needed)
+- ⏳ Admin panel logo
+- ⏳ Documentation updates
 
-#### 🚧 To Complete
-3. **Sidebar Navigation** ⏳
-   - Replace tab navigation with sidebar
-   - Collapsible sections
-   - Mobile responsive
-
-4. **Optimize Sources Table** ⏳
-   - Add pagination
-   - Add caching
-   - Lazy load article counts
-   - Currently loads all sources at once (slow)
-
-5. **Add Logos** ⏳
-   - Frontend logo
-   - Admin panel logo
-   - Fix favicon
-
-6. **Update Documentation** ⏳
-   - Reflect all Phase 1 & 2 changes
-   - Update API documentation
-   - Update deployment guides
+**Files Modified**:
+- `backend/index.ts`: Added 5 public endpoints (668-926)
+- `workers/app.ts`: Scheduled handler with D1 logging
+- `backend/services/CategoryManager.ts`: Fixed JSON parsing
+- `backend/admin/index.ts`: Complete redesign (1,221 lines)
+- `database/migrations/006_cron_logging.sql`: New cron_logs table
 
 ---
 
-### 📅 Phase 3: User Engagement Features (PLANNED)
+### 🚧 Phase 2: User Engagement APIs (CURRENT - 0% COMPLETE)
 **Status**: Not started
+**PR**: TBD
 **Completion**: 0%
 
-**Planned**:
-- User authentication (re-enable OpenAuthService)
-- Article interactions (likes, saves, bookmarks)
-- Comments system (create comments table)
-- User profiles
-- Following sources/journalists
-- User preferences
-- Reading history
+**Objective**: Enable users to interact with content (likes, saves, comments, follows)
 
-**Missing Database Tables**:
-- `comments`
-- `user_follows`
-- `user_reading_history`
+#### Required Database Migrations
 
-**APIs to Create**:
-- `POST /api/articles/:id/like`
-- `POST /api/articles/:id/save`
-- `POST /api/articles/:id/view`
-- `POST /api/articles/:id/comment`
-- `GET /api/user/me/preferences`
-- `POST /api/user/me/follows`
+**MUST CREATE**:
+```sql
+-- Article Comments Table
+CREATE TABLE IF NOT EXISTS article_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  parent_comment_id INTEGER REFERENCES article_comments(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  like_count INTEGER DEFAULT 0,
+  reply_count INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'published',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User Follows Table
+CREATE TABLE IF NOT EXISTS user_follows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  follow_type TEXT NOT NULL CHECK (follow_type IN ('source', 'author')),
+  follow_id TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, follow_type, follow_id)
+);
+```
+
+#### APIs to Implement (8 endpoints)
+
+**Article Interactions** (4 endpoints):
+- ❌ `POST /api/articles/:id/like` - Like/unlike article
+  - Insert into user_likes table
+  - Increment article.like_count
+  - Track in analytics
+
+- ❌ `POST /api/articles/:id/save` - Bookmark article
+  - Insert into user_bookmarks table
+  - Increment article.bookmark_count
+
+- ❌ `POST /api/articles/:id/view` - Track view
+  - Insert into user_reading_history
+  - Track reading_time, scroll_depth
+  - Increment article.view_count
+
+- ❌ `POST /api/articles/:id/comment` - Add comment
+  - Insert into article_comments
+  - Support nested replies (parent_comment_id)
+  - Increment article comment_count
+
+**User Preferences** (2 endpoints):
+- ❌ `GET /api/user/me/preferences` - Get user settings
+  - Preferred categories
+  - Followed sources/authors
+  - Reading habits
+
+- ❌ `POST /api/user/me/preferences` - Update settings
+  - Update category preferences
+  - Notification settings
+
+**Follows** (2 endpoints):
+- ❌ `POST /api/user/me/follows` - Follow source/journalist
+  - Insert into user_follows
+  - Support type: 'source' or 'author'
+
+- ❌ `DELETE /api/user/me/follows/:type/:id` - Unfollow
+
+#### Technical Requirements
+- ⚠️ **Authentication MUST be working** (currently disabled!)
+- Rate limiting on engagement endpoints
+- Analytics tracking for all interactions
+- Input validation and sanitization
+- Proper error handling
 
 ---
 
-### 📅 Phase 4: Analytics & Admin Features (PLANNED)
+### 📅 Phase 3: User Features & Personal Analytics (PLANNED)
 **Status**: Not started
 **Completion**: 0%
 
-**Planned**:
-- Admin analytics dashboard
-- Trending content queries
+**Objective**: Build user-facing features and personalization
+
+#### Features to Build
+- User profiles and settings pages
+- Personal reading history view
+- Reading statistics dashboard
+- Personalized feed based on preferences
+- Followed sources/authors activity feed
+- Notification system
+- User analytics dashboard
+
+#### APIs to Create (6+ endpoints)
+- `GET /api/user/me/profile` - User profile
+- `PUT /api/user/me/profile` - Update profile
+- `GET /api/user/me/history` - Reading history
+- `GET /api/user/me/analytics` - Personal stats
+  - Articles read count
+  - Favorite categories
+  - Total reading time
+  - Followed sources activity
+- `GET /api/user/me/feed` - Personalized feed
+- `GET /api/user/me/notifications` - Notifications
+
+#### Database Enhancements
+- Notification preferences table
+- Reading time tracking enhancements
+- Personalization algorithm data
+
+---
+
+### 📅 Phase 4: Admin Analytics & Management (PLANNED)
+**Status**: Not started
+**Completion**: 0%
+
+**Objective**: Comprehensive admin dashboard with analytics and management
+
+#### Features to Build
+- Platform-wide analytics overview
+- Trending content detection (24h engagement)
 - User engagement reports
+- Content performance metrics
 - Content moderation tools
-- Source management enhancements
-- Category management UI
-- Author profile management
+- User management interface
+- Enhanced source/category management
+
+#### APIs to Create (8+ endpoints)
+- `GET /api/admin/analytics/overview` - Platform stats
+  - Total views, likes, saves, comments
+  - User growth metrics
+  - Active users last 24h
+
+- `GET /api/admin/analytics/trending` - Trending articles
+  - Most engagement last 24h
+  - Breakout stories
+
+- `GET /api/admin/analytics/engagement` - User engagement
+  - Top categories by user preference
+  - Top sources by follows
+  - Comment activity
+
+- `GET /api/admin/analytics/content` - Content performance
+- `GET /api/admin/users` - User management
+- `PUT /api/admin/users/:id` - Manage user
+- `GET /api/admin/content/moderation` - Moderation queue
+- `PUT /api/admin/content/:id/moderate` - Moderate
 
 ---
 
@@ -149,191 +222,163 @@
 
 **Components**:
 - ✅ React Router 7 SSR
-- ✅ Scheduled cron handler (hourly)
-- ✅ Basic API endpoints
+- ✅ Scheduled cron handler (hourly) with D1 logging
+- ✅ 5 public API endpoints
 - ✅ PWA manifest generation
-- ⚠️ Missing: Logo, proper favicon
+- ✅ Logo component exists
+- ⚠️ Logo may need visibility check
 
 ### Backend Worker (admin.hararemetro.co.zw)
 **Status**: ✅ Functional
-**Build**: ✅ Passing (407 KiB bundle)
+**Build**: ✅ Passing (407 KiB)
 **Deployment**: ✅ Working
 
 **Components**:
 - ✅ Admin dashboard (black/white theme)
-- ✅ RSS feed processing
-- ✅ AI content pipeline (CategoryManager working)
+- ✅ RSS feed processing with AI
+- ✅ Category classification (fixed)
 - ✅ Author recognition
-- ✅ News source management
-- ⚠️ Missing: Sidebar navigation, logos
-- ⚠️ Disabled: Authentication (OpenAuthService has import errors)
+- ✅ Cron logging system
+- ⚠️ Tab navigation (should be sidebar)
+- ⚠️ No logo displayed
+- 🔴 **Authentication disabled** (OpenAuthService import errors)
 
 ### Database (D1)
-**Status**: ✅ Functional
 **Name**: hararemetro_db
-**Binding**: DB (shared across both workers)
+**Binding**: DB (shared)
 
 **Tables Status**:
 - ✅ articles
-- ✅ categories (with JSON keywords)
+- ✅ categories (with JSON keywords - fixed)
 - ✅ rss_sources
 - ✅ authors
 - ✅ article_keywords
 - ✅ article_authors
-- ✅ system_config
-- ✅ search_logs
 - ✅ cron_logs (NEW - Phase 2)
-- ❌ comments (missing - Phase 3)
-- ❌ user_follows (missing - Phase 3)
-- ❌ user_reading_history (missing - Phase 3)
+- ⚠️ users (exists but not used)
+- ⚠️ user_likes (needs verification)
+- ⚠️ user_bookmarks (needs verification)
+- ❌ **article_comments** (MISSING - Phase 2)
+- ❌ **user_follows** (MISSING - Phase 2)
+- ❌ user_reading_history (may need creation)
 
 ---
 
-## 🐛 Known Issues
+## 🎯 Current Status: Phase 2 Ready
 
-### Critical (Blocking)
-- None currently
+### ✅ Phase 1 Achievement
+- **95% complete**
+- Core infrastructure solid
+- Public APIs accessible
+- RSS aggregation working
+- Background cron jobs functional
+- Article categorization working
 
-### High Priority
-1. ⚠️ **Slow Sources Table Loading** - Needs pagination and caching
-2. ⚠️ **No Sidebar Navigation** - Current tab-based system not ideal
-3. ⚠️ **Missing Logos** - Frontend and admin need proper branding
-4. ⚠️ **Favicon Incorrect** - Needs to be updated
-5. ⚠️ **Authentication Disabled** - OpenAuthService import error
+### 🚧 Phase 2 Focus: User Engagement
+**Must Do**:
+1. Create missing database tables (comments, follows)
+2. Fix authentication (OpenAuthService)
+3. Implement 8 user engagement endpoints
+4. Add rate limiting
+5. Add analytics tracking
 
-### Medium Priority
-1. ⚠️ **Documentation Outdated** - Needs full update for Phase 1 & 2
-2. ⚠️ **No User Engagement APIs** - Phase 3 work
-3. ⚠️ **No Comments System** - Phase 3 work
-
-### Low Priority
-1. 📝 Zimbabwe flag colors removed from admin (by design)
-2. 📝 Durable Objects disabled (not needed for current scale)
+**Blockers**:
+- 🔴 Authentication disabled (must fix!)
+- Missing tables (must create migrations)
 
 ---
 
 ## 📊 Feature Completion Matrix
 
-| Feature | Frontend | Backend | Database | Status |
-|---------|----------|---------|----------|--------|
-| RSS Feed Refresh | ✅ | ✅ | ✅ | Working |
-| Article Display | ✅ | ✅ | ✅ | Working |
-| Search | ✅ | ✅ | ✅ | Working |
-| Categories | ✅ | ✅ | ✅ | Fixed in Phase 2 |
-| News Bytes | ✅ | ✅ | ✅ | Working |
-| Authors | ✅ | ✅ | ✅ | Working |
-| Sources | ✅ | ✅ | ✅ | Working (slow) |
-| User Refresh | ✅ | ✅ | ✅ | Working |
-| Admin Dashboard | N/A | ✅ | ✅ | Working |
-| Cron Logging | ✅ | ✅ | ✅ | New in Phase 2 |
-| Sidebar Nav | N/A | ❌ | N/A | Phase 2 TODO |
-| Logos | ❌ | ❌ | N/A | Phase 2 TODO |
-| Authentication | ❌ | ⚠️ | ✅ | Disabled |
-| Likes/Saves | ❌ | ❌ | ✅ | Phase 3 |
-| Comments | ❌ | ❌ | ❌ | Phase 3 |
-| User Profiles | ❌ | ❌ | ✅ | Phase 3 |
-| Analytics Dashboard | N/A | 🔄 | ✅ | Phase 4 |
+| Feature | Phase | Frontend | Backend | Database | Status |
+|---------|-------|----------|---------|----------|--------|
+| RSS Feed Refresh | 1 | ✅ | ✅ | ✅ | Working |
+| Article Display | 1 | ✅ | ✅ | ✅ | Working |
+| Search | 1 | ✅ | ✅ | ✅ | Working |
+| Categories | 1 | ✅ | ✅ | ✅ | Fixed |
+| News Bytes | 1 | ✅ | ✅ | ✅ | Working |
+| Authors | 1 | ✅ | ✅ | ✅ | Working |
+| Sources | 1 | ✅ | ✅ | ✅ | Working |
+| User Refresh | 1 | ✅ | ✅ | ✅ | Working |
+| **Like Articles** | **2** | ❌ | ❌ | ⚠️ | **Phase 2** |
+| **Save Articles** | **2** | ❌ | ❌ | ⚠️ | **Phase 2** |
+| **View Tracking** | **2** | ❌ | ❌ | ⚠️ | **Phase 2** |
+| **Comments** | **2** | ❌ | ❌ | ❌ | **Phase 2** |
+| **Follow Sources** | **2** | ❌ | ❌ | ❌ | **Phase 2** |
+| **User Preferences** | **2** | ❌ | ❌ | ⚠️ | **Phase 2** |
+| User Profiles | 3 | ❌ | ❌ | ⚠️ | Phase 3 |
+| Reading History | 3 | ❌ | ❌ | ⚠️ | Phase 3 |
+| Personal Analytics | 3 | ❌ | ❌ | ✅ | Phase 3 |
+| Admin Analytics | 4 | N/A | ❌ | ✅ | Phase 4 |
+| Content Moderation | 4 | N/A | ❌ | ✅ | Phase 4 |
 
 **Legend**:
-- ✅ Complete and working
-- 🔄 Partially complete
-- ⚠️ Has issues
+- ✅ Complete
+- ⚠️ Partially done/exists but not wired up
 - ❌ Not implemented
-- N/A Not applicable
 
 ---
 
-## 🚀 Deployment Status
+## 🔴 CRITICAL Issues
 
-### Production
-- **Frontend**: www.hararemetro.co.zw ✅ Deployed
-- **Backend**: admin.hararemetro.co.zw ✅ Deployed
-- **Database**: hararemetro_db ✅ Provisioned
+### Security
+1. **Authentication Completely Disabled**
+   - All `/api/admin/*` endpoints unprotected
+   - All `/api/user/me/*` endpoints won't work
+   - OpenAuthService has import errors
+   - **MUST FIX BEFORE Phase 2**
 
-### CI/CD
-- ✅ GitHub Actions workflow configured
-- ✅ Automatic deployment on merge to main
-- ✅ Separate workflows for frontend and backend
-- ✅ TypeScript compilation checks
+### Database
+2. **Missing Tables for Phase 2**
+   - `article_comments` doesn't exist
+   - `user_follows` doesn't exist
+   - Need migrations before implementing Phase 2
 
 ---
 
-## 📝 Next Actions (Phase 2 Completion)
+## 📝 Next Actions (Phase 2 Implementation)
 
-### Immediate (This Session)
-1. [ ] Add sidebar navigation to admin panel
-2. [ ] Optimize sources table (pagination, caching)
-3. [ ] Add logos to frontend and admin
-4. [ ] Fix favicon
-5. [ ] Update all documentation
-6. [ ] Full code review
+### Step 1: Database Migrations
+1. [ ] Create migration 007_user_engagement.sql
+2. [ ] Add article_comments table
+3. [ ] Add user_follows table
+4. [ ] Verify user_likes, user_bookmarks, user_reading_history tables
+5. [ ] Run migrations on D1
 
-### Near Term (Next Session)
-1. [ ] Start Phase 3: User engagement features
-2. [ ] Re-enable authentication
-3. [ ] Create comments table
-4. [ ] Implement like/save/bookmark APIs
+### Step 2: Fix Authentication
+1. [ ] Debug OpenAuthService import errors
+2. [ ] Re-enable authentication middleware
+3. [ ] Test auth on protected endpoints
+
+### Step 3: Implement APIs (8 endpoints)
+1. [ ] POST /api/articles/:id/like
+2. [ ] POST /api/articles/:id/save
+3. [ ] POST /api/articles/:id/view
+4. [ ] POST /api/articles/:id/comment
+5. [ ] GET /api/user/me/preferences
+6. [ ] POST /api/user/me/preferences
+7. [ ] POST /api/user/me/follows
+8. [ ] DELETE /api/user/me/follows/:type/:id
+
+### Step 4: Testing & Deployment
+1. [ ] Test all endpoints with authentication
+2. [ ] Test rate limiting
+3. [ ] Test analytics tracking
+4. [ ] Deploy to production
+5. [ ] Monitor errors
 
 ---
 
 ## 📚 Documentation Status
 
-| Document | Status | Last Updated |
-|----------|--------|--------------|
-| README.md | ✅ Current | Phase 1 |
-| CLAUDE.md | ✅ Current | Phase 1 |
-| backend/README.md | ✅ Current | Phase 1 |
-| PROJECT-STATUS.md | ✅ Current | Phase 2 |
-| API Documentation | 🔄 Needs update | Phase 1 |
-| Deployment Guide | 🔄 Needs update | Initial |
-
----
-
-## 🎯 Success Metrics
-
-### Technical Health
-- Build Status: ✅ Passing
-- TypeScript Errors: ✅ 0
-- Backend Bundle Size: 407 KiB (good)
-- Cron Jobs: ✅ Running hourly
-- Database: ✅ Healthy
-
-### Feature Completeness
-- Core Platform: ~65% complete
-- User Features: ~20% complete
-- Admin Features: ~45% complete
-- Analytics: ~30% complete
-- **Overall**: ~35% complete
-
-### Performance
-- Frontend Load Time: ⚠️ Not measured
-- Backend Response Time: ⚠️ Not measured
-- Database Query Speed: ⚠️ Sources table slow
-- Cron Job Duration: ✅ Tracked (new)
-
----
-
-## 🔗 Quick Links
-
-- **Frontend**: https://www.hararemetro.co.zw
-- **Admin**: https://admin.hararemetro.co.zw
-- **GitHub**: https://github.com/nyuchitech/harare-metro
-- **Phase 1 PR**: #12
-- **Admin Redesign PR**: #13
-- **Phase 2 PR**: #14
-
----
-
-## 💡 Technical Debt
-
-1. Authentication disabled due to OpenAuthService import errors
-2. Durable Objects commented out (not used)
-3. Vectorize partially implemented
-4. No automated tests configured
-5. Zimbabwe flag colors removed (may want option to re-enable)
-6. Sources table optimization needed
-7. No error monitoring service integrated
-8. No performance monitoring
+| Document | Status | Reflects Phase |
+|----------|--------|----------------|
+| PROJECT-STATUS.md | ✅ Updated | Current (Phase 2) |
+| CODE-REVIEW.md | ✅ Current | Phase 1 |
+| CLAUDE.md | ⚠️ Outdated | Phase 1 partial |
+| README.md | ⚠️ Outdated | Initial |
+| backend/README.md | ⚠️ Outdated | Phase 1 partial |
+| API Documentation | ❌ Missing | Needs creation |
 
 ---
 
