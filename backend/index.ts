@@ -966,6 +966,428 @@ app.post("/api/refresh", async (c) => {
   }
 });
 
+// ===== PHASE 2: USER ENGAGEMENT APIs (REQUIRE AUTH) =====
+
+// Article Like/Unlike
+app.post("/api/articles/:id/like", async (c) => {
+  try {
+    const articleId = c.req.param("id");
+    // TODO: Get from authenticated user when auth is re-enabled
+    const userId = c.req.header('x-user-id') || c.req.header('x-session-id') || 'anonymous';
+
+    // Check if already liked
+    const existing = await c.env.DB.prepare(`
+      SELECT id FROM user_likes WHERE user_id = ? AND article_id = ?
+    `).bind(userId, articleId).first();
+
+    if (existing) {
+      // Unlike
+      await c.env.DB.prepare(`
+        DELETE FROM user_likes WHERE user_id = ? AND article_id = ?
+      `).bind(userId, articleId).run();
+
+      await c.env.DB.prepare(`
+        UPDATE articles SET like_count = like_count - 1 WHERE id = ?
+      `).bind(articleId).run();
+
+      return c.json({ success: true, liked: false, message: "Article unliked" });
+    } else {
+      // Like
+      await c.env.DB.prepare(`
+        INSERT INTO user_likes (user_id, article_id) VALUES (?, ?)
+      `).bind(userId, articleId).run();
+
+      await c.env.DB.prepare(`
+        UPDATE articles SET like_count = like_count + 1 WHERE id = ?
+      `).bind(articleId).run();
+
+      // Track in analytics
+      if (c.env.NEWS_ANALYTICS) {
+        try {
+          c.env.NEWS_ANALYTICS.writeDataPoint({
+            blobs: ['article_like', userId, articleId.toString()],
+            doubles: [Date.now()],
+            indexes: ['engagement']
+          });
+        } catch (analyticsError) {
+          console.error('[LIKE] Analytics tracking failed:', analyticsError);
+        }
+      }
+
+      return c.json({ success: true, liked: true, message: "Article liked" });
+    }
+  } catch (error) {
+    console.error("[LIKE] Error:", error);
+    return c.json({ error: "Failed to like article" }, 500);
+  }
+});
+
+// Article Save/Bookmark
+app.post("/api/articles/:id/save", async (c) => {
+  try {
+    const articleId = c.req.param("id");
+    const userId = c.req.header('x-user-id') || c.req.header('x-session-id') || 'anonymous';
+
+    // Check if already saved
+    const existing = await c.env.DB.prepare(`
+      SELECT id FROM user_bookmarks WHERE user_id = ? AND article_id = ?
+    `).bind(userId, articleId).first();
+
+    if (existing) {
+      // Unsave
+      await c.env.DB.prepare(`
+        DELETE FROM user_bookmarks WHERE user_id = ? AND article_id = ?
+      `).bind(userId, articleId).run();
+
+      await c.env.DB.prepare(`
+        UPDATE articles SET bookmark_count = bookmark_count - 1 WHERE id = ?
+      `).bind(articleId).run();
+
+      return c.json({ success: true, saved: false, message: "Bookmark removed" });
+    } else {
+      // Save
+      await c.env.DB.prepare(`
+        INSERT INTO user_bookmarks (user_id, article_id) VALUES (?, ?)
+      `).bind(userId, articleId).run();
+
+      await c.env.DB.prepare(`
+        UPDATE articles SET bookmark_count = bookmark_count + 1 WHERE id = ?
+      `).bind(articleId).run();
+
+      // Track in analytics
+      if (c.env.NEWS_ANALYTICS) {
+        try {
+          c.env.NEWS_ANALYTICS.writeDataPoint({
+            blobs: ['article_save', userId, articleId.toString()],
+            doubles: [Date.now()],
+            indexes: ['engagement']
+          });
+        } catch (analyticsError) {
+          console.error('[SAVE] Analytics tracking failed:', analyticsError);
+        }
+      }
+
+      return c.json({ success: true, saved: true, message: "Article bookmarked" });
+    }
+  } catch (error) {
+    console.error("[SAVE] Error:", error);
+    return c.json({ error: "Failed to save article" }, 500);
+  }
+});
+
+// Article View Tracking
+app.post("/api/articles/:id/view", async (c) => {
+  try {
+    const articleId = c.req.param("id");
+    const userId = c.req.header('x-user-id') || c.req.header('x-session-id') || 'anonymous';
+
+    const body = await c.req.json();
+    const readingTime = body.reading_time || 0; // seconds
+    const scrollDepth = body.scroll_depth || 0; // percentage 0-100
+
+    // Insert or update reading history
+    await c.env.DB.prepare(`
+      INSERT INTO user_reading_history (user_id, article_id, reading_time, scroll_depth)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(user_id, article_id)
+      DO UPDATE SET
+        reading_time = reading_time + ?,
+        scroll_depth = MAX(scroll_depth, ?),
+        last_position_at = CURRENT_TIMESTAMP
+    `).bind(userId, articleId, readingTime, scrollDepth, readingTime, scrollDepth).run();
+
+    // Increment view count
+    await c.env.DB.prepare(`
+      UPDATE articles SET view_count = view_count + 1 WHERE id = ?
+    `).bind(articleId).run();
+
+    // Track in analytics
+    if (c.env.NEWS_ANALYTICS) {
+      try {
+        c.env.NEWS_ANALYTICS.writeDataPoint({
+          blobs: ['article_view', userId, articleId.toString()],
+          doubles: [readingTime, scrollDepth],
+          indexes: ['engagement']
+        });
+      } catch (analyticsError) {
+        console.error('[VIEW] Analytics tracking failed:', analyticsError);
+      }
+    }
+
+    return c.json({ success: true, message: "View tracked" });
+  } catch (error) {
+    console.error("[VIEW] Error:", error);
+    return c.json({ error: "Failed to track view" }, 500);
+  }
+});
+
+// Article Comment
+app.post("/api/articles/:id/comment", async (c) => {
+  try {
+    const articleId = c.req.param("id");
+    const userId = c.req.header('x-user-id') || c.req.header('x-session-id') || 'anonymous';
+
+    const body = await c.req.json();
+    const content = body.content;
+    const parentCommentId = body.parent_comment_id || null;
+
+    if (!content || content.trim().length === 0) {
+      return c.json({ error: "Comment content is required" }, 400);
+    }
+
+    if (content.length > 1000) {
+      return c.json({ error: "Comment too long (max 1000 characters)" }, 400);
+    }
+
+    // Insert comment
+    const result = await c.env.DB.prepare(`
+      INSERT INTO article_comments (article_id, user_id, parent_comment_id, content, status)
+      VALUES (?, ?, ?, ?, 'published')
+    `).bind(articleId, userId, parentCommentId, content.trim()).run();
+
+    // Note: Triggers will handle comment_count and reply_count updates
+
+    // Track in analytics
+    if (c.env.NEWS_ANALYTICS) {
+      try {
+        c.env.NEWS_ANALYTICS.writeDataPoint({
+          blobs: ['article_comment', userId, articleId.toString()],
+          doubles: [Date.now()],
+          indexes: ['engagement']
+        });
+      } catch (analyticsError) {
+        console.error('[COMMENT] Analytics tracking failed:', analyticsError);
+      }
+    }
+
+    return c.json({
+      success: true,
+      commentId: result.meta.last_row_id,
+      message: "Comment posted"
+    });
+  } catch (error) {
+    console.error("[COMMENT] Error:", error);
+    return c.json({ error: "Failed to post comment" }, 500);
+  }
+});
+
+// Get Article Comments
+app.get("/api/articles/:id/comments", async (c) => {
+  try {
+    const articleId = c.req.param("id");
+    const limit = parseInt(c.req.query("limit") || "50");
+    const offset = parseInt(c.req.query("offset") || "0");
+
+    const comments = await c.env.DB.prepare(`
+      SELECT
+        id,
+        article_id,
+        user_id,
+        parent_comment_id,
+        content,
+        like_count,
+        reply_count,
+        status,
+        created_at,
+        updated_at
+      FROM article_comments
+      WHERE article_id = ? AND status = 'published' AND parent_comment_id IS NULL
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(articleId, limit, offset).all();
+
+    // Get replies for each comment
+    for (const comment of comments.results) {
+      const replies = await c.env.DB.prepare(`
+        SELECT
+          id,
+          article_id,
+          user_id,
+          parent_comment_id,
+          content,
+          like_count,
+          reply_count,
+          status,
+          created_at,
+          updated_at
+        FROM article_comments
+        WHERE parent_comment_id = ? AND status = 'published'
+        ORDER BY created_at ASC
+        LIMIT 10
+      `).bind(comment.id).all();
+
+      (comment as any).replies = replies.results;
+    }
+
+    return c.json({
+      comments: comments.results,
+      total: comments.results.length,
+      limit,
+      offset
+    });
+  } catch (error) {
+    console.error("[COMMENTS] Error:", error);
+    return c.json({ error: "Failed to fetch comments" }, 500);
+  }
+});
+
+// User Preferences - GET
+app.get("/api/user/me/preferences", async (c) => {
+  try {
+    const userId = c.req.header('x-user-id') || c.req.header('x-session-id') || 'anonymous';
+
+    // Get user preferences
+    const prefs = await c.env.DB.prepare(`
+      SELECT preference_key, preference_value
+      FROM user_preferences
+      WHERE user_id = ?
+    `).bind(userId).all();
+
+    const preferences = {};
+    for (const pref of prefs.results) {
+      preferences[pref.preference_key] = pref.preference_value;
+    }
+
+    // Get followed sources
+    const followedSources = await c.env.DB.prepare(`
+      SELECT follow_id as source_id, created_at
+      FROM user_follows
+      WHERE user_id = ? AND follow_type = 'source'
+    `).bind(userId).all();
+
+    // Get followed authors
+    const followedAuthors = await c.env.DB.prepare(`
+      SELECT follow_id as author_id, created_at
+      FROM user_follows
+      WHERE user_id = ? AND follow_type = 'author'
+    `).bind(userId).all();
+
+    // Get reading habits
+    const readingStats = await c.env.DB.prepare(`
+      SELECT
+        COUNT(*) as articles_read,
+        SUM(reading_time) as total_reading_time,
+        AVG(scroll_depth) as avg_scroll_depth
+      FROM user_reading_history
+      WHERE user_id = ?
+    `).bind(userId).first();
+
+    return c.json({
+      preferences,
+      followed_sources: followedSources.results,
+      followed_authors: followedAuthors.results,
+      reading_stats: readingStats
+    });
+  } catch (error) {
+    console.error("[PREFERENCES_GET] Error:", error);
+    return c.json({ error: "Failed to fetch preferences" }, 500);
+  }
+});
+
+// User Preferences - UPDATE
+app.post("/api/user/me/preferences", async (c) => {
+  try {
+    const userId = c.req.header('x-user-id') || c.req.header('x-session-id') || 'anonymous';
+    const body = await c.req.json();
+
+    // Update or insert preferences
+    for (const [key, value] of Object.entries(body)) {
+      await c.env.DB.prepare(`
+        INSERT INTO user_preferences (user_id, preference_key, preference_value)
+        VALUES (?, ?, ?)
+        ON CONFLICT(user_id, preference_key)
+        DO UPDATE SET preference_value = ?, updated_at = CURRENT_TIMESTAMP
+      `).bind(userId, key, value, value).run();
+    }
+
+    return c.json({ success: true, message: "Preferences updated" });
+  } catch (error) {
+    console.error("[PREFERENCES_UPDATE] Error:", error);
+    return c.json({ error: "Failed to update preferences" }, 500);
+  }
+});
+
+// Follow Source/Author
+app.post("/api/user/me/follows", async (c) => {
+  try {
+    const userId = c.req.header('x-user-id') || c.req.header('x-session-id') || 'anonymous';
+    const body = await c.req.json();
+
+    const followType = body.follow_type; // 'source' or 'author'
+    const followId = body.follow_id;
+
+    if (!['source', 'author', 'category'].includes(followType)) {
+      return c.json({ error: "Invalid follow_type. Must be 'source', 'author', or 'category'" }, 400);
+    }
+
+    if (!followId) {
+      return c.json({ error: "follow_id is required" }, 400);
+    }
+
+    // Insert follow
+    await c.env.DB.prepare(`
+      INSERT INTO user_follows (user_id, follow_type, follow_id)
+      VALUES (?, ?, ?)
+      ON CONFLICT(user_id, follow_type, follow_id) DO NOTHING
+    `).bind(userId, followType, followId).run();
+
+    // Track in analytics
+    if (c.env.USER_ANALYTICS) {
+      try {
+        c.env.USER_ANALYTICS.writeDataPoint({
+          blobs: ['user_follow', userId, followType, followId],
+          doubles: [Date.now()],
+          indexes: ['follows']
+        });
+      } catch (analyticsError) {
+        console.error('[FOLLOW] Analytics tracking failed:', analyticsError);
+      }
+    }
+
+    return c.json({ success: true, message: `Now following ${followType}` });
+  } catch (error) {
+    console.error("[FOLLOW] Error:", error);
+    return c.json({ error: "Failed to follow" }, 500);
+  }
+});
+
+// Unfollow Source/Author
+app.delete("/api/user/me/follows/:type/:id", async (c) => {
+  try {
+    const userId = c.req.header('x-user-id') || c.req.header('x-session-id') || 'anonymous';
+    const followType = c.req.param("type");
+    const followId = c.req.param("id");
+
+    if (!['source', 'author', 'category'].includes(followType)) {
+      return c.json({ error: "Invalid follow_type" }, 400);
+    }
+
+    // Delete follow
+    await c.env.DB.prepare(`
+      DELETE FROM user_follows
+      WHERE user_id = ? AND follow_type = ? AND follow_id = ?
+    `).bind(userId, followType, followId).run();
+
+    // Track in analytics
+    if (c.env.USER_ANALYTICS) {
+      try {
+        c.env.USER_ANALYTICS.writeDataPoint({
+          blobs: ['user_unfollow', userId, followType, followId],
+          doubles: [Date.now()],
+          indexes: ['follows']
+        });
+      } catch (analyticsError) {
+        console.error('[UNFOLLOW] Analytics tracking failed:', analyticsError);
+      }
+    }
+
+    return c.json({ success: true, message: `Unfollowed ${followType}` });
+  } catch (error) {
+    console.error("[UNFOLLOW] Error:", error);
+    return c.json({ error: "Failed to unfollow" }, 500);
+  }
+});
+
 // ===== ADMIN ENDPOINTS (PROTECTED - TODO: Re-enable auth) =====
 
 // AI Pipeline monitoring and author recognition endpoints
