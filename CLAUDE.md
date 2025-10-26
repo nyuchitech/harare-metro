@@ -7,13 +7,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Development Environment
 - `npm run dev` - Start React Router dev server with Vite
 - `npm run dev:backend` - Start backend worker dev server (in backend directory)
+- `cd account && npm run dev` - Start account worker dev server
 - `npm run preview` - Preview production build locally
 
 ### Build and Deployment
 - `npm run build` - Build React Router frontend application
 - `npm run deploy` - Deploy frontend worker to www.hararemetro.co.zw
 - `npm run deploy:backend` - Deploy backend worker to admin.hararemetro.co.zw
-- `npm run deploy:all` - Deploy both frontend and backend workers
+- `cd account && npm run deploy` - Deploy account worker to account.hararemetro.co.zw
+- `npm run deploy:all` - Deploy both frontend and backend workers (NOTE: account worker deployed separately)
 - `npm run typecheck` - Run TypeScript type checking
 
 ### Testing and Utilities
@@ -25,14 +27,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Architecture Overview
 
 ### Core Platform
-**Harare Metro** is a modern news aggregation platform built with a **dual-worker architecture**:
+**Harare Metro** is a modern news aggregation platform built with a **3-worker architecture**:
 
 - **Frontend Worker** (www.hararemetro.co.zw): React Router 7 SSR application with minimal API endpoints
 - **Backend Worker** (admin.hararemetro.co.zw): Comprehensive admin panel and RSS processing engine
-- **Database**: Cloudflare D1 (single database shared across both workers)
+- **Account Worker** (account.hararemetro.co.zw): User authentication and account management (NEW in Phase 3a)
+- **Databases**: Cloudflare D1 (two databases: content and users)
 - **Analytics**: Cloudflare Analytics Engine for user interaction tracking
 - **AI Processing**: Cloudflare Workers AI for content enhancement and author recognition
-- **Deployment**: Two separate Cloudflare Workers on custom domains
+- **Deployment**: Three separate Cloudflare Workers on custom domains
 
 ### Key Technologies
 - **Frontend Framework**: React 19 with React Router 7 (SSR-enabled)
@@ -45,7 +48,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Database**: Cloudflare D1 (SQLite-based edge database)
 - **TypeScript**: Full type safety across both workers
 
-### Dual-Worker Architecture
+### 3-Worker Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -63,25 +66,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ┌─────────────────────────────────────────────────────────────┐
 │                admin.hararemetro.co.zw                      │
 │              Backend Worker (backend/index.ts)               │
-│  • Admin dashboard UI                                        │
+│  • Admin dashboard UI (admin only)                          │
 │  • RSS feed processing with AI pipeline                     │
 │  • Author recognition and profile generation                │
 │  • Content quality scoring                                   │
 │  • News source management                                    │
 │  • Analytics and insights                                    │
 │  • Category and keyword management                           │
+│  • User engagement APIs (likes, saves, comments, follows)   │
 └─────────────────────────────────────────────────────────────┘
                               ↓
-                    Shared D1 Database
+                    Two D1 Databases
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                  Cloudflare D1 Database                      │
-│                    (hararemetro_db)                          │
+│          Cloudflare D1 Database (hararemetro_db)            │
+│                  Content Database                            │
 │  • Articles, categories, news sources                        │
 │  • Authors, keywords, article relationships                  │
-│  • User data, authentication                                 │
 │  • System configuration                                      │
 │  • Analytics and processing logs                             │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│       Cloudflare D1 Database (hararemetro_users_db)         │
+│                    Users Database                            │
+│  • Users, authentication, sessions                           │
+│  • User profiles and preferences                             │
+│  • Reading history and bookmarks                             │
+│  • Notifications                                             │
+│  • User follows (sources, authors, categories)               │
+└─────────────────────────────────────────────────────────────┘
+                              ↑
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│              account.hararemetro.co.zw                      │
+│              Account Worker (account/index.ts)               │
+│  • User authentication (JWT-based)                          │
+│  • Registration and login                                    │
+│  • User profile management                                   │
+│  • Reading history tracking                                  │
+│  • Personal analytics (reading streaks, favorites)           │
+│  • Personalized feed algorithm                               │
+│  • Notifications system                                      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -130,6 +156,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │       ├── ArticleInteractionsDO.ts
 │       ├── UserBehaviorDO.ts
 │       └── RealtimeAnalyticsDO.ts
+│
+├── account/                    # ✅ Account worker (NEW - separate deployment)
+│   ├── index.ts                # Account worker entry point (Hono app)
+│   ├── wrangler.jsonc          # Account worker configuration
+│   ├── package.json            # Account dependencies
+│   ├── tsconfig.json           # TypeScript configuration
+│   ├── services/               # ✅ Account services
+│   │   ├── AuthService.ts      # JWT authentication (Web Crypto API)
+│   │   ├── UserService.ts      # Profile, history, analytics, personalized feed
+│   │   └── NotificationService.ts  # User notifications
+│   └── pages/                  # HTML pages
+│       ├── login.html          # Login page
+│       ├── register.html       # Registration page
+│       └── profile.html        # User profile dashboard
 │
 ├── wrangler.jsonc              # ✅ Frontend worker configuration
 ├── package.json                # Frontend dependencies
@@ -541,21 +581,64 @@ try {
 - `GET /api/trending-authors` - Trending authors
 - `GET /api/search/authors?q=query` - Search authors across outlets
 
+**User Engagement Endpoints (Phase 2):**
+- `POST /api/articles/:id/like` - Like/unlike article
+- `POST /api/articles/:id/save` - Bookmark article
+- `POST /api/articles/:id/view` - Track article view
+- `POST /api/articles/:id/comment` - Add comment to article
+- `GET /api/articles/:id/comments` - Get article comments
+- `GET /api/user/me/preferences` - Get user preferences
+- `POST /api/user/me/preferences` - Update user preferences
+- `POST /api/user/me/follows` - Follow source/journalist
+- `DELETE /api/user/me/follows/:type/:id` - Unfollow
+
+### Account Worker (account.hararemetro.co.zw) - NEW Phase 3a
+
+**Authentication Endpoints:**
+- `POST /api/auth/register` - Create new user account
+- `POST /api/auth/login` - Login with email/password
+- `POST /api/auth/logout` - Logout and invalidate session
+- `GET /api/auth/session` - Get current session information
+
+**User Management Endpoints:**
+- `GET /api/user/me/profile` - Get current user's profile
+- `PUT /api/user/me/profile` - Update user profile
+- `GET /api/user/me/history` - Get reading history
+- `GET /api/user/me/analytics` - Get personal analytics (reading streaks, favorites)
+- `GET /api/user/me/feed` - Get personalized feed (algorithm-based)
+- `GET /api/user/me/notifications` - Get user notifications
+- `PUT /api/user/me/notifications/:id/read` - Mark notification as read
+
+**HTML Pages:**
+- `GET /login` - Login page
+- `GET /register` - Registration page
+- `GET /profile` - User profile dashboard
+- `GET /` - Account dashboard home
+
 ## Important Reminders
 
-1. **Dual-Worker Architecture**: Frontend and backend are separate workers
-2. **Database Binding**: Always use `DB` (not `ARTICLES_DB`)
-3. **Services Location**: All business logic in `backend/services/`
-4. **Cron Implementation**: Frontend calls backend via HTTP POST
-5. **No KV Storage**: Everything uses D1 database
-6. **No Supabase**: All user data in D1
-7. **Typography**: Georgia for headings, Inter for body - NO EXCEPTIONS
-8. **Colors**: Zimbabwe flag palette only - maintain consistency
-9. **Mobile**: Mobile-first design with TikTok-like experience
-10. **Branding**: Zimbabwe flag strip must be present on all full-page views
-11. **TypeScript**: Use TypeScript for all new code
-12. **Logging**: Use proper log prefixes for debugging
-13. **Error Handling**: Consistent error boundaries and user feedback
-14. **Testing**: Manual testing required - no automated tests currently configured
-15. **AI Features**: Content cleaning, author extraction, keyword classification, quality scoring
-16. **Author Recognition**: Celebrate Zimbabwe journalism through author profiles
+1. **3-Worker Architecture**: Frontend, backend, and account are separate workers
+2. **Two Databases**:
+   - `hararemetro_db` (content): articles, categories, sources, authors
+   - `hararemetro_users_db` (users): authentication, profiles, preferences, notifications
+3. **Database Bindings**:
+   - Frontend: `DB` (content only)
+   - Backend: `DB` (content only)
+   - Account: `USERS_DB` (users) + `CONTENT_DB` (read-only content access)
+4. **Services Location**:
+   - Content/admin logic: `backend/services/`
+   - User/auth logic: `account/services/`
+5. **Cron Implementation**: Frontend calls backend via HTTP POST for RSS refresh
+6. **Authentication**: JWT-based auth in account worker, KV for session storage
+7. **No Supabase**: All user data in D1 (hararemetro_users_db)
+8. **Typography**: Georgia for headings, Inter for body - NO EXCEPTIONS
+9. **Colors**: Zimbabwe flag palette only - maintain consistency
+10. **Mobile**: Mobile-first design with TikTok-like experience
+11. **Branding**: Zimbabwe flag strip must be present on all full-page views
+12. **TypeScript**: Use TypeScript for all new code
+13. **Logging**: Use proper log prefixes for debugging
+14. **Error Handling**: Consistent error boundaries and user feedback
+15. **Testing**: Manual testing required - no automated tests currently configured
+16. **AI Features**: Content cleaning, author extraction, keyword classification, quality scoring
+17. **Author Recognition**: Celebrate Zimbabwe journalism through author profiles
+18. **Personalization**: Algorithm-based feed in account worker based on user behavior
