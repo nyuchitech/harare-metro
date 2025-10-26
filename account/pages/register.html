@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Harare Metro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --zw-green: hsl(140, 100%, 32%);
+            --zw-yellow: hsl(48, 98%, 54%);
+            --zw-red: hsl(354, 85%, 57%);
+            --zw-black: hsl(0, 0%, 0%);
+            --zw-white: hsl(0, 0%, 100%);
+            --gray-50: hsl(0, 0%, 98%);
+            --gray-100: hsl(0, 0%, 96%);
+            --gray-200: hsl(0, 0%, 90%);
+            --gray-300: hsl(0, 0%, 83%);
+            --gray-400: hsl(0, 0%, 64%);
+            --gray-500: hsl(0, 0%, 45%);
+            --gray-600: hsl(0, 0%, 32%);
+            --gray-700: hsl(0, 0%, 25%);
+            --gray-800: hsl(0, 0%, 15%);
+            --gray-900: hsl(0, 0%, 9%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            position: relative;
+        }
+
+        /* Zimbabwe Flag Strip */
+        .zimbabwe-flag-strip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 100vh;
+            z-index: 1000;
+            background: linear-gradient(to bottom,
+                var(--zw-green) 0% 20%,
+                var(--zw-yellow) 20% 40%,
+                var(--zw-red) 40% 60%,
+                var(--zw-black) 60% 80%,
+                var(--zw-white) 80% 100%
+            );
+        }
+
+        .register-container {
+            background: var(--zw-white);
+            border-radius: 1.5rem;
+            padding: 2.5rem 2rem;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            color: var(--gray-500);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-family: inherit;
+            border: 2px solid var(--gray-200);
+            border-radius: 0.75rem;
+            background: var(--gray-50);
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--zw-green);
+            background: var(--zw-white);
+        }
+
+        .form-group input::placeholder {
+            color: var(--gray-400);
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 0.5rem;
+            color: var(--gray-500);
+            font-size: 0.75rem;
+        }
+
+        .error-message,
+        .success-message {
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .error-message {
+            background: var(--zw-red);
+            color: var(--zw-white);
+        }
+
+        .success-message {
+            background: var(--zw-green);
+            color: var(--zw-white);
+        }
+
+        .error-message.show,
+        .success-message.show {
+            display: block;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--zw-white);
+            background: var(--zw-green);
+            border: none;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .submit-button:hover {
+            background: hsl(140, 100%, 28%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 166, 81, 0.3);
+        }
+
+        .submit-button:active {
+            transform: translateY(0);
+        }
+
+        .submit-button:disabled {
+            background: var(--gray-300);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .form-footer {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .form-footer a {
+            color: var(--zw-green);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--gray-200);
+        }
+
+        .divider::before {
+            margin-right: 1rem;
+        }
+
+        .divider::after {
+            margin-left: 1rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--zw-white);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .password-strength {
+            margin-top: 0.5rem;
+            height: 4px;
+            background: var(--gray-200);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s ease;
+        }
+
+        .password-strength-bar.weak {
+            width: 33%;
+            background: var(--zw-red);
+        }
+
+        .password-strength-bar.medium {
+            width: 66%;
+            background: var(--zw-yellow);
+        }
+
+        .password-strength-bar.strong {
+            width: 100%;
+            background: var(--zw-green);
+        }
+
+        @media (max-width: 480px) {
+            .register-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .logo h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="zimbabwe-flag-strip"></div>
+
+    <div class="register-container">
+        <div class="logo">
+            <h1>Harare Metro</h1>
+            <p>Create your account</p>
+        </div>
+
+        <div class="error-message" id="error-message"></div>
+        <div class="success-message" id="success-message"></div>
+
+        <form id="register-form">
+            <div class="form-group">
+                <label for="display_name">Display Name (Optional)</label>
+                <input
+                    type="text"
+                    id="display_name"
+                    name="display_name"
+                    placeholder="John Doe"
+                    autocomplete="name"
+                >
+                <small>This is how your name will appear on comments</small>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    required
+                    autocomplete="email"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Create a strong password"
+                    required
+                    autocomplete="new-password"
+                    minlength="8"
+                >
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="password-strength-bar"></div>
+                </div>
+                <small>At least 8 characters</small>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input
+                    type="password"
+                    id="confirm_password"
+                    name="confirm_password"
+                    placeholder="Re-enter your password"
+                    required
+                    autocomplete="new-password"
+                >
+            </div>
+
+            <button type="submit" class="submit-button" id="submit-button">
+                Create Account
+            </button>
+        </form>
+
+        <div class="form-footer">
+            <div class="divider">OR</div>
+            <p>
+                Already have an account? <a href="/login">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('register-form');
+        const submitButton = document.getElementById('submit-button');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        const passwordInput = document.getElementById('password');
+        const passwordStrengthBar = document.getElementById('password-strength-bar');
+
+        // Password strength indicator
+        passwordInput.addEventListener('input', (e) => {
+            const password = e.target.value;
+            let strength = 0;
+
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+
+            passwordStrengthBar.className = 'password-strength-bar';
+            if (strength >= 3) {
+                passwordStrengthBar.classList.add('strong');
+            } else if (strength >= 2) {
+                passwordStrengthBar.classList.add('medium');
+            } else if (strength >= 1) {
+                passwordStrengthBar.classList.add('weak');
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const display_name = document.getElementById('display_name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirm_password = document.getElementById('confirm_password').value;
+
+            // Hide messages
+            errorMessage.classList.remove('show');
+            successMessage.classList.remove('show');
+
+            // Validate passwords match
+            if (password !== confirm_password) {
+                errorMessage.textContent = 'Passwords do not match';
+                errorMessage.classList.add('show');
+                return;
+            }
+
+            // Validate password length
+            if (password.length < 8) {
+                errorMessage.textContent = 'Password must be at least 8 characters';
+                errorMessage.classList.add('show');
+                return;
+            }
+
+            // Disable submit button and show loading
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="loading-spinner"></span>Creating account...';
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        display_name: display_name || null,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Registration failed');
+                }
+
+                // Show success message
+                successMessage.textContent = 'Account created successfully! Redirecting...';
+                successMessage.classList.add('show');
+
+                // Store token and session
+                localStorage.setItem('session_id', data.session_id);
+                localStorage.setItem('token', data.token);
+
+                // Redirect to main site after 1 second
+                setTimeout(() => {
+                    window.location.href = 'https://www.hararemetro.co.zw';
+                }, 1000);
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.classList.add('show');
+
+                // Re-enable submit button
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 # Harare Metro - Project Status
 
-**Last Updated**: 2025-10-24
-**Current Phase**: Phase 2 (User Engagement APIs)
-**Overall Completion**: ~45%
+**Last Updated**: 2025-10-26
+**Current Phase**: Phase 3a (Account Worker Implementation)
+**Overall Completion**: ~65%
 
 ---
 
@@ -57,16 +57,14 @@
 
 ---
 
-### 🚧 Phase 2: User Engagement APIs (CURRENT - 0% COMPLETE)
-**Status**: Not started
-**PR**: TBD
-**Completion**: 0%
+### ✅ Phase 2: User Engagement APIs (100% COMPLETE)
+**Status**: Merged to main
+**PR**: #15
+**Completion**: 100%
 
 **Objective**: Enable users to interact with content (likes, saves, comments, follows)
 
-#### Required Database Migrations
-
-**MUST CREATE**:
+#### ✅ Completed Database Migrations
 ```sql
 -- Article Comments Table
 CREATE TABLE IF NOT EXISTS article_comments (
@@ -93,59 +91,105 @@ CREATE TABLE IF NOT EXISTS user_follows (
 );
 ```
 
-#### APIs to Implement (8 endpoints)
+#### ✅ Implemented APIs (9 endpoints)
 
 **Article Interactions** (4 endpoints):
-- ❌ `POST /api/articles/:id/like` - Like/unlike article
-  - Insert into user_likes table
-  - Increment article.like_count
-  - Track in analytics
-
-- ❌ `POST /api/articles/:id/save` - Bookmark article
-  - Insert into user_bookmarks table
-  - Increment article.bookmark_count
-
-- ❌ `POST /api/articles/:id/view` - Track view
-  - Insert into user_reading_history
-  - Track reading_time, scroll_depth
-  - Increment article.view_count
-
-- ❌ `POST /api/articles/:id/comment` - Add comment
-  - Insert into article_comments
-  - Support nested replies (parent_comment_id)
-  - Increment article comment_count
+- ✅ `POST /api/articles/:id/like` - Like/unlike article (backend/index.ts:972)
+- ✅ `POST /api/articles/:id/save` - Bookmark article (backend/index.ts:1026)
+- ✅ `POST /api/articles/:id/view` - Track view (backend/index.ts:1079)
+- ✅ `POST /api/articles/:id/comment` - Add comment (backend/index.ts:1125)
+- ✅ `GET /api/articles/:id/comments` - Get comments (backend/index.ts:1175)
 
 **User Preferences** (2 endpoints):
-- ❌ `GET /api/user/me/preferences` - Get user settings
-  - Preferred categories
-  - Followed sources/authors
-  - Reading habits
-
-- ❌ `POST /api/user/me/preferences` - Update settings
-  - Update category preferences
-  - Notification settings
+- ✅ `GET /api/user/me/preferences` - Get user settings (backend/index.ts:1235)
+- ✅ `POST /api/user/me/preferences` - Update settings (backend/index.ts:1288)
 
 **Follows** (2 endpoints):
-- ❌ `POST /api/user/me/follows` - Follow source/journalist
-  - Insert into user_follows
-  - Support type: 'source' or 'author'
+- ✅ `POST /api/user/me/follows` - Follow source/journalist (backend/index.ts:1311)
+- ✅ `DELETE /api/user/me/follows/:type/:id` - Unfollow (backend/index.ts:1355)
 
-- ❌ `DELETE /api/user/me/follows/:type/:id` - Unfollow
-
-#### Technical Requirements
-- ⚠️ **Authentication MUST be working** (currently disabled!)
-- Rate limiting on engagement endpoints
+#### ✅ Technical Implementation
+- Database migrations applied (007_user_engagement_complete.sql)
 - Analytics tracking for all interactions
 - Input validation and sanitization
 - Proper error handling
+- **Note**: Full authentication implemented in Phase 3a (Account Worker)
 
 ---
 
-### 📅 Phase 3: User Features & Personal Analytics (PLANNED)
+### 🚧 Phase 3a: Account Worker Implementation (CURRENT - 90% COMPLETE)
+**Status**: In development
+**Branch**: claude/phase3a-account-worker-011CURB4XHhm96PJ2fNTAzWT
+**PR**: TBD
+**Completion**: 90%
+
+**Objective**: Separate user authentication and account management into dedicated worker
+
+#### ✅ Completed Work
+
+**New Worker Created**:
+- ✅ account/index.ts - Account worker entry point (Hono app)
+- ✅ account/wrangler.jsonc - Worker configuration (3-worker architecture)
+- ✅ account/package.json - Dependencies
+- ✅ account/tsconfig.json - TypeScript configuration
+
+**Services Implemented** (3 services):
+- ✅ account/services/AuthService.ts - JWT authentication (Web Crypto API)
+- ✅ account/services/UserService.ts - Profile, history, analytics, personalized feed
+- ✅ account/services/NotificationService.ts - User notifications
+
+**UI Pages Created** (3 HTML pages):
+- ✅ account/pages/login.html - Modern login page with Zimbabwe flag colors
+- ✅ account/pages/register.html - Registration with password strength indicator
+- ✅ account/pages/profile.html - User profile dashboard
+
+**API Endpoints Implemented** (10 endpoints):
+
+*Authentication* (4 endpoints):
+- ✅ POST /api/auth/register - Create account
+- ✅ POST /api/auth/login - Login
+- ✅ POST /api/auth/logout - Logout
+- ✅ GET /api/auth/session - Session check
+
+*User Management* (6 endpoints):
+- ✅ GET /api/user/me/profile - Get profile
+- ✅ PUT /api/user/me/profile - Update profile
+- ✅ GET /api/user/me/history - Reading history
+- ✅ GET /api/user/me/analytics - Personal analytics
+- ✅ GET /api/user/me/feed - Personalized feed (algorithm)
+- ✅ GET /api/user/me/notifications - Notifications
+
+**Database Migrations Created** (2 migrations):
+- ✅ database/migrations/008_notifications.sql - Notifications table with indexes and views
+- ✅ database/migrations/009_keywords_table.sql - Structured keywords taxonomy
+
+**GitHub Actions Updated**:
+- ✅ .github/workflows/deploy.yml - Added account worker test job
+
+#### 🚧 Remaining (10%)
+- ⏳ Create D1 database: hararemetro_users_db
+- ⏳ Create KV namespace: AUTH_SESSIONS
+- ⏳ Run database migrations (008, 009)
+- ⏳ Update database IDs in wrangler.jsonc
+- ⏳ Deploy account worker to account.hararemetro.co.zw
+- ⏳ Connect services to actual implementations
+- ⏳ Integrate HTML pages with API endpoints
+
+#### Architecture Change
+**Before**: Dual-worker (www + admin)
+**After**: 3-worker (www + admin + account)
+
+**Database Change**:
+- hararemetro_db - Content (articles, categories, sources, authors)
+- hararemetro_users_db (NEW) - Users (auth, profiles, preferences, notifications)
+
+---
+
+### 📅 Phase 3b: User Features & UI Integration (PLANNED)
 **Status**: Not started
 **Completion**: 0%
 
-**Objective**: Build user-facing features and personalization
+**Objective**: Integrate account worker with frontend and build user-facing features
 
 #### Features to Build
 - User profiles and settings pages

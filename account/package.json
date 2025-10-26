@@ -1,0 +1,26 @@
+{
+  "name": "harare-metro-account",
+  "version": "1.0.0",
+  "description": "Account Management and Authentication Worker for Harare Metro",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "npm run clean && npm run build && wrangler deploy",
+    "build": "wrangler deploy --dry-run",
+    "test": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'Account Worker: TypeScript compilation serves as linting'",
+    "validate": "npm run typecheck && npm run build",
+    "clean": "rm -rf node_modules/.cache .wrangler dist build && npm cache clean --force",
+    "install:clean": "npm run clean && npm install"
+  },
+  "dependencies": {
+    "hono": "^4.9.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250425.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^4.21.2"
+  }
+}
