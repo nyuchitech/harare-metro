@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Development Workflow - CRITICAL
+
+**ALWAYS follow these steps before making ANY changes:**
+
+1. **Pull from main first**: `git checkout main && git pull origin main`
+2. **Review documentation**: Read CLAUDE.md, PROJECT-STATUS.md, CODE-REVIEW.md, and any PHASE-*-PLAN.md files
+3. **Code review**: Review the current state of the codebase on main branch
+4. **Check project status**: Verify what phase we're in and what's complete
+5. **Plan changes**: Understand what needs to be added or fixed
+6. **Apply changes**: Make your changes on a feature branch
+7. **Update documentation**: Keep CLAUDE.md and PROJECT-STATUS.md in sync with code changes
+
+**Never skip these steps**. Always ensure you're working from the latest main branch and understand the full context before making changes.
+
 ## Development Commands
 
 ### Development Environment
