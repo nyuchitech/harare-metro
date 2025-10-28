@@ -801,7 +801,7 @@ export function getAdminHTML(): string {
             button.disabled = true;
 
             try {
-                const response = await fetch('/api/admin/refresh-rss', { method: 'POST' });
+                const response = await fetch('/api/refresh-rss', { method: 'POST' });
                 const data = await response.json();
 
                 const resultDiv = document.getElementById('actionResult');
@@ -1170,7 +1170,7 @@ export function getAdminHTML(): string {
                         <li><code>GET /api/admin/sources</code> - RSS sources with stats</li>
                         <li><code>GET /api/admin/authors</code> - Author profiles</li>
                         <li><code>GET /api/admin/analytics</code> - Analytics data</li>
-                        <li><code>POST /api/admin/refresh-rss</code> - Manual RSS refresh</li>
+                        <li><code>POST /api/refresh-rss</code> - Manual RSS refresh</li>
                         <li><code>POST /api/admin/bulk-pull</code> - Bulk article fetch</li>
                         <li><code>PUT /api/admin/rss-source/:id</code> - Update RSS source</li>
                     </ul>

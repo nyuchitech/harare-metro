@@ -187,7 +187,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - scheduled() handler triggered
    ↓
 3. HTTP POST to Backend
-   - https://admin.hararemetro.co.zw/api/admin/refresh-rss
+   - https://admin.hararemetro.co.zw/api/refresh-rss
    ↓
 4. Backend Worker (backend/index.ts)
    - Calls RSSFeedService.initialBulkPull()
@@ -245,7 +245,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Serves admin dashboard HTML
    ↓
 3. Admin actions (manual refresh, source management, etc.)
-   - POST /api/admin/refresh-rss
+   - POST /api/refresh-rss
    - GET /api/admin/stats
    - PUT /api/admin/rss-source/:id
    ↓
@@ -347,7 +347,7 @@ export default {
   async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
     // Calls backend RSS refresh endpoint
     const backendUrl = env.BACKEND_URL || 'https://admin.hararemetro.co.zw';
-    const response = await fetch(`${backendUrl}/api/admin/refresh-rss`, {
+    const response = await fetch(`${backendUrl}/api/refresh-rss`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -560,7 +560,7 @@ try {
 - `GET /` or `/admin` - Admin dashboard
 - `GET /api/health` - Health check with full service status
 - `GET /api/admin/stats` - Platform statistics
-- `POST /api/admin/refresh-rss` - Manual RSS refresh (also called by cron)
+- `POST /api/refresh-rss` - Manual RSS refresh (also called by cron)
 - `POST /api/admin/bulk-pull` - Initial bulk article fetch
 - `POST /api/admin/add-zimbabwe-sources` - Add Zimbabwe news sources
 - `GET /api/admin/rss-config` - RSS configuration and source limits

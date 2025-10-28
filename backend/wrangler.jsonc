@@ -27,7 +27,8 @@
     "ROLES_ENABLED": "true",
     "DEFAULT_ROLE": "creator",
     "ADMIN_ROLES": "admin,super_admin,moderator",
-    "CREATOR_ROLES": "creator,business-creator,author"
+    "CREATOR_ROLES": "creator,business-creator,author",
+    "CLOUDFLARE_ACCOUNT_ID": "125a2dfbc21f76a25c980609609e8218"
   },
 
   /**
@@ -124,9 +125,9 @@
    * Cloudflare Images - Image storage and optimization
    * Note: Configure this in the Cloudflare dashboard
    */
-  // "images": {
-  //   "binding": "IMAGES"
-  // },
+  "images": {
+    "binding": "IMAGES"
+  },
 
   /**
    * Cron Triggers - Background RSS refresh (handled by frontend worker)

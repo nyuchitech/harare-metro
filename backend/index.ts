@@ -14,6 +14,7 @@ import { AuthorProfileService } from "./services/AuthorProfileService.js";
 import { NewsSourceService } from "./services/NewsSourceService.js";
 import { NewsSourceManager } from "./services/NewsSourceManager.js";
 import { RSSFeedService } from "./services/RSSFeedService.js";
+import { CloudflareImagesService } from "./services/CloudflareImagesService.js";
 // TODO: Fix OpenAuthService - currently has import errors
 // import { OpenAuthService } from "./services/OpenAuthService.js";
 // Durable Objects temporarily disabled - uncomment when needed
@@ -40,12 +41,14 @@ type Bindings = {
   PERFORMANCE_ANALYTICS: AnalyticsEngineDataset;
   AI: Ai;
   VECTORIZE_INDEX: VectorizeIndex;
+  IMAGES?: any; // Cloudflare Images binding (optional)
   NODE_ENV: string;
   LOG_LEVEL: string;
   ROLES_ENABLED: string;
   DEFAULT_ROLE: string;
   ADMIN_ROLES: string;
   CREATOR_ROLES: string;
+  CLOUDFLARE_ACCOUNT_ID?: string; // Optional Cloudflare account ID for Images API
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -72,7 +75,17 @@ function initializeServices(env: Bindings) {
   const articleService = new ArticleService(env.DB); // Fix: ArticleService takes database directly
   const newsSourceService = new NewsSourceService(); // Fix: NewsSourceService takes no parameters
   const newsSourceManager = new NewsSourceManager(env.DB);
-  const rssService = new RSSFeedService(d1Service);
+
+  // Initialize CloudflareImagesService if available
+  let imagesService = null;
+  if (env.IMAGES && env.CLOUDFLARE_ACCOUNT_ID) {
+    imagesService = new CloudflareImagesService(env.IMAGES, env.CLOUDFLARE_ACCOUNT_ID);
+    console.log('[INIT] CloudflareImagesService initialized successfully');
+  } else {
+    console.warn('[INIT] CloudflareImagesService not initialized - IMAGES binding or CLOUDFLARE_ACCOUNT_ID not configured. RSS images will not be optimized.');
+  }
+
+  const rssService = new RSSFeedService(env.DB, imagesService); // Fix: RSSFeedService takes database directly
 
   return {
     d1Service,
@@ -273,16 +286,16 @@ app.get("/api/feeds", async (c) => {
 
 // RSS refresh endpoint with AI-powered content processing pipeline
 // TODO: Add authentication back when OpenAuthService is fixed
-app.post("/api/admin/refresh-rss", async (c) => {
+app.post("/api/refresh-rss", async (c) => {
   try {
     const services = initializeServices(c.env);
     const startTime = Date.now();
-    
+
     console.log("Starting AI-powered RSS refresh...");
-    
-    // Get all enabled news sources
+
+    // Get all enabled RSS sources
     const sources = await services.d1Service.db.prepare(`
-      SELECT * FROM news_sources WHERE enabled = true
+      SELECT * FROM rss_sources WHERE enabled = 1
     `).all();
     
     const results = {

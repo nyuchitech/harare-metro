@@ -537,30 +537,181 @@ export class RSSFeedService {
   }
 
   private async extractImage(item: any, fallbackUrl: string): Promise<string | null> {
-    // Simple image extraction - can be enhanced later
+    // Enhanced image extraction matching Google News/Feedly capabilities
     try {
-      // Check media:content
-      if (item['media:content']?.['@_url'] && this.isImageUrl(item['media:content']['@_url'])) {
-        return item['media:content']['@_url'];
+      const imageCandidates: string[] = [];
+
+      // 1. Check media:content (high quality, most common)
+      if (item['media:content']?.['@_url']) {
+        imageCandidates.push(item['media:content']['@_url']);
       }
 
-      // Check enclosure
-      if (item.enclosure?.['@_url'] && this.isImageUrl(item.enclosure['@_url'])) {
-        return item.enclosure['@_url'];
+      // 2. Check media:thumbnail (common in RSS 2.0)
+      if (item['media:thumbnail']?.['@_url']) {
+        imageCandidates.push(item['media:thumbnail']['@_url']);
       }
 
-      // Extract from description
+      // 3. Check enclosure (podcast/media RSS)
+      if (item.enclosure?.['@_url'] && item.enclosure?.['@_type']?.includes('image')) {
+        imageCandidates.push(item.enclosure['@_url']);
+      }
+
+      // 4. Extract from content:encoded (full HTML content)
+      if (item['content:encoded']) {
+        const contentEncoded = this.extractText(item['content:encoded']);
+        const imgMatch = contentEncoded.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+        if (imgMatch) {
+          imageCandidates.push(imgMatch[1]);
+        }
+      }
+
+      // 5. Extract from description HTML
       const description = this.extractText(item.description);
       if (description) {
         const imgMatch = description.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
-        if (imgMatch && this.isImageUrl(imgMatch[1])) {
-          return imgMatch[1];
+        if (imgMatch) {
+          imageCandidates.push(imgMatch[1]);
         }
       }
-      
+
+      // 6. Try to extract og:image from article URL (premium feature like Feedly)
+      if (fallbackUrl && this.shouldFetchOgImage(item)) {
+        try {
+          const ogImage = await this.extractOgImage(fallbackUrl);
+          if (ogImage) {
+            imageCandidates.push(ogImage);
+          }
+        } catch (error) {
+          console.warn(`Failed to extract og:image from ${fallbackUrl}:`, error);
+        }
+      }
+
+      // Filter and validate image candidates
+      for (const candidate of imageCandidates) {
+        if (candidate && this.isImageUrl(candidate)) {
+          // Validate that it's an accessible URL
+          const validatedUrl = this.normalizeImageUrl(candidate, fallbackUrl);
+          if (validatedUrl && await this.isImageAccessible(validatedUrl)) {
+            return validatedUrl;
+          }
+        }
+      }
+
       return null;
-    } catch {
+    } catch (error) {
+      console.warn(`Error extracting image:`, error);
       return null;
+    }
+  }
+
+  /**
+   * Determine if we should fetch og:image from article URL
+   * Only do this for high-priority sources to avoid excessive requests
+   */
+  private shouldFetchOgImage(item: any): boolean {
+    // Skip if we already have good image candidates
+    if (item['media:content']?.['@_url'] || item['media:thumbnail']?.['@_url']) {
+      return false;
+    }
+    // Only fetch for recent articles (within last 7 days)
+    const pubDate = item.pubDate || item.published;
+    if (pubDate) {
+      const articleDate = new Date(pubDate);
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      return articleDate > weekAgo;
+    }
+    return false;
+  }
+
+  /**
+   * Extract og:image from article URL
+   */
+  private async extractOgImage(articleUrl: string): Promise<string | null> {
+    try {
+      const response = await fetch(articleUrl, {
+        headers: {
+          'User-Agent': 'Harare Metro News Bot/1.0',
+          'Accept': 'text/html'
+        },
+        timeout: 5000 // 5 second timeout
+      });
+
+      if (!response.ok) return null;
+
+      const html = await response.text();
+
+      // Extract og:image meta tag
+      const ogImageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/i);
+      if (ogImageMatch) {
+        return ogImageMatch[1];
+      }
+
+      // Try alternate format
+      const ogImageMatch2 = html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["'][^>]*>/i);
+      if (ogImageMatch2) {
+        return ogImageMatch2[1];
+      }
+
+      return null;
+    } catch (error) {
+      console.warn(`Failed to fetch og:image from ${articleUrl}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Normalize image URL (handle relative URLs)
+   */
+  private normalizeImageUrl(imageUrl: string, baseUrl: string): string | null {
+    try {
+      // Already absolute URL
+      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        return imageUrl;
+      }
+
+      // Relative URL - need to resolve against base
+      if (baseUrl) {
+        const base = new URL(baseUrl);
+        if (imageUrl.startsWith('//')) {
+          return `${base.protocol}${imageUrl}`;
+        }
+        if (imageUrl.startsWith('/')) {
+          return `${base.origin}${imageUrl}`;
+        }
+        return new URL(imageUrl, baseUrl).href;
+      }
+
+      return null;
+    } catch (error) {
+      console.warn(`Failed to normalize image URL ${imageUrl}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if image URL is accessible
+   */
+  private async isImageAccessible(imageUrl: string): Promise<boolean> {
+    try {
+      const response = await fetch(imageUrl, {
+        method: 'HEAD',
+        timeout: 3000, // 3 second timeout
+        headers: {
+          'User-Agent': 'Harare Metro News Bot/1.0'
+        }
+      });
+
+      // Check if response is successful and content-type is image
+      if (response.ok) {
+        const contentType = response.headers.get('content-type') || '';
+        return contentType.startsWith('image/') || this.isImageUrl(imageUrl);
+      }
+
+      return false;
+    } catch (error) {
+      // If HEAD request fails, assume image is not accessible
+      console.warn(`Image not accessible: ${imageUrl}`);
+      return false;
     }
   }
 
