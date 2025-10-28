@@ -27,7 +27,8 @@
     "ROLES_ENABLED": "true",
     "DEFAULT_ROLE": "creator",
     "ADMIN_ROLES": "admin,super_admin,moderator",
-    "CREATOR_ROLES": "creator,business-creator,author"
+    "CREATOR_ROLES": "creator,business-creator,author",
+    "CLOUDFLARE_ACCOUNT_ID": "125a2dfbc21f76a25c980609609e8218"
   },
 
   /**
