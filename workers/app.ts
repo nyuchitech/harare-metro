@@ -224,7 +224,7 @@ export default {
 
       // Get backend URL from environment (defaults to production)
       const backendUrl = env.BACKEND_URL || 'https://admin.hararemetro.co.zw';
-      const refreshEndpoint = `${backendUrl}/api/admin/refresh-rss`;
+      const refreshEndpoint = `${backendUrl}/api/refresh-rss`;
 
       console.log('[CRON] Calling backend refresh endpoint:', refreshEndpoint);
 

@@ -124,9 +124,9 @@
    * Cloudflare Images - Image storage and optimization
    * Note: Configure this in the Cloudflare dashboard
    */
-  // "images": {
-  //   "binding": "IMAGES"
-  // },
+  "images": {
+    "binding": "IMAGES"
+  },
 
   /**
    * Cron Triggers - Background RSS refresh (handled by frontend worker)
