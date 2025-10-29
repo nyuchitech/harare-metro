@@ -260,7 +260,14 @@ export default {
         return;
       }
 
-      const result = await response.json();
+      const result = await response.json() as {
+        results?: {
+          processed?: number;
+          newArticles?: number;
+          sources?: number;
+          errors?: any[];
+        };
+      };
 
       console.log('[CRON] RSS refresh completed successfully');
       console.log('[CRON] Duration:', duration, 'ms');

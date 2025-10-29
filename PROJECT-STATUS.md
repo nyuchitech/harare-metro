@@ -1,8 +1,8 @@
 # Harare Metro - Project Status
 
-**Last Updated**: 2025-10-26
-**Current Phase**: Phase 3a (Account Worker Implementation)
-**Overall Completion**: ~65%
+**Last Updated**: 2025-10-28
+**Current Phase**: Phase 2 (User Engagement APIs - IN PROGRESS)
+**Overall Completion**: ~55%
 
 ---
 
@@ -21,411 +21,387 @@
 
 ---
 
-## 📋 Phase Overview (CORRECTED)
+## 🏗️ Architecture Status
 
-### ✅ Phase 1: API Structure & Critical Fixes (95% COMPLETE)
-**Status**: Mostly merged to main
-**PRs**: #12, #13, #14
-**Completion**: 95%
+### Current Architecture: 2-Worker System
 
-**Objective**: Fix API structure - move endpoints out of `/admin/` and make them accessible to users
+**Frontend Worker** (www.hararemetro.co.zw)
+- **Status**: ✅ Deployed and Functional
+- **Build**: ✅ Passing
+- **Components**:
+  - React Router 7 SSR
+  - Scheduled cron handler (hourly)
+  - Basic API endpoints
+  - PWA manifest generation
 
-#### ✅ Completed
-1. **RSS Feed Cron Jobs** - Fixed scheduled handler
-2. **Public API Endpoints** (moved from /api/admin/):
-   - ✅ `/api/news-bytes` - Articles with images only
-   - ✅ `/api/search` - Full-text search with keywords
-   - ✅ `/api/authors` - Public journalist discovery
-   - ✅ `/api/sources` - Public news sources listing
-   - ✅ `/api/refresh` - User-triggered refresh (rate-limited, 5 min)
-3. **Article Categorization** - Fixed JSON keyword parsing
-4. **Cron Logging** - D1 logging system for RSS refresh tracking
-5. **Admin Panel** - Black/white redesign with Lucide icons
+**Backend Worker** (admin.hararemetro.co.zw)
+- **Status**: ✅ Deployed and Functional
+- **Build**: ✅ Passing (407 KiB)
+- **Components**:
+  - Admin dashboard
+  - RSS feed processing with AI
+  - Category classification
+  - Author recognition
+  - User engagement APIs (written, not enabled)
+  - ⚠️ Authentication currently disabled
 
-#### 🚧 Remaining (5%)
-- ⏳ Admin sidebar navigation (currently tabs)
-- ⏳ Sources table optimization (pagination needed)
-- ⏳ Admin panel logo
-- ⏳ Documentation updates
-
-**Files Modified**:
-- `backend/index.ts`: Added 5 public endpoints (668-926)
-- `workers/app.ts`: Scheduled handler with D1 logging
-- `backend/services/CategoryManager.ts`: Fixed JSON parsing
-- `backend/admin/index.ts`: Complete redesign (1,221 lines)
-- `database/migrations/006_cron_logging.sql`: New cron_logs table
+**Database** (Cloudflare D1)
+- **Name**: `hararemetro_articles`
+- **UUID**: `70d94fe9-4a78-4926-927b-e88e37141a54`
+- **Binding**: `DB` (shared by both workers)
+- **Status**: ✅ Operational
+- **Size**: 491 KB
+- **Note**: Phase 2 migrations (007) not yet applied
 
 ---
 
-### ✅ Phase 2: User Engagement APIs (100% COMPLETE)
-**Status**: Merged to main
-**PR**: #15
-**Completion**: 100%
+## 📋 Phase Completion Status
+
+### ✅ Phase 1: Core Platform & RSS Aggregation - 100% COMPLETE
+
+**Objective**: Build foundational RSS aggregation platform with AI processing
+
+**✅ Completed Features:**
+1. RSS feed aggregation from Zimbabwe news sources
+2. Hourly cron job processing (frontend → backend)
+3. AI content pipeline (author extraction, keywords, quality scoring)
+4. Admin dashboard with source management
+5. Frontend React Router 7 application
+6. Basic public API endpoints:
+   - `/api/feeds` - Get articles
+   - `/api/categories` - Get categories
+   - `/api/article/by-source-slug` - Get single article
+   - `/api/health` - Health check
+7. Author recognition across multiple outlets
+8. Category classification system
+9. Cron logging system (migration 006)
+10. Zimbabwe flag branding and design system
+
+**Files & Services:**
+- ✅ `workers/app.ts` - Frontend worker with cron handler
+- ✅ `backend/index.ts` - Backend worker with admin APIs
+- ✅ `backend/services/RSSFeedService.ts` - RSS processing
+- ✅ `backend/services/ArticleAIService.ts` - AI enhancements
+- ✅ `backend/services/AuthorProfileService.ts` - Author recognition
+- ✅ `backend/admin/index.ts` - Admin dashboard UI
+
+**Outcome**: Platform is live, RSS feeds working, AI processing functional ✅
+
+---
+
+### 🚧 Phase 2: User Engagement APIs - 40% COMPLETE (IN PROGRESS)
 
 **Objective**: Enable users to interact with content (likes, saves, comments, follows)
 
-#### ✅ Completed Database Migrations
-```sql
--- Article Comments Table
-CREATE TABLE IF NOT EXISTS article_comments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
-  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  parent_comment_id INTEGER REFERENCES article_comments(id) ON DELETE CASCADE,
-  content TEXT NOT NULL,
-  like_count INTEGER DEFAULT 0,
-  reply_count INTEGER DEFAULT 0,
-  status TEXT DEFAULT 'published',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+**Status**: Code written, authentication blocking deployment
 
--- User Follows Table
-CREATE TABLE IF NOT EXISTS user_follows (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  follow_type TEXT NOT NULL CHECK (follow_type IN ('source', 'author')),
-  follow_id TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, follow_type, follow_id)
-);
-```
+**✅ Completed Work:**
 
-#### ✅ Implemented APIs (9 endpoints)
+1. **Migration 007 Created** ✅
+   - `article_comments` table with moderation
+   - `comment_likes` table
+   - `user_follows` table (sources, authors, categories)
+   - Indexes and triggers for performance
+   - File: `database/migrations/007_user_engagement_complete.sql`
 
-**Article Interactions** (4 endpoints):
-- ✅ `POST /api/articles/:id/like` - Like/unlike article (backend/index.ts:972)
-- ✅ `POST /api/articles/:id/save` - Bookmark article (backend/index.ts:1026)
-- ✅ `POST /api/articles/:id/view` - Track view (backend/index.ts:1079)
-- ✅ `POST /api/articles/:id/comment` - Add comment (backend/index.ts:1125)
-- ✅ `GET /api/articles/:id/comments` - Get comments (backend/index.ts:1175)
+2. **Backend Endpoints Written** ✅
+   - `POST /api/articles/:id/like` (backend/index.ts:972)
+   - `POST /api/articles/:id/save` (backend/index.ts:1026)
+   - `POST /api/articles/:id/view` (backend/index.ts:1079)
+   - `POST /api/articles/:id/comment` (backend/index.ts:1125)
+   - `GET /api/articles/:id/comments` (backend/index.ts:1175)
+   - `GET /api/user/me/preferences` (backend/index.ts:1235)
+   - `POST /api/user/me/preferences` (backend/index.ts:1288)
+   - `POST /api/user/me/follows` (backend/index.ts:1311)
+   - `DELETE /api/user/me/follows/:type/:id` (backend/index.ts:1355)
 
-**User Preferences** (2 endpoints):
-- ✅ `GET /api/user/me/preferences` - Get user settings (backend/index.ts:1235)
-- ✅ `POST /api/user/me/preferences` - Update settings (backend/index.ts:1288)
+**❌ Blocking Issues:**
 
-**Follows** (2 endpoints):
-- ✅ `POST /api/user/me/follows` - Follow source/journalist (backend/index.ts:1311)
-- ✅ `DELETE /api/user/me/follows/:type/:id` - Unfollow (backend/index.ts:1355)
+1. **Authentication System Disabled** ⛔
+   - `OpenAuthService` has import errors (backend/index.ts:18-19)
+   - All user endpoints require authentication
+   - Cannot test or deploy Phase 2 without working auth
 
-#### ✅ Technical Implementation
-- Database migrations applied (007_user_engagement_complete.sql)
-- Analytics tracking for all interactions
-- Input validation and sanitization
-- Proper error handling
-- **Note**: Full authentication implemented in Phase 3a (Account Worker)
+2. **Database Migration Not Applied** ⏳
+   - Migration 007 exists but not run on production database
+   - Tables `article_comments`, `user_follows` don't exist yet
+   - Need to apply migration before enabling endpoints
 
----
+3. **Frontend Integration Missing** ⏳
+   - No UI for liking articles
+   - No UI for commenting
+   - No UI for following sources/authors
+   - No user profile pages
 
-### 🚧 Phase 3a: Account Worker Implementation (CURRENT - 90% COMPLETE)
-**Status**: In development
-**Branch**: claude/phase3a-account-worker-011CURB4XHhm96PJ2fNTAzWT
-**PR**: TBD
-**Completion**: 90%
+**Next Steps to Complete Phase 2:**
+1. ⛔ **Critical**: Fix `OpenAuthService` import errors
+2. ⛔ **Critical**: Apply migration 007 to `hararemetro_articles` database
+3. 🔧 Enable and test authentication
+4. 🔧 Test all 9 user engagement endpoints
+5. 🎨 Build frontend UI components for:
+   - Like/save buttons on articles
+   - Comment forms and comment threads
+   - Follow buttons on sources/authors
+   - User profile pages
+6. 📚 Update documentation
 
-**Objective**: Separate user authentication and account management into dedicated worker
-
-#### ✅ Completed Work
-
-**New Worker Created**:
-- ✅ account/index.ts - Account worker entry point (Hono app)
-- ✅ account/wrangler.jsonc - Worker configuration (3-worker architecture)
-- ✅ account/package.json - Dependencies
-- ✅ account/tsconfig.json - TypeScript configuration
-
-**Services Implemented** (3 services):
-- ✅ account/services/AuthService.ts - JWT authentication (Web Crypto API)
-- ✅ account/services/UserService.ts - Profile, history, analytics, personalized feed
-- ✅ account/services/NotificationService.ts - User notifications
-
-**UI Pages Created** (3 HTML pages):
-- ✅ account/pages/login.html - Modern login page with Zimbabwe flag colors
-- ✅ account/pages/register.html - Registration with password strength indicator
-- ✅ account/pages/profile.html - User profile dashboard
-
-**API Endpoints Implemented** (10 endpoints):
-
-*Authentication* (4 endpoints):
-- ✅ POST /api/auth/register - Create account
-- ✅ POST /api/auth/login - Login
-- ✅ POST /api/auth/logout - Logout
-- ✅ GET /api/auth/session - Session check
-
-*User Management* (6 endpoints):
-- ✅ GET /api/user/me/profile - Get profile
-- ✅ PUT /api/user/me/profile - Update profile
-- ✅ GET /api/user/me/history - Reading history
-- ✅ GET /api/user/me/analytics - Personal analytics
-- ✅ GET /api/user/me/feed - Personalized feed (algorithm)
-- ✅ GET /api/user/me/notifications - Notifications
-
-**Database Migrations Created** (2 migrations):
-- ✅ database/migrations/008_notifications.sql - Notifications table with indexes and views
-- ✅ database/migrations/009_keywords_table.sql - Structured keywords taxonomy
-
-**GitHub Actions Updated**:
-- ✅ .github/workflows/deploy.yml - Added account worker test job
-
-#### 🚧 Remaining (10%)
-- ⏳ Create D1 database: hararemetro_users_db
-- ⏳ Create KV namespace: AUTH_SESSIONS
-- ⏳ Run database migrations (008, 009)
-- ⏳ Update database IDs in wrangler.jsonc
-- ⏳ Deploy account worker to account.hararemetro.co.zw
-- ⏳ Connect services to actual implementations
-- ⏳ Integrate HTML pages with API endpoints
-
-#### Architecture Change
-**Before**: Dual-worker (www + admin)
-**After**: 3-worker (www + admin + account)
-
-**Database Change**:
-- hararemetro_db - Content (articles, categories, sources, authors)
-- hararemetro_users_db (NEW) - Users (auth, profiles, preferences, notifications)
+**Estimated Time to Complete**: 1-2 weeks
 
 ---
 
-### 📅 Phase 3b: User Features & UI Integration (PLANNED)
-**Status**: Not started
-**Completion**: 0%
+### 📅 Phase 3: Advanced User Features - 0% NOT STARTED
 
-**Objective**: Integrate account worker with frontend and build user-facing features
+**Objective**: Personalized feeds, notifications, and advanced analytics
 
-#### Features to Build
-- User profiles and settings pages
-- Personal reading history view
-- Reading statistics dashboard
-- Personalized feed based on preferences
-- Followed sources/authors activity feed
-- Notification system
-- User analytics dashboard
+**Deferred Features:**
+- Personalized feed algorithm
+- User notifications system
+- Reading streak analytics
+- Advanced user preferences
+- Reading history dashboard
+- Personal analytics dashboard
 
-#### APIs to Create (6+ endpoints)
-- `GET /api/user/me/profile` - User profile
-- `PUT /api/user/me/profile` - Update profile
-- `GET /api/user/me/history` - Reading history
-- `GET /api/user/me/analytics` - Personal stats
-  - Articles read count
-  - Favorite categories
-  - Total reading time
-  - Followed sources activity
-- `GET /api/user/me/feed` - Personalized feed
-- `GET /api/user/me/notifications` - Notifications
+**Migrations Ready (Not Applied)**:
+- Migration 008: Notifications table
+- Migration 009: Keywords table
 
-#### Database Enhancements
-- Notification preferences table
-- Reading time tracking enhancements
-- Personalization algorithm data
+**Note**: Phase 3 blocked until Phase 2 is complete and stable
 
 ---
 
-### 📅 Phase 4: Admin Analytics & Management (PLANNED)
-**Status**: Not started
-**Completion**: 0%
+### 📅 Phase 4: Admin Analytics & Management - 0% NOT STARTED
 
-**Objective**: Comprehensive admin dashboard with analytics and management
+**Objective**: Comprehensive admin dashboard with platform-wide analytics
 
-#### Features to Build
+**Planned Features:**
 - Platform-wide analytics overview
-- Trending content detection (24h engagement)
+- Trending content detection
 - User engagement reports
 - Content performance metrics
 - Content moderation tools
 - User management interface
-- Enhanced source/category management
 
-#### APIs to Create (8+ endpoints)
-- `GET /api/admin/analytics/overview` - Platform stats
-  - Total views, likes, saves, comments
-  - User growth metrics
-  - Active users last 24h
-
-- `GET /api/admin/analytics/trending` - Trending articles
-  - Most engagement last 24h
-  - Breakout stories
-
-- `GET /api/admin/analytics/engagement` - User engagement
-  - Top categories by user preference
-  - Top sources by follows
-  - Comment activity
-
-- `GET /api/admin/analytics/content` - Content performance
-- `GET /api/admin/users` - User management
-- `PUT /api/admin/users/:id` - Manage user
-- `GET /api/admin/content/moderation` - Moderation queue
-- `PUT /api/admin/content/:id/moderate` - Moderate
+**Note**: Phase 4 depends on Phase 2 and Phase 3 completion
 
 ---
 
-## 🏗️ Architecture Status
+## 🔴 CRITICAL ISSUES & BLOCKERS
 
-### Frontend Worker (www.hararemetro.co.zw)
-**Status**: ✅ Functional
-**Build**: ✅ Passing
-**Deployment**: ✅ Working
+### 1. Authentication System Completely Disabled ⛔
 
-**Components**:
-- ✅ React Router 7 SSR
-- ✅ Scheduled cron handler (hourly) with D1 logging
-- ✅ 5 public API endpoints
-- ✅ PWA manifest generation
-- ✅ Logo component exists
-- ⚠️ Logo may need visibility check
+**Problem**: `OpenAuthService` import is commented out due to errors
+```typescript
+// backend/index.ts:18-19
+// TODO: Fix OpenAuthService - currently has import errors
+// import { OpenAuthService } from "./services/OpenAuthService.js";
+```
 
-### Backend Worker (admin.hararemetro.co.zw)
-**Status**: ✅ Functional
-**Build**: ✅ Passing (407 KiB)
-**Deployment**: ✅ Working
+**Impact**:
+- All Phase 2 user endpoints are unprotected
+- Cannot deploy user engagement features
+- Security risk if deployed
 
-**Components**:
-- ✅ Admin dashboard (black/white theme)
-- ✅ RSS feed processing with AI
-- ✅ Category classification (fixed)
-- ✅ Author recognition
-- ✅ Cron logging system
-- ⚠️ Tab navigation (should be sidebar)
-- ⚠️ No logo displayed
-- 🔴 **Authentication disabled** (OpenAuthService import errors)
-
-### Database (D1)
-**Name**: hararemetro_db
-**Binding**: DB (shared)
-
-**Tables Status**:
-- ✅ articles
-- ✅ categories (with JSON keywords - fixed)
-- ✅ rss_sources
-- ✅ authors
-- ✅ article_keywords
-- ✅ article_authors
-- ✅ cron_logs (NEW - Phase 2)
-- ⚠️ users (exists but not used)
-- ⚠️ user_likes (needs verification)
-- ⚠️ user_bookmarks (needs verification)
-- ❌ **article_comments** (MISSING - Phase 2)
-- ❌ **user_follows** (MISSING - Phase 2)
-- ❌ user_reading_history (may need creation)
+**Resolution Needed**:
+- Investigate OpenAuthService import errors
+- Fix or replace authentication system
+- Enable auth middleware
+- Test authentication flow
 
 ---
 
-## 🎯 Current Status: Phase 2 Ready
+### 2. Database Migration 007 Not Applied ⏳
 
-### ✅ Phase 1 Achievement
-- **95% complete**
-- Core infrastructure solid
-- Public APIs accessible
-- RSS aggregation working
-- Background cron jobs functional
-- Article categorization working
+**Problem**: Phase 2 migration exists but not applied to production database
 
-### 🚧 Phase 2 Focus: User Engagement
-**Must Do**:
-1. Create missing database tables (comments, follows)
-2. Fix authentication (OpenAuthService)
-3. Implement 8 user engagement endpoints
-4. Add rate limiting
-5. Add analytics tracking
+**Missing Tables**:
+- `article_comments`
+- `comment_likes`
+- `user_follows`
 
-**Blockers**:
-- 🔴 Authentication disabled (must fix!)
-- Missing tables (must create migrations)
+**Impact**: Phase 2 endpoints will fail when called (table doesn't exist)
+
+**Resolution**:
+```bash
+npx wrangler d1 execute hararemetro_articles --file=database/migrations/007_user_engagement_complete.sql
+```
+
+---
+
+### 3. Database Name Mismatch - NOW FIXED ✅
+
+**Problem**: Documentation referenced wrong database name
+- Docs said: `hararemetro_db`
+- Actual name: `hararemetro_articles`
+
+**Status**: ✅ Fixed in all wrangler.jsonc files and documentation (2025-10-28)
 
 ---
 
 ## 📊 Feature Completion Matrix
 
-| Feature | Phase | Frontend | Backend | Database | Status |
-|---------|-------|----------|---------|----------|--------|
-| RSS Feed Refresh | 1 | ✅ | ✅ | ✅ | Working |
-| Article Display | 1 | ✅ | ✅ | ✅ | Working |
-| Search | 1 | ✅ | ✅ | ✅ | Working |
-| Categories | 1 | ✅ | ✅ | ✅ | Fixed |
-| News Bytes | 1 | ✅ | ✅ | ✅ | Working |
-| Authors | 1 | ✅ | ✅ | ✅ | Working |
-| Sources | 1 | ✅ | ✅ | ✅ | Working |
-| User Refresh | 1 | ✅ | ✅ | ✅ | Working |
-| **Like Articles** | **2** | ❌ | ❌ | ⚠️ | **Phase 2** |
-| **Save Articles** | **2** | ❌ | ❌ | ⚠️ | **Phase 2** |
-| **View Tracking** | **2** | ❌ | ❌ | ⚠️ | **Phase 2** |
-| **Comments** | **2** | ❌ | ❌ | ❌ | **Phase 2** |
-| **Follow Sources** | **2** | ❌ | ❌ | ❌ | **Phase 2** |
-| **User Preferences** | **2** | ❌ | ❌ | ⚠️ | **Phase 2** |
-| User Profiles | 3 | ❌ | ❌ | ⚠️ | Phase 3 |
-| Reading History | 3 | ❌ | ❌ | ⚠️ | Phase 3 |
-| Personal Analytics | 3 | ❌ | ❌ | ✅ | Phase 3 |
-| Admin Analytics | 4 | N/A | ❌ | ✅ | Phase 4 |
-| Content Moderation | 4 | N/A | ❌ | ✅ | Phase 4 |
+| Feature | Phase | Frontend | Backend | Database | Auth | Status |
+|---------|-------|----------|---------|----------|------|--------|
+| RSS Feed Refresh | 1 | ✅ | ✅ | ✅ | N/A | ✅ Working |
+| Article Display | 1 | ✅ | ✅ | ✅ | N/A | ✅ Working |
+| Search | 1 | ✅ | ✅ | ✅ | N/A | ✅ Working |
+| Categories | 1 | ✅ | ✅ | ✅ | N/A | ✅ Working |
+| News Bytes | 1 | ✅ | ✅ | ✅ | N/A | ✅ Working |
+| Authors | 1 | ✅ | ✅ | ✅ | N/A | ✅ Working |
+| Sources | 1 | ✅ | ✅ | ✅ | N/A | ✅ Working |
+| User Refresh | 1 | ✅ | ✅ | ✅ | N/A | ✅ Working |
+| **Like Articles** | **2** | ❌ | ✅ | ❌ | ❌ | 🚧 **Blocked** |
+| **Save Articles** | **2** | ❌ | ✅ | ❌ | ❌ | 🚧 **Blocked** |
+| **View Tracking** | **2** | ❌ | ✅ | ❌ | ❌ | 🚧 **Blocked** |
+| **Comments** | **2** | ❌ | ✅ | ❌ | ❌ | 🚧 **Blocked** |
+| **Follow Sources** | **2** | ❌ | ✅ | ❌ | ❌ | 🚧 **Blocked** |
+| **User Preferences** | **2** | ❌ | ✅ | ⚠️ | ❌ | 🚧 **Blocked** |
+| Personalized Feed | 3 | ❌ | ❌ | ❌ | ❌ | ⏳ Not Started |
+| Notifications | 3 | ❌ | ❌ | ❌ | ❌ | ⏳ Not Started |
+| Reading Analytics | 3 | ❌ | ❌ | ❌ | ❌ | ⏳ Not Started |
+| Admin Analytics | 4 | N/A | ❌ | ✅ | N/A | ⏳ Not Started |
 
 **Legend**:
-- ✅ Complete
-- ⚠️ Partially done/exists but not wired up
+- ✅ Complete and working
+- ⚠️ Partially done/exists but incomplete
 - ❌ Not implemented
+- 🚧 Code written but blocked by dependencies
+- ⏳ Planned but not started
+- N/A Not applicable
 
 ---
 
-## 🔴 CRITICAL Issues
+## 🎯 Immediate Action Plan
 
-### Security
-1. **Authentication Completely Disabled**
-   - All `/api/admin/*` endpoints unprotected
-   - All `/api/user/me/*` endpoints won't work
-   - OpenAuthService has import errors
-   - **MUST FIX BEFORE Phase 2**
+### Week 1: Fix Authentication & Database
 
-### Database
-2. **Missing Tables for Phase 2**
-   - `article_comments` doesn't exist
-   - `user_follows` doesn't exist
-   - Need migrations before implementing Phase 2
+**Goal**: Unblock Phase 2 development
 
----
+**Tasks**:
+1. ⛔ **Day 1-2**: Investigate and fix OpenAuthService
+   - Review error messages
+   - Fix import/export issues
+   - Test authentication flow
+   - Re-enable auth middleware
 
-## 📝 Next Actions (Phase 2 Implementation)
+2. ⛔ **Day 3**: Apply database migration 007
+   ```bash
+   npx wrangler d1 execute hararemetro_articles --file=database/migrations/007_user_engagement_complete.sql
+   ```
+   - Verify tables created
+   - Test table structure
+   - Run sample queries
 
-### Step 1: Database Migrations
-1. [ ] Create migration 007_user_engagement.sql
-2. [ ] Add article_comments table
-3. [ ] Add user_follows table
-4. [ ] Verify user_likes, user_bookmarks, user_reading_history tables
-5. [ ] Run migrations on D1
+3. 🔧 **Day 4-5**: Test Phase 2 Backend Endpoints
+   - Test all 9 endpoints with authentication
+   - Verify database writes
+   - Check analytics tracking
+   - Document any issues
 
-### Step 2: Fix Authentication
-1. [ ] Debug OpenAuthService import errors
-2. [ ] Re-enable authentication middleware
-3. [ ] Test auth on protected endpoints
+### Week 2: Frontend Integration
 
-### Step 3: Implement APIs (8 endpoints)
-1. [ ] POST /api/articles/:id/like
-2. [ ] POST /api/articles/:id/save
-3. [ ] POST /api/articles/:id/view
-4. [ ] POST /api/articles/:id/comment
-5. [ ] GET /api/user/me/preferences
-6. [ ] POST /api/user/me/preferences
-7. [ ] POST /api/user/me/follows
-8. [ ] DELETE /api/user/me/follows/:type/:id
+**Goal**: Build user-facing engagement features
 
-### Step 4: Testing & Deployment
-1. [ ] Test all endpoints with authentication
-2. [ ] Test rate limiting
-3. [ ] Test analytics tracking
-4. [ ] Deploy to production
-5. [ ] Monitor errors
+**Tasks**:
+1. 🎨 **Day 1-2**: Article engagement UI
+   - Like button component
+   - Save/bookmark button
+   - View count display
+   - Toast notifications for actions
+
+2. 🎨 **Day 3-4**: Comments system
+   - Comment form component
+   - Comment thread display
+   - Reply functionality
+   - Like comments feature
+
+3. 🎨 **Day 5**: Follow system
+   - Follow button for sources
+   - Follow button for authors
+   - Following status indicators
+   - Followed items list
+
+### Week 3: Testing & Deployment
+
+**Goal**: Complete Phase 2 and deploy to production
+
+**Tasks**:
+1. 🧪 **Day 1-2**: Integration testing
+   - Test all user flows
+   - Test authentication
+   - Test database operations
+   - Performance testing
+
+2. 📚 **Day 3**: Documentation
+   - Update API documentation
+   - Update architecture docs
+   - Create user guide
+   - Update PROJECT-STATUS.md
+
+3. 🚀 **Day 4-5**: Deployment
+   - Deploy backend updates
+   - Deploy frontend updates
+   - Monitor errors
+   - User acceptance testing
 
 ---
 
 ## 📚 Documentation Status
 
-| Document | Status | Reflects Phase |
-|----------|--------|----------------|
-| PROJECT-STATUS.md | ✅ Updated | Current (Phase 2) |
-| CODE-REVIEW.md | ✅ Current | Phase 1 |
-| CLAUDE.md | ⚠️ Outdated | Phase 1 partial |
-| README.md | ⚠️ Outdated | Initial |
-| backend/README.md | ⚠️ Outdated | Phase 1 partial |
-| API Documentation | ❌ Missing | Needs creation |
+| Document | Status | Last Updated | Reflects Reality |
+|----------|--------|--------------|------------------|
+| CLAUDE.md | ✅ Updated | 2025-10-28 | ✅ Yes (2-worker) |
+| PROJECT-STATUS.md | ✅ Updated | 2025-10-28 | ✅ Yes |
+| README.md | ⚠️ Needs Update | 2025-10-26 | ⚠️ Partial |
+| CODE-REVIEW.md | ⚠️ Outdated | 2025-10-24 | ❌ No |
+| PHASE-3-REVISED-PLAN.md | ⚠️ Superseded | 2025-10-24 | ❌ No (3-worker) |
+
+**Documentation TODOs**:
+- Update README.md to reflect 2-worker architecture
+- Archive or update PHASE-3-REVISED-PLAN.md
+- Create Phase 2 completion guide
+- Update API documentation with Phase 2 endpoints
+
+---
+
+## 🗄️ Archive Notes
+
+**Archived Items**:
+- `archive/account-worker-phase3a-archived-YYYYMMDD/` - Account worker code for future 3-worker architecture (Phase 3+)
+
+**Reason for Archive**: Decided to complete Phase 2 with 2-worker architecture before adding complexity of 3rd worker.
+
+**Future Consideration**: May revisit 3-worker architecture in Phase 3+ if needed for scaling or separation of concerns.
+
+---
+
+## 📈 Progress Metrics
+
+**Overall Project**: 55% Complete
+
+**By Phase**:
+- Phase 1: 100% ✅
+- Phase 2: 40% 🚧
+- Phase 3: 0% ⏳
+- Phase 4: 0% ⏳
+
+**By Component**:
+- Infrastructure: 95% ✅
+- RSS Aggregation: 100% ✅
+- AI Processing: 100% ✅
+- Admin Dashboard: 85% ✅
+- Public APIs: 70% 🚧
+- Authentication: 20% ⛔
+- User Features: 10% ⛔
+- Frontend UI: 60% 🚧
+
+**Estimated Time to Production-Ready**:
+- Phase 2 Complete: 2-3 weeks
+- Phase 3 Complete: 1-2 months
+- Full Platform: 3-4 months
 
 ---
 
 **Project Owner**: Bryan Fawcett
 **Development**: Claude Code
 **Stack**: Cloudflare Workers, D1, React Router 7, TypeScript
+**Current Focus**: Fix authentication, complete Phase 2

@@ -15,8 +15,7 @@ import { NewsSourceService } from "./services/NewsSourceService.js";
 import { NewsSourceManager } from "./services/NewsSourceManager.js";
 import { RSSFeedService } from "./services/RSSFeedService.js";
 import { CloudflareImagesService } from "./services/CloudflareImagesService.js";
-// TODO: Fix OpenAuthService - currently has import errors
-// import { OpenAuthService } from "./services/OpenAuthService.js";
+import { OpenAuthService } from "./services/OpenAuthService.js";
 // Durable Objects temporarily disabled - uncomment when needed
 // import { RealtimeAnalyticsDO } from "./durable-objects/RealtimeAnalyticsDO.js";
 // import { ArticleInteractionsDO } from "./durable-objects/ArticleInteractionsDO.js";
@@ -24,7 +23,7 @@ import { CloudflareImagesService } from "./services/CloudflareImagesService.js";
 // import { RealtimeCountersDO } from "./durable-objects/RealtimeCountersDO.js";
 
 // Import admin interface
-import { getAdminHTML } from "./admin/index.js";
+import { getAdminHTML, getLoginHTML } from "./admin/index.js";
 
 // Types for Cloudflare bindings
 type Bindings = {
@@ -56,6 +55,17 @@ const app = new Hono<{ Bindings: Bindings }>();
 // Add CORS and logging middleware
 app.use("*", cors());
 app.use("*", logger());
+
+// Protect all admin API routes (except login)
+app.use("/api/admin/*", async (c, next) => {
+  // Allow login endpoint to bypass auth
+  if (c.req.path === '/api/admin/login') {
+    return await next();
+  }
+
+  // All other admin routes require authentication
+  return await requireAdmin(c, next);
+});
 
 // Initialize all business services
 function initializeServices(env: Bindings) {
@@ -102,46 +112,132 @@ function initializeServices(env: Bindings) {
   };
 }
 
-// TODO: Re-enable authentication when OpenAuthService is fixed
-// Initialize authentication service
-// let authService: OpenAuthService;
-//
-// function initializeAuth(env: Bindings) {
-//   if (!authService) {
-//     authService = new OpenAuthService({
-//       DB: env.DB,
-//       AUTH_STORAGE: env.AUTH_STORAGE
-//     });
-//   }
-//   return authService;
-// }
-//
-// // Authentication middleware
-// const requireAuth = async (c: any, next: any) => {
-//   const auth = initializeAuth(c.env);
-//   const authResult = await auth.handleAuth(c.req.raw);
-//
-//   if (!authResult.ok) {
-//     return c.json({ error: 'Authentication required' }, 401);
-//   }
-//
-//   c.set('user', authResult.user);
-//   await next();
-// };
-//
-// const requireAdmin = async (c: any, next: any) => {
-//   const auth = initializeAuth(c.env);
-//   return auth.requireRole(['admin', 'super_admin', 'moderator'])(c, next);
-// };
+// Simple session-based authentication (temporary until OpenAuth is fully implemented)
+const ADMIN_SESSION_SECRET = "harare-metro-admin-secret-2025"; // TODO: Move to environment variable
 
-// Admin dashboard - serve the HTML interface
-// TODO: Add authentication back when OpenAuthService is fixed
-app.get("/", (c) => {
+// Helper function to hash password (simple implementation)
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + ADMIN_SESSION_SECRET);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Helper function to create session token
+async function createSessionToken(email: string): Promise<string> {
+  const timestamp = Date.now();
+  const data = `${email}:${timestamp}:${ADMIN_SESSION_SECRET}`;
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(data));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Helper function to get cookie value
+function getCookie(cookieHeader: string | null, name: string): string | null {
+  if (!cookieHeader) return null;
+  const cookies = cookieHeader.split(';').map(c => c.trim());
+  const cookie = cookies.find(c => c.startsWith(`${name}=`));
+  return cookie ? cookie.substring(name.length + 1) : null;
+}
+
+// Authentication middleware - protect admin routes
+const requireAdmin = async (c: any, next: any) => {
+  const cookieHeader = c.req.header('cookie');
+  const sessionToken = getCookie(cookieHeader, 'admin_session');
+  const isApiRequest = c.req.path.startsWith('/api/');
+
+  if (!sessionToken) {
+    // No session - return JSON for API, redirect for pages
+    if (isApiRequest) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+    return c.redirect('/login');
+  }
+
+  // Check if session token is valid (stored in KV)
+  try {
+    const session = await c.env.AUTH_STORAGE.get(`session:${sessionToken}`);
+    if (!session) {
+      // Invalid session - return JSON for API, redirect for pages
+      if (isApiRequest) {
+        return c.json({ error: 'Session expired or invalid' }, 401);
+      }
+      return c.redirect('/login');
+    }
+
+    // Session valid, continue
+    c.set('admin', JSON.parse(session));
+    await next();
+  } catch (error) {
+    console.error('[AUTH] Session validation error:', error);
+    if (isApiRequest) {
+      return c.json({ error: 'Authentication error' }, 401);
+    }
+    return c.redirect('/login');
+  }
+};
+
+// Login page - public route
+app.get("/login", (c) => {
+  c.header("Content-Type", "text/html");
+  return c.html(getLoginHTML());
+});
+
+// Login API endpoint
+app.post("/api/admin/login", async (c) => {
+  try {
+    const { email, password } = await c.req.json();
+
+    // Hardcoded admin credentials (TODO: Move to database)
+    const ADMIN_EMAIL = "admin@hararemetro.co.zw";
+    const ADMIN_PASSWORD_HASH = await hashPassword("admin123");
+    const inputPasswordHash = await hashPassword(password);
+
+    if (email !== ADMIN_EMAIL || inputPasswordHash !== ADMIN_PASSWORD_HASH) {
+      return c.json({ error: "Invalid email or password" }, 401);
+    }
+
+    // Create session token
+    const sessionToken = await createSessionToken(email);
+
+    // Store session in KV (expires in 7 days)
+    await c.env.AUTH_STORAGE.put(
+      `session:${sessionToken}`,
+      JSON.stringify({ email, role: "admin", loginAt: new Date().toISOString() }),
+      { expirationTtl: 7 * 24 * 60 * 60 }
+    );
+
+    console.log('[AUTH] Admin login successful:', email);
+
+    return c.json({ success: true, token: sessionToken });
+  } catch (error: any) {
+    console.error('[AUTH] Login error:', error);
+    return c.json({ error: "Login failed" }, 500);
+  }
+});
+
+// Logout API endpoint
+app.post("/api/admin/logout", async (c) => {
+  const cookieHeader = c.req.header('cookie');
+  const sessionToken = getCookie(cookieHeader, 'admin_session');
+
+  if (sessionToken) {
+    // Delete session from KV
+    await c.env.AUTH_STORAGE.delete(`session:${sessionToken}`);
+  }
+
+  return c.json({ success: true });
+});
+
+// Admin dashboard - PROTECTED route
+app.get("/", requireAdmin, (c) => {
   c.header("Content-Type", "text/html");
   return c.html(getAdminHTML());
 });
 
-app.get("/admin", (c) => {
+app.get("/admin", requireAdmin, (c) => {
   c.header("Content-Type", "text/html");
   return c.html(getAdminHTML());
 });
