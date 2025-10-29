@@ -7,29 +7,68 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **ALWAYS follow these steps before making ANY changes:**
 
 1. **Pull from main first**: `git checkout main && git pull origin main`
-2. **Review documentation**: Read CLAUDE.md, PROJECT-STATUS.md, CODE-REVIEW.md, and any PHASE-*-PLAN.md files
-3. **Code review**: Review the current state of the codebase on main branch
-4. **Check project status**: Verify what phase we're in and what's complete
-5. **Plan changes**: Understand what needs to be added or fixed
-6. **Apply changes**: Make your changes on a feature branch
-7. **Update documentation**: Keep CLAUDE.md and PROJECT-STATUS.md in sync with code changes
+2. **Review documentation**: Read CLAUDE.md, PROJECT-STATUS.md, and PHASE-2-COMPLETION-PLAN.md
+3. **Check CHANGELOG.md**: Review recent changes to understand project history
+4. **Code review**: Review the current state of the codebase on main branch
+5. **Check project status**: Verify what phase we're in and what's complete
+6. **Plan changes**: Understand what needs to be added or fixed
+7. **Apply changes**: Make your changes on a feature branch
+8. **Update documentation**: Keep CLAUDE.md and PROJECT-STATUS.md in sync with code changes
+9. **Update CHANGELOG.md**: Add entry for significant changes
 
 **Never skip these steps**. Always ensure you're working from the latest main branch and understand the full context before making changes.
+
+## Documentation Management Rules - CRITICAL
+
+**Core Documentation (ALWAYS KEEP)**:
+- **README.md** - Project overview and getting started
+- **CLAUDE.md** - This file, development guide
+- **CHANGELOG.md** - All project changes (keep updated!)
+- **PROJECT-STATUS.md** - Current phase and completion status
+- **PHASE-2-COMPLETION-PLAN.md** - Current phase detailed plan
+- **LOGGING-AND-MONITORING.md** - Operations guide
+- **SECURITY.md** - Security policies
+
+**Documentation Rules**:
+1. **Never create temporary documentation** - All docs should be permanent or archived
+2. **Update CHANGELOG.md for all changes** - Keep it current with every session
+3. **Consolidate, don't proliferate** - Add to existing docs rather than creating new ones
+4. **Archive outdated docs** - Move old docs to `archive/docs/` rather than deleting
+5. **One plan at a time** - Only keep current phase plan, archive old ones
+6. **No duplicate information** - If it's in CLAUDE.md, don't repeat in README.md
+7. **Document location hierarchy**:
+   - Project overview → README.md
+   - Development guide → CLAUDE.md
+   - Current status → PROJECT-STATUS.md
+   - Change history → CHANGELOG.md
+   - Current phase → PHASE-*-COMPLETION-PLAN.md
+   - Operations → LOGGING-AND-MONITORING.md
+   - Guides → guides/ directory
+
+**Before Creating New Docs**:
+1. Check if information fits in existing docs
+2. If creating new doc, update this list
+3. If doc is temporary (summaries, reports), plan to consolidate into CHANGELOG.md
+4. Add reference to new doc in appropriate section below
+
+**Archive Management**:
+- Old plan documents → `archive/docs/`
+- Temporary summaries → `archive/docs/`
+- Outdated guides → `archive/docs/`
+- Superseded code → `archive/` (e.g., account worker)
 
 ## Development Commands
 
 ### Development Environment
 - `npm run dev` - Start React Router dev server with Vite
 - `npm run dev:backend` - Start backend worker dev server (in backend directory)
-- `cd account && npm run dev` - Start account worker dev server
 - `npm run preview` - Preview production build locally
 
 ### Build and Deployment
 - `npm run build` - Build React Router frontend application
 - `npm run deploy` - Deploy frontend worker to www.hararemetro.co.zw
 - `npm run deploy:backend` - Deploy backend worker to admin.hararemetro.co.zw
-- `cd account && npm run deploy` - Deploy account worker to account.hararemetro.co.zw
-- `npm run deploy:all` - Deploy both frontend and backend workers (NOTE: account worker deployed separately)
+- `npm run deploy:all` - Deploy both frontend and backend workers
 - `npm run typecheck` - Run TypeScript type checking
 
 ### Testing and Utilities
@@ -41,15 +80,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Architecture Overview
 
 ### Core Platform
-**Harare Metro** is a modern news aggregation platform built with a **3-worker architecture**:
+**Harare Metro** is a modern news aggregation platform built with a **2-worker architecture**:
 
 - **Frontend Worker** (www.hararemetro.co.zw): React Router 7 SSR application with minimal API endpoints
-- **Backend Worker** (admin.hararemetro.co.zw): Comprehensive admin panel and RSS processing engine
-- **Account Worker** (account.hararemetro.co.zw): User authentication and account management (NEW in Phase 3a)
-- **Databases**: Cloudflare D1 (two databases: content and users)
+- **Backend Worker** (admin.hararemetro.co.zw): Comprehensive admin panel, RSS processing engine, and user engagement APIs
+- **Database**: Cloudflare D1 (single database: hararemetro_articles)
 - **Analytics**: Cloudflare Analytics Engine for user interaction tracking
 - **AI Processing**: Cloudflare Workers AI for content enhancement and author recognition
-- **Deployment**: Three separate Cloudflare Workers on custom domains
+- **Deployment**: Two separate Cloudflare Workers on custom domains
 
 ### Key Technologies
 - **Frontend Framework**: React 19 with React Router 7 (SSR-enabled)
@@ -62,7 +100,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Database**: Cloudflare D1 (SQLite-based edge database)
 - **TypeScript**: Full type safety across both workers
 
-### 3-Worker Architecture
+### 2-Worker Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -88,40 +126,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │  • Analytics and insights                                    │
 │  • Category and keyword management                           │
 │  • User engagement APIs (likes, saves, comments, follows)   │
+│  • User authentication and session management                │
 └─────────────────────────────────────────────────────────────┘
                               ↓
-                    Two D1 Databases
+                    Single D1 Database
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│          Cloudflare D1 Database (hararemetro_db)            │
-│                  Content Database                            │
+│       Cloudflare D1 Database (hararemetro_articles)         │
+│                   Primary Database                           │
 │  • Articles, categories, news sources                        │
 │  • Authors, keywords, article relationships                  │
-│  • System configuration                                      │
-│  • Analytics and processing logs                             │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│       Cloudflare D1 Database (hararemetro_users_db)         │
-│                    Users Database                            │
 │  • Users, authentication, sessions                           │
 │  • User profiles and preferences                             │
 │  • Reading history and bookmarks                             │
-│  • Notifications                                             │
+│  • Comments and user engagement                              │
 │  • User follows (sources, authors, categories)               │
-└─────────────────────────────────────────────────────────────┘
-                              ↑
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│              account.hararemetro.co.zw                      │
-│              Account Worker (account/index.ts)               │
-│  • User authentication (JWT-based)                          │
-│  • Registration and login                                    │
-│  • User profile management                                   │
-│  • Reading history tracking                                  │
-│  • Personal analytics (reading streaks, favorites)           │
-│  • Personalized feed algorithm                               │
-│  • Notifications system                                      │
+│  • System configuration                                      │
+│  • Analytics and processing logs                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -171,19 +192,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │       ├── UserBehaviorDO.ts
 │       └── RealtimeAnalyticsDO.ts
 │
-├── account/                    # ✅ Account worker (NEW - separate deployment)
-│   ├── index.ts                # Account worker entry point (Hono app)
-│   ├── wrangler.jsonc          # Account worker configuration
-│   ├── package.json            # Account dependencies
-│   ├── tsconfig.json           # TypeScript configuration
-│   ├── services/               # ✅ Account services
-│   │   ├── AuthService.ts      # JWT authentication (Web Crypto API)
-│   │   ├── UserService.ts      # Profile, history, analytics, personalized feed
-│   │   └── NotificationService.ts  # User notifications
-│   └── pages/                  # HTML pages
-│       ├── login.html          # Login page
-│       ├── register.html       # Registration page
-│       └── profile.html        # User profile dashboard
+├── archive/                    # Archived code for future phases
+│   └── account-worker-phase3a-archived-YYYYMMDD/  # Account worker (for Phase 3+)
 │
 ├── wrangler.jsonc              # ✅ Frontend worker configuration
 ├── package.json                # Frontend dependencies
@@ -273,7 +283,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Database Architecture
 
-**Single D1 Database (hararemetro_db):**
+**Single D1 Database (hararemetro_articles):**
 
 Binding name: `DB` (used by both workers)
 
@@ -304,7 +314,7 @@ Key tables:
   "main": "./workers/app.ts",
   "routes": ["www.hararemetro.co.zw/*"],
   "d1_databases": [
-    { "binding": "DB", "database_name": "hararemetro_db" }
+    { "binding": "DB", "database_name": "hararemetro_articles" }
   ],
   "analytics_engine_datasets": [
     { "binding": "CATEGORY_CLICKS", "dataset": "category_clicks" },
@@ -324,7 +334,7 @@ Key tables:
   "main": "./index.ts",
   "routes": ["admin.hararemetro.co.zw/*"],
   "d1_databases": [
-    { "binding": "DB", "database_name": "hararemetro_db" }
+    { "binding": "DB", "database_name": "hararemetro_articles" }
   ],
   "analytics_engine_datasets": [
     { "binding": "NEWS_ANALYTICS", "dataset": "news_analytics" },
@@ -606,45 +616,17 @@ try {
 - `POST /api/user/me/follows` - Follow source/journalist
 - `DELETE /api/user/me/follows/:type/:id` - Unfollow
 
-### Account Worker (account.hararemetro.co.zw) - NEW Phase 3a
-
-**Authentication Endpoints:**
-- `POST /api/auth/register` - Create new user account
-- `POST /api/auth/login` - Login with email/password
-- `POST /api/auth/logout` - Logout and invalidate session
-- `GET /api/auth/session` - Get current session information
-
-**User Management Endpoints:**
-- `GET /api/user/me/profile` - Get current user's profile
-- `PUT /api/user/me/profile` - Update user profile
-- `GET /api/user/me/history` - Get reading history
-- `GET /api/user/me/analytics` - Get personal analytics (reading streaks, favorites)
-- `GET /api/user/me/feed` - Get personalized feed (algorithm-based)
-- `GET /api/user/me/notifications` - Get user notifications
-- `PUT /api/user/me/notifications/:id/read` - Mark notification as read
-
-**HTML Pages:**
-- `GET /login` - Login page
-- `GET /register` - Registration page
-- `GET /profile` - User profile dashboard
-- `GET /` - Account dashboard home
-
 ## Important Reminders
 
-1. **3-Worker Architecture**: Frontend, backend, and account are separate workers
-2. **Two Databases**:
-   - `hararemetro_db` (content): articles, categories, sources, authors
-   - `hararemetro_users_db` (users): authentication, profiles, preferences, notifications
+1. **2-Worker Architecture**: Frontend and backend are separate workers
+2. **Single Database**: `hararemetro_articles` (content, users, and all application data)
 3. **Database Bindings**:
-   - Frontend: `DB` (content only)
-   - Backend: `DB` (content only)
-   - Account: `USERS_DB` (users) + `CONTENT_DB` (read-only content access)
-4. **Services Location**:
-   - Content/admin logic: `backend/services/`
-   - User/auth logic: `account/services/`
+   - Frontend: `DB` (read access for articles, categories)
+   - Backend: `DB` (full access for all operations)
+4. **Services Location**: All business logic in `backend/services/`
 5. **Cron Implementation**: Frontend calls backend via HTTP POST for RSS refresh
-6. **Authentication**: JWT-based auth in account worker, KV for session storage
-7. **No Supabase**: All user data in D1 (hararemetro_users_db)
+6. **Authentication**: User authentication and session management in backend worker
+7. **No Supabase**: All user data in D1 (hararemetro_articles)
 8. **Typography**: Georgia for headings, Inter for body - NO EXCEPTIONS
 9. **Colors**: Zimbabwe flag palette only - maintain consistency
 10. **Mobile**: Mobile-first design with TikTok-like experience

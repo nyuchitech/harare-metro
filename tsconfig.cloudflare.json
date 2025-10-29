@@ -5,14 +5,22 @@
     "app/**/*",
     "app/**/.server/**/*",
     "app/**/.client/**/*",
-    "workers/**/*",
+    "workers/app.ts",
     "worker-configuration.d.ts"
+  ],
+  "exclude": [
+    "workers/api.js",
+    "workers/index.js",
+    "workers/index-d1.js",
+    "workers/app-old.ts",
+    "workers/utils/**/*.js",
+    "database/D1Service.js"
   ],
   "compilerOptions": {
     "composite": true,
     "strict": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["@cloudflare/workers-types", "vite/client"],
+    "types": ["vite/client"],
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "bundler",

@@ -36,8 +36,8 @@
    */
   "d1_databases": [
     {
-      "binding": "DB", 
-      "database_name": "hararemetro_db",
+      "binding": "DB",
+      "database_name": "hararemetro_articles",
       "database_id": "70d94fe9-4a78-4926-927b-e88e37141a54"
     }
   ],
@@ -135,9 +135,25 @@
   // "triggers": {
   //   "crons": ["0 * * * *"]
   // },
+
+  /**
+   * Observability - Real-time logs and monitoring
+   */
   "observability": {
     "enabled": true
   },
+
+  /**
+   * Logging - Enable real-time log streaming
+   * Access via: wrangler tail or Cloudflare dashboard
+   */
+  "logpush": false,
+  "tail_consumers": [],
+
+  /**
+   * Deployments - Enable preview URLs for testing
+   */
+  "keep_vars": true,
   /**
    * Smart Placement
    * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

@@ -26,7 +26,7 @@ A modern, AI-powered news aggregation platform built on Cloudflare's edge infras
 - ⚡ **Edge-Deployed** - Sub-100ms response times globally via Cloudflare
 
 ### Technical Features
-- 🚀 **Dual-Worker Architecture** - Separate frontend and backend workers
+- 🚀 **2-Worker Architecture** - Separate frontend and backend workers
 - 💾 **Cloudflare D1 Database** - Serverless SQLite at the edge
 - 🧠 **Cloudflare Workers AI** - On-demand AI processing
 - 📈 **Analytics Engine** - Real-time user interaction tracking
@@ -36,7 +36,7 @@ A modern, AI-powered news aggregation platform built on Cloudflare's edge infras
 
 ## 🏗️ Architecture
 
-### Dual-Worker Design
+### 2-Worker Design
 
 ```
 ┌──────────────────────────────────────┐
@@ -51,14 +51,17 @@ A modern, AI-powered news aggregation platform built on Cloudflare's edge infras
                  ↓
 ┌──────────────────────────────────────┐
 │   admin.hararemetro.co.zw            │
-│   Backend Worker (Admin + RSS)       │
+│   Backend Worker (Admin + APIs)      │
 │   • Admin dashboard                  │
 │   • RSS processing with AI           │
 │   • Author recognition               │
 │   • Content quality scoring          │
+│   • User engagement APIs             │
+│   • Authentication                   │
 └──────────────────────────────────────┘
                  ↓
-      Shared D1 Database
+     Single D1 Database
+     (hararemetro_articles)
 ```
 
 ### Technology Stack
@@ -269,7 +272,7 @@ CREATOR_ROLES=creator,business-creator,author
 
 ## 📊 Database Schema
 
-Single D1 database (`hararemetro_db`) shared across both workers:
+Single D1 database (`hararemetro_articles`) shared across both workers:
 
 **Core Tables:**
 - `articles` - News articles
@@ -282,11 +285,18 @@ Single D1 database (`hararemetro_db`) shared across both workers:
 - `article_authors` - Many-to-many
 - `article_keywords` - Many-to-many
 
+**User Engagement** (Phase 2):
+- `article_comments` - User comments
+- `comment_likes` - Comment likes
+- `user_follows` - Following sources/authors
+
 **System:**
 - `system_config` - Platform configuration
 - `users` - User accounts
+- `user_preferences` - User settings
 - `daily_source_stats` - RSS statistics
 - `ai_processing_log` - AI pipeline logs
+- `cron_logs` - Cron execution history
 
 ## 🤝 Contributing
 
