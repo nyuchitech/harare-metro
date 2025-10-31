@@ -13,10 +13,13 @@ import { ContentProcessingPipeline } from "./services/ContentProcessingPipeline.
 import { AuthorProfileService } from "./services/AuthorProfileService.js";
 import { NewsSourceService } from "./services/NewsSourceService.js";
 import { NewsSourceManager } from "./services/NewsSourceManager.js";
-import { RSSFeedService } from "./services/RSSFeedService.js";
 import { SimpleRSSService } from "./services/SimpleRSSService.js";
 import { CloudflareImagesService } from "./services/CloudflareImagesService.js";
 import { OpenAuthService } from "./services/OpenAuthService.js";
+// Additional enhancement services
+import { CategoryManager } from "./services/CategoryManager.js";
+import { ObservabilityService } from "./services/ObservabilityService.js";
+import { D1UserService } from "./services/D1UserService.js";
 // Durable Objects temporarily disabled - uncomment when needed
 // import { RealtimeAnalyticsDO } from "./durable-objects/RealtimeAnalyticsDO.js";
 // import { ArticleInteractionsDO } from "./durable-objects/ArticleInteractionsDO.js";
@@ -96,7 +99,12 @@ function initializeServices(env: Bindings) {
     console.warn('[INIT] CloudflareImagesService not initialized - IMAGES binding or CLOUDFLARE_ACCOUNT_ID not configured. RSS images will not be optimized.');
   }
 
-  const rssService = new RSSFeedService(env.DB, imagesService); // Fix: RSSFeedService takes database directly
+  // Initialize enhancement services for SimpleRSSService
+  const categoryManager = new CategoryManager(env.DB);
+  const observabilityService = new ObservabilityService(env.DB, env.LOG_LEVEL || 'info');
+  const userService = new D1UserService(env.DB);
+
+  console.log('[INIT] All services initialized - using SimpleRSSService for RSS processing');
 
   return {
     d1Service,
@@ -109,7 +117,9 @@ function initializeServices(env: Bindings) {
     articleService,
     newsSourceService,
     newsSourceManager,
-    rssService
+    categoryManager,
+    observabilityService,
+    userService
   };
 }
 
@@ -556,33 +566,28 @@ app.post("/api/admin/backfill-keywords", async (c) => {
 // TODO: Add authentication back when OpenAuthService is fixed
 app.post("/api/admin/bulk-pull", async (c) => {
   try {
-    const services = initializeServices(c.env);
     const body = await c.req.json().catch(() => ({}));
-    
-    const options = {
-      articlesPerSource: parseInt(body.articlesPerSource) || 200,
-      includeOlderArticles: body.includeOlderArticles !== false,
-      testMode: body.testMode === true
-    };
-    
-    console.log(`Starting BULK PULL with options:`, options);
-    
-    // Use the RSS service for initial bulk pull
-    const results = await services.rssService.initialBulkPull(options);
-    
+
+    console.log(`Starting BULK PULL using SimpleRSSService...`);
+
+    // Use SimpleRSSService for bulk pull (same as regular refresh)
+    const rssService = new SimpleRSSService(c.env.DB);
+    const results = await rssService.refreshAllFeeds();
+
     // Track the bulk pull event for analytics
+    const services = initializeServices(c.env);
     await services.analyticsService.trackEvent('initial_bulk_pull', {
-      articles_per_source: options.articlesPerSource,
-      include_older: options.includeOlderArticles,
-      test_mode: options.testMode,
-      ...results
+      new_articles: results.newArticles,
+      errors: results.errors,
+      details: results.details
     });
-    
+
     return c.json({
-      success: true,
-      message: `Bulk pull completed: ${results.newArticles} new articles from ${results.sources} sources`,
-      ...results,
-      options,
+      success: results.success,
+      message: `Bulk pull completed: ${results.newArticles} new articles`,
+      newArticles: results.newArticles,
+      errors: results.errors,
+      details: results.details,
       timestamp: new Date().toISOString()
     });
     
@@ -2104,6 +2109,246 @@ app.get("/api/manifest.json", async (c) => {
   }
 });
 
+// ===== CATEGORY MANAGEMENT ENDPOINTS (Using CategoryManager) =====
+
+// Get category insights and analytics
+app.get("/api/admin/category-insights", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const days = parseInt(c.req.query('days') || '30');
+
+    const insights = await services.categoryManager.generateInsights(days);
+
+    return c.json({
+      success: true,
+      insights,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error getting category insights:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get trending categories
+app.get("/api/trending-categories", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const limit = parseInt(c.req.query('limit') || '5');
+
+    const trending = await services.categoryManager.getTrendingCategories(limit);
+
+    return c.json({
+      success: true,
+      trending,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error getting trending categories:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get user's personalized category recommendations
+app.get("/api/user/personalized-categories", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const userId = c.req.query('userId');
+
+    if (!userId) {
+      return c.json({ error: 'User ID required' }, 400);
+    }
+
+    const categories = await services.categoryManager.getPersonalizedCategories(userId, 10);
+
+    return c.json({
+      success: true,
+      categories,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error getting personalized categories:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Initialize user category interest (for onboarding)
+app.post("/api/user/me/category-interest", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const { categoryId, initialScore } = await c.req.json();
+
+    // Get user ID from auth token
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // TODO: Extract user ID from token (for now, get from OpenAuthService)
+    // This is a placeholder - you'll need to implement proper token validation
+    const token = authHeader.substring(7);
+
+    // For now, we'll get user ID from the session
+    // In production, validate the token and extract user_id
+    const sessionResult = await c.env.DB.prepare(`
+      SELECT user_id FROM user_sessions WHERE token_hash = ? AND expires_at > datetime('now')
+    `).bind(token).first() as any;
+
+    if (!sessionResult) {
+      return c.json({ error: 'Invalid or expired token' }, 401);
+    }
+
+    const userId = sessionResult.user_id;
+
+    // Update category interest
+    await services.categoryManager.updateInterestScore(
+      userId,
+      categoryId,
+      initialScore || 10,
+      'view'
+    );
+
+    return c.json({
+      success: true,
+      message: 'Category interest initialized',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error initializing category interest:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ===== OBSERVABILITY ENDPOINTS (Using ObservabilityService) =====
+
+// Health check with full observability
+app.get("/api/admin/observability/health", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const healthChecks = await services.observabilityService.performHealthChecks(c.env);
+
+    return c.json({
+      success: true,
+      health: healthChecks,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error performing health checks:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get metrics summary
+app.get("/api/admin/observability/metrics", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const metrics = services.observabilityService.getMetricsSummary();
+
+    return c.json({
+      success: true,
+      metrics,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error getting metrics:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get alerts
+app.get("/api/admin/observability/alerts", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const alerts = await services.observabilityService.checkAlerts();
+
+    return c.json({
+      success: true,
+      alerts,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error checking alerts:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ===== USER SERVICE ENDPOINTS (Using D1UserService) =====
+
+// Get user bookmarks
+app.get("/api/user/bookmarks", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const userId = c.req.query('userId');
+    const limit = parseInt(c.req.query('limit') || '100');
+    const offset = parseInt(c.req.query('offset') || '0');
+
+    if (!userId) {
+      return c.json({ error: 'User ID required' }, 400);
+    }
+
+    const bookmarks = await services.userService.getUserBookmarks(userId, limit, offset);
+
+    return c.json({
+      success: true,
+      bookmarks,
+      count: bookmarks.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error getting user bookmarks:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get user reading history
+app.get("/api/user/history", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const userId = c.req.query('userId');
+    const limit = parseInt(c.req.query('limit') || '50');
+    const offset = parseInt(c.req.query('offset') || '0');
+
+    if (!userId) {
+      return c.json({ error: 'User ID required' }, 400);
+    }
+
+    const history = await services.userService.getUserReadingHistory(userId, limit, offset);
+
+    return c.json({
+      success: true,
+      history,
+      count: history.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error getting reading history:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get user statistics
+app.get("/api/user/stats", async (c) => {
+  try {
+    const services = initializeServices(c.env);
+    const userId = c.req.query('userId');
+
+    if (!userId) {
+      return c.json({ error: 'User ID required' }, 400);
+    }
+
+    const stats = await services.userService.getUserStats(userId);
+
+    return c.json({
+      success: true,
+      stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error getting user stats:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // ===== AUTHENTICATION ENDPOINTS =====
 // Simple password-based authentication using D1 + KV
 // Replaces Supabase with OpenAuth service
@@ -2302,6 +2547,130 @@ app.post("/api/auth/logout", async (c) => {
   }
 });
 
+// Update user profile (including username during onboarding)
+app.patch("/api/user/me/profile", async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const token = authHeader.substring(7);
+    const { username, displayName, bio, avatarUrl } = await c.req.json();
+
+    // Get user ID from session
+    const sessionResult = await c.env.DB.prepare(`
+      SELECT user_id FROM user_sessions WHERE token_hash = ? AND expires_at > datetime('now')
+    `).bind(token).first() as any;
+
+    if (!sessionResult) {
+      return c.json({ error: 'Invalid or expired token' }, 401);
+    }
+
+    const userId = sessionResult.user_id;
+
+    // If username is being updated, check uniqueness
+    if (username) {
+      // Validate username format
+      const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+      if (!usernameRegex.test(username)) {
+        return c.json({
+          error: 'Username must be 3-30 characters and contain only letters, numbers, and underscores'
+        }, 400);
+      }
+
+      // Check if username is already taken by another user
+      const existingUser = await c.env.DB.prepare(`
+        SELECT id FROM users WHERE username = ? AND id != ?
+      `).bind(username, userId).first() as any;
+
+      if (existingUser) {
+        return c.json({ error: 'Username is already taken' }, 409);
+      }
+    }
+
+    // Build update query dynamically
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (username !== undefined) {
+      updates.push('username = ?');
+      values.push(username);
+    }
+    if (displayName !== undefined) {
+      updates.push('display_name = ?');
+      values.push(displayName);
+    }
+    if (bio !== undefined) {
+      updates.push('bio = ?');
+      values.push(bio);
+    }
+    if (avatarUrl !== undefined) {
+      updates.push('avatar_url = ?');
+      values.push(avatarUrl);
+    }
+
+    if (updates.length === 0) {
+      return c.json({ error: 'No fields to update' }, 400);
+    }
+
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(userId);
+
+    await c.env.DB.prepare(`
+      UPDATE users SET ${updates.join(', ')} WHERE id = ?
+    `).bind(...values).run();
+
+    // Get updated user
+    const updatedUser = await c.env.DB.prepare(`
+      SELECT id, email, username, display_name, bio, avatar_url, user_number, user_uid, role, status, created_at
+      FROM users WHERE id = ?
+    `).bind(userId).first() as any;
+
+    return c.json({
+      success: true,
+      user: updatedUser,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error updating profile:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Check username availability
+app.get("/api/auth/check-username", async (c) => {
+  try {
+    const username = c.req.query('username');
+
+    if (!username) {
+      return c.json({ error: 'Username parameter required' }, 400);
+    }
+
+    // Validate format
+    const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+    if (!usernameRegex.test(username)) {
+      return c.json({
+        available: false,
+        error: 'Invalid username format'
+      });
+    }
+
+    // Check if taken
+    const existingUser = await c.env.DB.prepare(`
+      SELECT id FROM users WHERE username = ?
+    `).bind(username).first() as any;
+
+    return c.json({
+      available: !existingUser,
+      username
+    });
+  } catch (error: any) {
+    console.error('[API] Error checking username:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // ===== USER MANAGEMENT (ADMIN ONLY) =====
 
 // Get all users (admin only)
@@ -2325,7 +2694,7 @@ app.get("/api/admin/users", async (c) => {
     const search = c.req.query("search") || "";
 
     let query = `
-      SELECT id, email, display_name, role, status, email_verified,
+      SELECT id, email, username, display_name, user_number, user_uid, role, status, email_verified,
              created_at, updated_at, last_login_at, login_count
       FROM users
     `;
@@ -2333,19 +2702,19 @@ app.get("/api/admin/users", async (c) => {
     let params: any[] = [];
 
     if (search) {
-      query += ` WHERE email LIKE ? OR display_name LIKE ?`;
-      params.push(`%${search}%`, `%${search}%`);
+      query += ` WHERE email LIKE ? OR display_name LIKE ? OR username LIKE ? OR user_number LIKE ? OR user_uid LIKE ?`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    query += ` ORDER BY user_number ASC LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     const users = await c.env.DB.prepare(query).bind(...params).all();
     const totalResult = await c.env.DB.prepare(
       search
-        ? `SELECT COUNT(*) as total FROM users WHERE email LIKE ? OR display_name LIKE ?`
+        ? `SELECT COUNT(*) as total FROM users WHERE email LIKE ? OR display_name LIKE ? OR username LIKE ? OR user_number LIKE ? OR user_uid LIKE ?`
         : `SELECT COUNT(*) as total FROM users`
-    ).bind(...(search ? [`%${search}%`, `%${search}%`] : [])).first();
+    ).bind(...(search ? [`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`] : [])).first();
 
     return c.json({
       users: users.results,

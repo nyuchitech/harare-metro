@@ -45,7 +45,7 @@ export async function action({ request }: Route.ActionArgs) {
       return new Response(null, {
         status: 302,
         headers: {
-          Location: "/",
+          Location: "/onboarding",
           "Set-Cookie": `auth_token=${session.access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`,
         },
       });
