@@ -5,8 +5,9 @@ import { AuthModal } from "../components/auth/AuthModal";
 import { UserProfile } from "../components/auth/UserProfile";
 import HeaderNavigation from "../components/HeaderNavigation";
 import MobileNavigation from "../components/MobileNavigation";
-import { Heart, Bookmark, ExternalLink, Grid3x3, List, Loader2, Hash } from "lucide-react";
+import { Grid3x3, List, Loader2, Hash } from "lucide-react";
 import { buildApiUrl, buildClientImageUrl } from "../lib/api-utils";
+import { ArticleLikeButton, ArticleSaveButton } from "../components/engagement";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -340,21 +341,20 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       <div className="flex items-center justify-between">
                         <span className="text-zw-green text-sm font-medium">Read More</span>
 
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                            className="p-2 rounded-full hover:bg-muted transition-colors touch-target"
-                            aria-label="Like article"
-                          >
-                            <Heart className="h-4 w-4 text-muted-foreground hover:text-zw-red" />
-                          </button>
-                          <button
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                            className="p-2 rounded-full hover:bg-muted transition-colors touch-target"
-                            aria-label="Bookmark article"
-                          >
-                            <Bookmark className="h-4 w-4 text-muted-foreground hover:text-zw-yellow" />
-                          </button>
+                        <div className="flex items-center space-x-1" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                          <ArticleLikeButton
+                            articleId={article.id}
+                            initialLiked={article.isLiked}
+                            initialCount={article.likesCount || 0}
+                            size="sm"
+                            showCount={false}
+                          />
+                          <ArticleSaveButton
+                            articleId={article.id}
+                            initialSaved={article.isSaved}
+                            size="sm"
+                            showLabel={false}
+                          />
                         </div>
                       </div>
                     </div>
@@ -418,21 +418,20 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                         <div className="flex items-center justify-between">
                           <span className="text-zw-green text-sm font-medium">Read More</span>
 
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                              className="p-2 rounded-full hover:bg-muted transition-colors touch-target"
-                              aria-label="Like article"
-                            >
-                              <Heart className="h-4 w-4 text-muted-foreground hover:text-zw-red" />
-                            </button>
-                            <button
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                              className="p-2 rounded-full hover:bg-muted transition-colors touch-target"
-                              aria-label="Bookmark article"
-                            >
-                              <Bookmark className="h-4 w-4 text-muted-foreground hover:text-zw-yellow" />
-                            </button>
+                          <div className="flex items-center space-x-1" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                            <ArticleLikeButton
+                              articleId={article.id}
+                              initialLiked={article.isLiked}
+                              initialCount={article.likesCount || 0}
+                              size="sm"
+                              showCount={false}
+                            />
+                            <ArticleSaveButton
+                              articleId={article.id}
+                              initialSaved={article.isSaved}
+                              size="sm"
+                              showLabel={false}
+                            />
                           </div>
                         </div>
                       </div>
