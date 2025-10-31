@@ -2152,7 +2152,11 @@ app.post("/api/auth/register", async (c) => {
       while (attempts < 10) {
         const existing = await authService.getUserByUsername(uniqueUsername);
         if (!existing) break;
-        uniqueUsername = `${finalUsername}${Math.floor(Math.random() * 10000)}`;
+        // Use cryptographically secure random number
+        const randomArray = new Uint32Array(1);
+        crypto.getRandomValues(randomArray);
+        const randomSuffix = randomArray[0] % 10000;
+        uniqueUsername = `${finalUsername}${randomSuffix}`;
         attempts++;
       }
       finalUsername = uniqueUsername;

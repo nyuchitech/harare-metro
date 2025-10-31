@@ -134,7 +134,11 @@ export class OpenAuthService {
 
             if (!existing) break
 
-            uniqueUsername = `${username}${Math.floor(Math.random() * 10000)}`
+            // Use cryptographically secure random number
+            const randomArray = new Uint32Array(1)
+            crypto.getRandomValues(randomArray)
+            const randomSuffix = randomArray[0] % 10000
+            uniqueUsername = `${username}${randomSuffix}`
             attempts++
           }
           username = uniqueUsername

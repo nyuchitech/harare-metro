@@ -435,11 +435,8 @@ export class SimpleRSSService {
       for (const candidate of imageCandidates) {
         if (!candidate || typeof candidate !== 'string') continue;
 
-        // Clean URL
-        let cleanUrl = candidate.trim()
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>');
+        // Clean URL - decode HTML entities safely
+        let cleanUrl = this.decodeHtmlEntities(candidate.trim());
 
         // Handle protocol-relative URLs
         if (cleanUrl.startsWith('//')) {
@@ -584,27 +581,43 @@ export class SimpleRSSService {
   }
 
   /**
+   * Decode HTML entities safely (prevents double-unescaping)
+   */
+  private decodeHtmlEntities(text: string): string {
+    const entities: Record<string, string> = {
+      'amp': '&',
+      'lt': '<',
+      'gt': '>',
+      'quot': '"',
+      'apos': "'",
+      'nbsp': ' '
+    };
+
+    return text
+      // Decode named entities
+      .replace(/&([a-z]+);/gi, (match, entity) => entities[entity.toLowerCase()] || match)
+      // Decode numeric entities (decimal)
+      .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(parseInt(dec, 10)))
+      // Decode hex entities
+      .replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+  }
+
+  /**
    * Clean text - remove HTML, decode entities, trim, normalize whitespace
    */
   private cleanText(text: string): string {
     return text
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/&#8230;/g, '...') // Replace ellipsis entity
-      .replace(/&#8211;/g, '-') // Replace en dash
-      .replace(/&#8212;/g, '-') // Replace em dash
-      .replace(/&#8216;/g, "'") // Replace left single quote
-      .replace(/&#8217;/g, "'") // Replace right single quote
-      .replace(/&#8220;/g, '"') // Replace left double quote
-      .replace(/&#8221;/g, '"') // Replace right double quote
-      .replace(/&#038;/g, '&') // Replace ampersand
-      .replace(/&amp;/g, '&') // Replace HTML ampersand
-      .replace(/&lt;/g, '<') // Replace less than
-      .replace(/&gt;/g, '>') // Replace greater than
-      .replace(/&quot;/g, '"') // Replace quote
-      .replace(/&apos;/g, "'") // Replace apostrophe
-      .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec)) // Decode decimal entities
-      .replace(/&nbsp;/g, ' ') // Replace non-breaking space
-      .replace(/\s+/g, ' ') // Normalize whitespace
+      .replace(/<[^>]*>/g, '') // Remove HTML tags first
+      .replace(/\s+/g, ' ') // Normalize whitespace before decoding
+      .trim()
+      .replace(/&#8230;/g, '...') // Replace common typographic entities
+      .replace(/&#8211;/g, '-')
+      .replace(/&#8212;/g, '-')
+      .replace(/&#8216;/g, "'")
+      .replace(/&#8217;/g, "'")
+      .replace(/&#8220;/g, '"')
+      .replace(/&#8221;/g, '"')
+      .replace(/&#038;/g, '&')
       .trim();
   }
 
