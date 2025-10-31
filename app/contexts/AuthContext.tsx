@@ -19,11 +19,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isConfigured, setIsConfigured] = useState(false);
-  const [supabaseClient, setSupabaseClient] = useState<{
-    supabase: any;
-    auth: any;
-  } | null>(null);
+  const [isConfigured] = useState(true); // Always configured with our simple auth
 
   useEffect(() => {
     // Only run on client side
@@ -34,32 +30,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const initAuth = async () => {
       try {
-        // Dynamically import Supabase client only on client side
-        const { supabase, auth, isSupabaseConfigured } = await import('../lib/supabase.client');
-        
-        if (!isSupabaseConfigured()) {
-          setLoading(false);
-          return;
-        }
-
-        setIsConfigured(true);
-        setSupabaseClient({ supabase, auth });
+        // Dynamically import our auth client only on client side
+        const { authClient } = await import('../lib/auth.client');
 
         // Get initial session
-        const { data: { session }, error } = await auth.getSession();
+        const { user, session, error } = await authClient.getSession();
         if (error) {
           console.error('Error getting session:', error);
         } else {
           setSession(session);
-          setUser(session?.user ?? null);
+          setUser(user);
         }
 
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        // Listen for auth changes (simple implementation - checks on mount)
+        const { unsubscribe } = authClient.onAuthStateChange(
           async (event, session) => {
-            console.log('Auth state changed:', event, session?.user?.email);
-            setSession(session);
-            setUser(session?.user ?? null);
+            console.log('Auth state changed:', event);
+            if (session) {
+              const response = await authClient.getSession();
+              setSession(response.session);
+              setUser(response.user);
+            } else {
+              setSession(null);
+              setUser(null);
+            }
             setLoading(false);
           }
         );
@@ -67,11 +61,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setLoading(false);
 
         return () => {
-          subscription.unsubscribe();
+          unsubscribe();
         };
 
       } catch (error) {
-        console.error('Failed to initialize Supabase:', error);
+        console.error('Failed to initialize auth:', error);
         setLoading(false);
       }
     };
@@ -80,12 +74,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signUp = async (email: string, password: string, metadata?: Record<string, unknown>): Promise<AuthResponse> => {
-    if (!supabaseClient?.auth) {
-      return { data: { user: null, session: null }, error: { message: 'Supabase not initialized' } as AuthError };
-    }
     try {
-      const result = await supabaseClient.auth.signUp(email, password, metadata);
-      return result;
+      const { authClient } = await import('../lib/auth.client');
+      const result = await authClient.signUp(email, password, {
+        displayName: metadata?.display_name as string
+      });
+
+      if (result.error) {
+        return { data: { user: null, session: null }, error: { message: result.error } as AuthError };
+      }
+
+      return { data: { user: result.user, session: result.session }, error: null };
     } catch (error) {
       console.error('Error in signUp:', error);
       return { data: { user: null, session: null }, error: error as AuthError };
@@ -93,12 +92,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signIn = async (email: string, password: string): Promise<AuthResponse> => {
-    if (!supabaseClient?.auth) {
-      return { data: { user: null, session: null }, error: { message: 'Supabase not initialized' } as AuthError };
-    }
     try {
-      const result = await supabaseClient.auth.signIn(email, password);
-      return result;
+      const { authClient } = await import('../lib/auth.client');
+      const result = await authClient.signIn(email, password);
+
+      if (result.error) {
+        return { data: { user: null, session: null }, error: { message: result.error } as AuthError };
+      }
+
+      // Update local state
+      setUser(result.user);
+      setSession(result.session);
+
+      return { data: { user: result.user, session: result.session }, error: null };
     } catch (error) {
       console.error('Error in signIn:', error);
       return { data: { user: null, session: null }, error: error as AuthError };
@@ -106,25 +112,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signInWithOAuth = async (provider: 'google' | 'github'): Promise<AuthResponse> => {
-    if (!supabaseClient?.auth) {
-      return { data: { user: null, session: null }, error: { message: 'Supabase not initialized' } as AuthError };
-    }
-    try {
-      const result = await supabaseClient.auth.signInWithOAuth(provider);
-      return result;
-    } catch (error) {
-      console.error('Error in signInWithOAuth:', error);
-      return { data: { user: null, session: null }, error: error as AuthError };
-    }
+    // OAuth not implemented yet
+    return {
+      data: { user: null, session: null },
+      error: { message: 'OAuth not implemented' } as AuthError
+    };
   };
 
   const signOut = async (): Promise<{ error: AuthError | null }> => {
-    if (!supabaseClient?.auth) {
-      return { error: { message: 'Supabase not initialized' } as AuthError };
-    }
     try {
-      const result = await supabaseClient.auth.signOut();
-      return result;
+      const { authClient } = await import('../lib/auth.client');
+      await authClient.signOut();
+
+      // Update local state
+      setUser(null);
+      setSession(null);
+
+      return { error: null };
     } catch (error) {
       console.error('Error in signOut:', error);
       return { error: error as AuthError };
@@ -132,29 +136,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (email: string): Promise<AuthResponse> => {
-    if (!supabaseClient?.auth) {
-      return { data: { user: null, session: null }, error: { message: 'Supabase not initialized' } as AuthError };
-    }
-    try {
-      const result = await supabaseClient.auth.resetPassword(email);
-      return result;
-    } catch (error) {
-      console.error('Error in resetPassword:', error);
-      return { data: { user: null, session: null }, error: error as AuthError };
-    }
+    // Password reset not implemented yet
+    return {
+      data: { user: null, session: null },
+      error: { message: 'Password reset not implemented' } as AuthError
+    };
   };
 
   const updatePassword = async (password: string): Promise<AuthResponse> => {
-    if (!supabaseClient?.auth) {
-      return { data: { user: null, session: null }, error: { message: 'Supabase not initialized' } as AuthError };
-    }
-    try {
-      const result = await supabaseClient.auth.updatePassword(password);
-      return result;
-    } catch (error) {
-      console.error('Error in updatePassword:', error);
-      return { data: { user: null, session: null }, error: error as AuthError };
-    }
+    // Password update not implemented yet
+    return {
+      data: { user: null, session: null },
+      error: { message: 'Password update not implemented' } as AuthError
+    };
   };
 
   const value: AuthContextType = {

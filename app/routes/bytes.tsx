@@ -331,7 +331,7 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
             </div>
 
             {/* Content overlay */}
-            <div className="absolute inset-0 flex flex-col justify-between p-4 pt-safe pb-24">
+            <div className="absolute inset-0 flex flex-col justify-between p-4 pt-safe pb-32">
               {/* Spacer for top safe area */}
               <div className="pt-safe" />
 

@@ -142,7 +142,24 @@ export default function Article({ loaderData }: Route.ComponentProps) {
                   </div>
                 </div>
               )}
-              
+
+              {/* Keywords as hashtags */}
+              {article.keywords && article.keywords.length > 0 && (
+                <div className="mb-8">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">Topics</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {article.keywords.map((keyword: any) => (
+                      <span
+                        key={keyword.id}
+                        className="text-sm px-3 py-1.5 bg-muted text-muted-foreground rounded-full hover:bg-zw-green/20 hover:text-zw-green transition-colors cursor-pointer"
+                      >
+                        #{keyword.slug}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t border-border">
                 <div className="flex items-center space-x-4">

@@ -7,7 +7,7 @@ interface UserProfileProps {
 }
 
 export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
-  const { user, signOut, isConfigured } = useAuth();
+  const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [bookmarks, setBookmarks] = useState<any[]>([]);
   const [likes, setLikes] = useState<string[]>([]);
@@ -15,30 +15,28 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
   const [activeTab, setActiveTab] = useState<'profile' | 'bookmarks' | 'settings'>('profile');
 
   useEffect(() => {
-    if (isOpen && user && isConfigured) {
+    if (isOpen && user) {
       loadUserData();
     }
-  }, [isOpen, user, isConfigured]);
+  }, [isOpen, user]);
 
   const loadUserData = async () => {
     if (!user || typeof window === 'undefined') return;
-    
+
     setLoading(true);
     try {
-      // Dynamically import db functions on client side only
-      const { db } = await import('../../lib/supabase.client');
+      // For now, just use user data from session
+      // Backend API endpoints for bookmarks/likes can be added later
+      setProfile({
+        id: user.id,
+        email: user.email,
+        display_name: user.display_name || user.email,
+        role: user.role || 'creator'
+      });
 
-      // Load profile
-      const { data: profileData } = await db.profiles.get(user.id);
-      setProfile(profileData);
-
-      // Load bookmarks
-      const { data: bookmarksData } = await db.bookmarks.get(user.id);
-      setBookmarks(bookmarksData || []);
-
-      // Load likes
-      const { data: likesData } = await db.likes.get(user.id);
-      setLikes((likesData || []).map((like: any) => like.article_id));
+      // Bookmarks and likes will be loaded from backend API in future
+      setBookmarks([]);
+      setLikes([]);
 
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -53,27 +51,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
   };
 
   if (!isOpen) return null;
-
-  if (!isConfigured) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-        <div className="bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-700">
-          <h2 className="text-2xl font-bold text-center mb-4 font-serif text-white">
-            Profile Unavailable
-          </h2>
-          <p className="text-gray-400 text-center mb-6">
-            Supabase is not configured. Please check your environment variables.
-          </p>
-          <button
-            onClick={onClose}
-            className="w-full bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-xl transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   if (!user) {
     return (
@@ -195,7 +172,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
                     <div className="flex justify-between">
                       <span className="text-gray-400">Member since</span>
                       <span className="text-white">
-                        {new Date(user.created_at).toISOString().split('T')[0]}
+                        {user.created_at ? new Date(user.created_at).toISOString().split('T')[0] : 'N/A'}
                       </span>
                     </div>
                     <div className="flex justify-between">
