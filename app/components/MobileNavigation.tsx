@@ -1,10 +1,12 @@
 // app/components/MobileNavigation.tsx
 import React from 'react'
-import { 
+import { Link } from 'react-router'
+import {
   Home,
   Search,
   User,
-  Video
+  Video,
+  LogIn
 } from 'lucide-react'
 
 interface MobileNavigationProps {
@@ -14,40 +16,48 @@ interface MobileNavigationProps {
   onProfileClick?: () => void
   onBytesClick?: () => void
   className?: string
+  isAuthenticated?: boolean
+  username?: string
 }
 
-const MobileNavigation: React.FC<MobileNavigationProps> = ({ 
+const MobileNavigation: React.FC<MobileNavigationProps> = ({
   currentView = '/',
   onHomeClick,
   onSearchClick,
-  onProfileClick, 
+  onProfileClick,
   onBytesClick,
-  className = ''
+  className = '',
+  isAuthenticated = false,
+  username
 }) => {
   const navigation = [
-    { 
-      id: 'home', 
-      name: 'Feed', 
-      icon: Home, 
-      action: onHomeClick || (() => {})
+    {
+      id: 'home',
+      name: 'Feed',
+      icon: Home,
+      action: onHomeClick || (() => {}),
+      href: '/'
     },
-    { 
-      id: 'bytes', 
-      name: 'Bytes', 
-      icon: Video, 
-      action: onBytesClick || (() => {})
+    {
+      id: 'bytes',
+      name: 'Bytes',
+      icon: Video,
+      action: onBytesClick || (() => {}),
+      href: '/bytes'
     },
-    { 
-      id: 'search', 
-      name: 'Search', 
-      icon: Search, 
-      action: onSearchClick || (() => {})
+    {
+      id: 'search',
+      name: 'Search',
+      icon: Search,
+      action: onSearchClick || (() => {}),
+      href: '/search'
     },
-    { 
-      id: 'profile', 
-      name: 'Profile', 
-      icon: User, 
-      action: onProfileClick || (() => {})
+    {
+      id: 'profile',
+      name: isAuthenticated ? 'Profile' : 'Login',
+      icon: isAuthenticated ? User : LogIn,
+      action: onProfileClick || (() => {}),
+      href: isAuthenticated ? (username ? `/@${username}` : '/auth/login') : '/auth/login'
     }
   ]
 
@@ -74,21 +84,39 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
             
             return (
               <div key={item.id} className="flex flex-col items-center">
-                <button
-                  onClick={item.action}
-                  className={`
-                    p-3 rounded-full transition-all duration-200 touch-target
-                    ${isActive ? 
-                      'bg-zw-green/10 text-zw-green' : 
-                      'text-muted-foreground hover:text-zw-green hover:bg-zw-green/5'
-                    }
-                  `}
-                  aria-current={isActive ? 'page' : undefined}
-                  aria-label={`Navigate to ${item.name}`}
-                >
-                  <IconComponent className="h-6 w-6" />
-                </button>
-                
+                {/* Use Link for proper navigation */}
+                {item.href ? (
+                  <Link
+                    to={item.href}
+                    className={`
+                      p-3 rounded-full transition-all duration-200 touch-target
+                      ${isActive ?
+                        'bg-zw-green/10 text-zw-green' :
+                        'text-muted-foreground hover:text-zw-green hover:bg-zw-green/5'
+                      }
+                    `}
+                    aria-current={isActive ? 'page' : undefined}
+                    aria-label={`Navigate to ${item.name}`}
+                  >
+                    <IconComponent className="h-6 w-6" />
+                  </Link>
+                ) : (
+                  <button
+                    onClick={item.action}
+                    className={`
+                      p-3 rounded-full transition-all duration-200 touch-target
+                      ${isActive ?
+                        'bg-zw-green/10 text-zw-green' :
+                        'text-muted-foreground hover:text-zw-green hover:bg-zw-green/5'
+                      }
+                    `}
+                    aria-current={isActive ? 'page' : undefined}
+                    aria-label={`Navigate to ${item.name}`}
+                  >
+                    <IconComponent className="h-6 w-6" />
+                  </button>
+                )}
+
                 {/* Active indicator dot */}
                 <div className={`
                   w-1 h-1 rounded-full mt-1 transition-all duration-200
