@@ -604,11 +604,25 @@ export class SimpleRSSService {
 
   /**
    * Clean text - remove HTML, decode entities, trim, normalize whitespace
+   * Uses multiple passes to ensure complete sanitization
    */
   private cleanText(text: string): string {
-    return text
-      .replace(/<[^>]*>/g, '') // Remove HTML tags first
-      .replace(/\s+/g, ' ') // Normalize whitespace before decoding
+    // First pass: remove all HTML tags (multiple iterations to catch nested tags)
+    let cleaned = text;
+    let previousLength = 0;
+
+    // Keep removing tags until no more tags are found
+    while (cleaned.length !== previousLength) {
+      previousLength = cleaned.length;
+      cleaned = cleaned.replace(/<[^>]*>/g, '');
+    }
+
+    // Second pass: remove any remaining < or > characters that might cause issues
+    cleaned = cleaned.replace(/[<>]/g, '');
+
+    // Third pass: decode HTML entities and normalize
+    return cleaned
+      .replace(/\s+/g, ' ') // Normalize whitespace
       .trim()
       .replace(/&#8230;/g, '...') // Replace common typographic entities
       .replace(/&#8211;/g, '-')
