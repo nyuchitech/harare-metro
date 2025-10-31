@@ -2,6 +2,7 @@
 export interface User {
   id: string;
   email: string;
+  username?: string;
   display_name?: string;
   role?: string;
   created_at?: string;
@@ -24,9 +25,13 @@ export interface AuthError {
 
 export interface Profile {
   id: string;
+  username?: string;
   full_name?: string;
+  displayName?: string;
   email?: string;
   avatar_url?: string;
+  avatarUrl?: string;
+  bio?: string;
   updated_at?: string;
   created_at: string;
 }
