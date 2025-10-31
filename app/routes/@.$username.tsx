@@ -3,6 +3,25 @@ import type { Route } from "./+types/@.$username";
 import { Heart, Bookmark, Clock, Calendar, MapPin } from "lucide-react";
 import { useState } from "react";
 
+interface UserProfile {
+  username: string;
+  displayName?: string;
+  display_name?: string; // API returns snake_case
+  bio?: string;
+  avatarUrl?: string;
+  avatar_url?: string; // API returns snake_case
+  location?: string;
+  created_at?: string; // API returns snake_case
+}
+
+interface UserStats {
+  bookmarks?: number;
+  likes?: number;
+  articles_read?: number;
+  member_since?: string;
+  total_reading_time?: number;
+}
+
 // Loader to fetch user profile data
 export async function loader({ params, request }: Route.LoaderArgs) {
   const username = params.username;
@@ -25,7 +44,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       throw new Error("User not found");
     }
 
-    const profile = await profileResponse.json();
+    const profile = await profileResponse.json() as UserProfile;
 
     // Fetch user stats
     const statsResponse = await fetch(
@@ -35,7 +54,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }
     );
 
-    const stats = statsResponse.ok ? await statsResponse.json() : null;
+    const stats = statsResponse.ok ? await statsResponse.json() as UserStats : null;
 
     // Check if viewing own profile
     let isOwnProfile = false;
@@ -48,8 +67,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       );
 
       if (sessionResponse.ok) {
-        const { user } = await sessionResponse.json();
-        isOwnProfile = user && user.username === username;
+        const { user } = await sessionResponse.json() as { user?: { username: string } };
+        isOwnProfile = !!(user && user.username === username);
       }
     }
 
@@ -66,6 +85,11 @@ export default function UserProfile({ loaderData }: Route.ComponentProps) {
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Guard: profile should always be defined (loader throws 404 otherwise)
+  if (!profile) {
+    return null;
+  }
+
   // Load articles based on active tab
   const loadArticles = async (tab: string) => {
     if (!token || !isOwnProfile) return;
@@ -80,7 +104,7 @@ export default function UserProfile({ loaderData }: Route.ComponentProps) {
       );
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as Record<string, any[]>;
         setArticles(data[tab] || data.history || []);
       }
     } catch (error) {
@@ -161,7 +185,7 @@ export default function UserProfile({ loaderData }: Route.ComponentProps) {
                 <Calendar className="w-4 h-4" />
                 <span>
                   Member since{" "}
-                  {new Date(stats?.member_since || profile.created_at).toLocaleDateString()}
+                  {new Date(stats?.member_since || profile.created_at || Date.now()).toLocaleDateString()}
                 </span>
               </div>
 

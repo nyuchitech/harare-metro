@@ -3,6 +3,13 @@ import type { Route } from "./+types/settings.profile";
 import { useState } from "react";
 import { User, AtSign, FileText, Image, ArrowLeft, Check, AlertCircle } from "lucide-react";
 
+interface Profile {
+  username: string;
+  displayName?: string;
+  bio?: string;
+  avatarUrl?: string;
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
   // Check if user is authenticated
   const cookies = request.headers.get("Cookie") || "";
@@ -28,7 +35,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       return redirect("/auth/login");
     }
 
-    const profile = await response.json();
+    const profile = await response.json() as Profile;
     return { profile, token };
   } catch (error) {
     console.error("Error fetching profile:", error);
@@ -72,11 +79,11 @@ export async function action({ request }: Route.ActionArgs) {
       );
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { username?: string };
         return { success: true, message: "Username updated successfully", newUsername: data.username };
       }
 
-      const error = await response.json();
+      const error = await response.json() as { error?: string };
       return { error: error.error || "Failed to update username" };
     }
 
@@ -105,7 +112,7 @@ export async function action({ request }: Route.ActionArgs) {
         return { success: true, message: "Profile updated successfully" };
       }
 
-      const error = await response.json();
+      const error = await response.json() as { error?: string };
       return { error: error.error || "Failed to update profile" };
     }
 
@@ -121,6 +128,11 @@ export default function ProfileSettings() {
   const actionData = useActionData<typeof action>();
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<"username" | "profile">("profile");
+
+  // Guard: profile should always be defined (loader redirects otherwise)
+  if (!profile) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">

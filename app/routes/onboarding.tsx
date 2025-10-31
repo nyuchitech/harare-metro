@@ -19,13 +19,13 @@ export async function loader({ request }: { request: Request }) {
   // Fetch categories from backend
   try {
     const response = await fetch("https://admin.hararemetro.co.zw/api/categories");
-    const data = await response.json();
+    const data = await response.json() as { categories?: Array<{ id: string; name: string; emoji?: string }> };
 
     return {
       categories: data.categories || [],
       authToken: tokenMatch[1]
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Failed to load categories:", error);
     return {
       categories: [],
@@ -62,7 +62,7 @@ export async function action({ request }: { request: Request }) {
     );
 
     if (!usernameResponse.ok) {
-      const error = await usernameResponse.json();
+      const error = await usernameResponse.json() as { error?: string };
       return { error: error.error || "Failed to update username" };
     }
 
@@ -137,7 +137,7 @@ export default function Onboarding() {
       const response = await fetch(
         `https://admin.hararemetro.co.zw/api/auth/check-username?username=${encodeURIComponent(value)}`
       );
-      const data = await response.json();
+      const data = await response.json() as { available?: boolean; error?: string };
 
       if (!data.available) {
         setUsernameError(data.error || "Username is already taken");
@@ -146,7 +146,7 @@ export default function Onboarding() {
 
       setUsernameError("");
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       setUsernameError("Error checking username");
       return false;
     } finally {
