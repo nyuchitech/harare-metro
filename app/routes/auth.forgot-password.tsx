@@ -1,5 +1,4 @@
 import { Form, Link, useActionData } from "react-router";
-import type { Route } from "./+types/auth.forgot-password";
 import { useState } from "react";
 import { Mail, Key } from "lucide-react";
 
@@ -8,7 +7,7 @@ export async function loader() {
   return null;
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const step = formData.get("step") as string;
 
@@ -57,8 +56,8 @@ export async function action({ request }: Route.ActionArgs) {
         });
       }
 
-      const error = await response.json();
-      return { error: error.error || "Invalid or expired code", step: "reset", email };
+      const errorData = await response.json() as { error?: string };
+      return { error: errorData.error || "Invalid or expired code", step: "reset", email };
     } catch (error) {
       return { error: "Network error. Please try again.", step: "reset" };
     }
@@ -68,7 +67,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function ForgotPassword() {
-  const actionData = useActionData<typeof action>();
+  const actionData = useActionData<{ error?: string; success?: string; step?: string; email?: string }>();
   const [loading, setLoading] = useState(false);
   const isResetStep = actionData?.step === "reset";
 
