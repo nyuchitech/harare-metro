@@ -1,7 +1,12 @@
-import { Form, Link, useActionData, useNavigate } from "react-router";
+import { Form, Link, useActionData, useNavigate, redirect } from "react-router";
 import type { Route } from "./+types/auth.login";
 import { useState } from "react";
 import { LogIn } from "lucide-react";
+
+export async function loader() {
+  // Simple loader to prevent 404 on data fetches
+  return null;
+}
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
