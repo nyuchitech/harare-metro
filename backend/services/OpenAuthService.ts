@@ -1,4 +1,5 @@
-import { createAuthHandler } from '@openauthjs/openauth'
+// OpenAuth library not needed - using simple D1 + KV auth
+// import { createAuthHandler } from '@openauthjs/openauth'
 import * as v from 'valibot'
 
 /**
@@ -51,38 +52,10 @@ export interface OpenAuthBindings {
 export class OpenAuthService {
   private db: D1Database
   private kv: KVNamespace
-  private authHandler: any
 
   constructor(bindings: OpenAuthBindings) {
     this.db = bindings.DB
     this.kv = bindings.AUTH_STORAGE
-    
-    // Initialize OpenAuth handler
-    this.authHandler = createAuthHandler({
-      providers: {
-        password: {
-          type: 'password',
-          sendVerificationCode: this.sendVerificationCode.bind(this),
-          verifyCode: this.verifyCode.bind(this)
-        }
-      },
-      storage: {
-        type: 'cloudflare-kv',
-        namespace: this.kv
-      },
-      theme: {
-        logo: 'https://hararemetro.co.zw/logo.png',
-        primary: '#00A651', // Zimbabwe green
-        background: '#FFFFFF'
-      }
-    })
-  }
-
-  /**
-   * Handle authentication requests
-   */
-  async handleAuth(request: Request): Promise<Response> {
-    return await this.authHandler(request)
   }
 
   /**
@@ -143,24 +116,53 @@ export class OpenAuthService {
       } else {
         // Create new user with default role 'creator'
         const userId = crypto.randomUUID()
+
+        // Generate default username from email if not provided
+        let username = metadata?.username
+        if (!username) {
+          // Extract email prefix and sanitize
+          username = email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
+
+          // Ensure uniqueness by adding random suffix if needed
+          let attempts = 0
+          let uniqueUsername = username
+          while (attempts < 10) {
+            const existing = await this.db
+              .prepare('SELECT id FROM users WHERE username = ?')
+              .bind(uniqueUsername)
+              .first()
+
+            if (!existing) break
+
+            // Use cryptographically secure random number
+            const randomArray = new Uint32Array(1)
+            crypto.getRandomValues(randomArray)
+            const randomSuffix = randomArray[0] % 10000
+            uniqueUsername = `${username}${randomSuffix}`
+            attempts++
+          }
+          username = uniqueUsername
+        }
+
         const result = await this.db
           .prepare(`
             INSERT INTO users (
-              id, email, role, status, email_verified, 
+              id, email, username, role, status, email_verified,
               login_count, analytics_consent, preferences
-            ) VALUES (?, ?, 'creator', 'active', TRUE, 1, TRUE, '{}')
+            ) VALUES (?, ?, ?, 'creator', 'active', TRUE, 1, TRUE, '{}')
             RETURNING *
           `)
-          .bind(userId, email)
+          .bind(userId, email, username)
           .first()
-        
+
         // Log user creation for audit
         await this.logAuditEvent('user_created', 'user', userId, null, {
           email,
+          username,
           role: 'creator',
           ip_address: metadata?.ip_address
         })
-        
+
         return result
       }
     } catch (error) {
@@ -187,6 +189,54 @@ export class OpenAuthService {
       .prepare('SELECT * FROM users WHERE email = ? AND status = "active"')
       .bind(email)
       .first()
+  }
+
+  /**
+   * Get user by username
+   */
+  async getUserByUsername(username: string): Promise<any> {
+    return await this.db
+      .prepare('SELECT * FROM users WHERE username = ? AND status = "active"')
+      .bind(username)
+      .first()
+  }
+
+  /**
+   * Update username (user can change their own username)
+   */
+  async updateUsername(userId: string, newUsername: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Validate username format (3-30 chars, alphanumeric + underscore/hyphen)
+      if (!newUsername || newUsername.length < 3 || newUsername.length > 30) {
+        return { success: false, error: 'Username must be 3-30 characters' }
+      }
+
+      if (!/^[a-zA-Z0-9_-]+$/.test(newUsername)) {
+        return { success: false, error: 'Username can only contain letters, numbers, underscores and hyphens' }
+      }
+
+      // Check if username is already taken
+      const existing = await this.getUserByUsername(newUsername)
+      if (existing && existing.id !== userId) {
+        return { success: false, error: 'Username is already taken' }
+      }
+
+      // Update username
+      await this.db
+        .prepare('UPDATE users SET username = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+        .bind(newUsername, userId)
+        .run()
+
+      // Log username change for audit
+      await this.logAuditEvent('username_updated', 'user', userId, userId, {
+        new_username: newUsername
+      })
+
+      return { success: true }
+    } catch (error: any) {
+      console.error('Error updating username:', error)
+      return { success: false, error: 'Failed to update username' }
+    }
   }
 
   /**

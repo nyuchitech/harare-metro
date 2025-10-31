@@ -305,6 +305,59 @@ Key tables:
 
 **No Supabase** - All authentication and user data in D1.
 
+### Authentication & User Management
+
+**Current State (Transitioning):**
+- **Backend**: Ready for OpenAuth.js (Cloudflare-native authentication)
+  - `OpenAuthService.ts` implemented in `backend/services/`
+  - Auth tables created in D1 (`users`, `user_sessions`, `user_bookmarks`, `user_likes`, etc.)
+  - Supports roles: `creator`, `business-creator`, `moderator`, `admin`
+  - Uses KV namespace `AUTH_STORAGE` for session management
+
+- **Frontend**: Currently using legacy Supabase auth (TO BE MIGRATED)
+  - `AuthContext.tsx` imports from `lib/supabase.client`
+  - `UserProfile.tsx` uses Supabase for user data
+  - **Migration needed**: Update to use OpenAuth backend endpoints
+
+**Auth Tables in D1:**
+```sql
+-- Core auth tables
+users                    -- User accounts with role-based access
+user_sessions            -- Session management with device tracking
+user_bookmarks           -- Article bookmarks
+user_likes               -- Article likes
+user_reading_history     -- Reading engagement metrics
+user_preferences         -- User settings
+analytics_events         -- User interaction tracking
+audit_log               -- Security and compliance audit trail
+```
+
+**User Roles & Permissions:**
+- `creator` - Default role, can create and manage own content
+- `business-creator` - Business/organization accounts with enhanced features
+- `moderator` - Can moderate content and users
+- `admin` - Full platform access and management
+
+**Super Admin Account:**
+- Email: bryan@nyuchi.com
+- Role: admin
+- Status: active
+- Created: 2025-10-31
+
+**Authentication Flow (Target with OpenAuth):**
+1. User registers/logs in via backend OpenAuth endpoints
+2. Backend validates credentials and creates session in D1 + KV
+3. Frontend receives session token
+4. Subsequent requests include session token for authentication
+5. Backend validates token against KV and D1 user data
+
+**Migration TODO:**
+- [ ] Update `AuthContext.tsx` to use OpenAuth backend endpoints instead of Supabase
+- [ ] Update `UserProfile.tsx` to fetch from D1/OpenAuth
+- [ ] Remove Supabase client dependencies from frontend
+- [ ] Update login/signup flows to use backend auth API
+- [ ] Test full authentication flow end-to-end
+
 ### Cloudflare Configuration
 
 **Frontend Worker (wrangler.jsonc):**
@@ -625,8 +678,12 @@ try {
    - Backend: `DB` (full access for all operations)
 4. **Services Location**: All business logic in `backend/services/`
 5. **Cron Implementation**: Frontend calls backend via HTTP POST for RSS refresh
-6. **Authentication**: User authentication and session management in backend worker
-7. **No Supabase**: All user data in D1 (hararemetro_articles)
+6. **Authentication**:
+   - Backend ready for OpenAuth.js (D1 + KV session management)
+   - Frontend currently using Supabase (migration needed)
+   - Super admin: bryan@nyuchi.com (role: admin)
+   - Auth tables in D1: users, user_sessions, user_bookmarks, user_likes
+7. **No Supabase (Target)**: Migrating all auth from Supabase to OpenAuth.js + D1
 8. **Typography**: Georgia for headings, Inter for body - NO EXCEPTIONS
 9. **Colors**: Zimbabwe flag palette only - maintain consistency
 10. **Mobile**: Mobile-first design with TikTok-like experience

@@ -1,13 +1,14 @@
-// Custom backend types - no Supabase dependencies
+// Custom backend types - matches our D1 + OpenAuth implementation
 export interface User {
   id: string;
-  email?: string;
-  created_at: string;
+  email: string;
+  display_name?: string;
+  role?: string;
+  created_at?: string;
   last_sign_in_at?: string;
 }
 
 export interface Session {
-  user: User;
   access_token: string;
 }
 

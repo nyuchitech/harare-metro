@@ -543,16 +543,19 @@ export class RSSFeedService {
 
       // 1. Check media:content (high quality, most common)
       if (item['media:content']?.['@_url']) {
+        console.log(`[IMAGE-EXTRACT] Found media:content URL: ${item['media:content']['@_url']}`);
         imageCandidates.push(item['media:content']['@_url']);
       }
 
       // 2. Check media:thumbnail (common in RSS 2.0)
       if (item['media:thumbnail']?.['@_url']) {
+        console.log(`[IMAGE-EXTRACT] Found media:thumbnail URL: ${item['media:thumbnail']['@_url']}`);
         imageCandidates.push(item['media:thumbnail']['@_url']);
       }
 
       // 3. Check enclosure (podcast/media RSS)
       if (item.enclosure?.['@_url'] && item.enclosure?.['@_type']?.includes('image')) {
+        console.log(`[IMAGE-EXTRACT] Found enclosure URL: ${item.enclosure['@_url']}`);
         imageCandidates.push(item.enclosure['@_url']);
       }
 
@@ -561,6 +564,7 @@ export class RSSFeedService {
         const contentEncoded = this.extractText(item['content:encoded']);
         const imgMatch = contentEncoded.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
         if (imgMatch) {
+          console.log(`[IMAGE-EXTRACT] Found img in content:encoded: ${imgMatch[1]}`);
           imageCandidates.push(imgMatch[1]);
         }
       }
@@ -570,6 +574,7 @@ export class RSSFeedService {
       if (description) {
         const imgMatch = description.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
         if (imgMatch) {
+          console.log(`[IMAGE-EXTRACT] Found img in description: ${imgMatch[1]}`);
           imageCandidates.push(imgMatch[1]);
         }
       }
@@ -577,8 +582,10 @@ export class RSSFeedService {
       // 6. Try to extract og:image from article URL (premium feature like Feedly)
       if (fallbackUrl && this.shouldFetchOgImage(item)) {
         try {
+          console.log(`[IMAGE-EXTRACT] Attempting to fetch og:image from ${fallbackUrl}`);
           const ogImage = await this.extractOgImage(fallbackUrl);
           if (ogImage) {
+            console.log(`[IMAGE-EXTRACT] Found og:image: ${ogImage}`);
             imageCandidates.push(ogImage);
           }
         } catch (error) {
@@ -586,20 +593,34 @@ export class RSSFeedService {
         }
       }
 
+      console.log(`[IMAGE-EXTRACT] Total candidates found: ${imageCandidates.length}`, imageCandidates);
+
       // Filter and validate image candidates
       for (const candidate of imageCandidates) {
         if (candidate && this.isImageUrl(candidate)) {
+          console.log(`[IMAGE-EXTRACT] Validating candidate: ${candidate}`);
           // Validate that it's an accessible URL
           const validatedUrl = this.normalizeImageUrl(candidate, fallbackUrl);
-          if (validatedUrl && await this.isImageAccessible(validatedUrl)) {
-            return validatedUrl;
+          console.log(`[IMAGE-EXTRACT] Normalized URL: ${validatedUrl}`);
+
+          if (validatedUrl) {
+            const isAccessible = await this.isImageAccessible(validatedUrl);
+            console.log(`[IMAGE-EXTRACT] Accessibility check for ${validatedUrl}: ${isAccessible}`);
+
+            if (isAccessible) {
+              console.log(`[IMAGE-EXTRACT] ✅ Selected image: ${validatedUrl}`);
+              return validatedUrl;
+            }
           }
+        } else {
+          console.log(`[IMAGE-EXTRACT] Skipped candidate (not image URL): ${candidate}`);
         }
       }
 
+      console.warn(`[IMAGE-EXTRACT] ❌ No valid image found for article`);
       return null;
     } catch (error) {
-      console.warn(`Error extracting image:`, error);
+      console.error(`[IMAGE-EXTRACT] Error extracting image:`, error);
       return null;
     }
   }
@@ -690,6 +711,7 @@ export class RSSFeedService {
 
   /**
    * Check if image URL is accessible
+   * UPDATED: Less strict - fallback to URL validation if HEAD fails
    */
   private async isImageAccessible(imageUrl: string): Promise<boolean> {
     try {
@@ -704,14 +726,26 @@ export class RSSFeedService {
       // Check if response is successful and content-type is image
       if (response.ok) {
         const contentType = response.headers.get('content-type') || '';
-        return contentType.startsWith('image/') || this.isImageUrl(imageUrl);
+        const isValid = contentType.startsWith('image/') || this.isImageUrl(imageUrl);
+        console.log(`[IMAGE-ACCESSIBLE] HEAD request succeeded. Content-Type: ${contentType}, Valid: ${isValid}`);
+        return isValid;
       }
 
-      return false;
-    } catch (error) {
-      // If HEAD request fails, assume image is not accessible
-      console.warn(`Image not accessible: ${imageUrl}`);
-      return false;
+      // If HEAD failed but status is 405 (Method Not Allowed), the server might not support HEAD
+      // Fall back to URL validation
+      if (response.status === 405) {
+        console.log(`[IMAGE-ACCESSIBLE] HEAD not allowed (405), falling back to URL validation`);
+        return this.isImageUrl(imageUrl);
+      }
+
+      console.warn(`[IMAGE-ACCESSIBLE] HEAD request failed with status ${response.status}`);
+      // Still try URL validation as fallback
+      return this.isImageUrl(imageUrl);
+    } catch (error: any) {
+      // If HEAD request fails (timeout, network error), fall back to URL validation
+      // Many servers don't respond well to HEAD requests
+      console.warn(`[IMAGE-ACCESSIBLE] HEAD request error for ${imageUrl}: ${error.message}. Falling back to URL validation.`);
+      return this.isImageUrl(imageUrl);
     }
   }
 

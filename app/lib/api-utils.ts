@@ -44,19 +44,10 @@ export function buildImageUrl(request: Request, imageUrl: string): string {
 
 /**
  * Build image proxy URL for client-side use
- * Prioritizes Cloudflare Images URLs, falls back to proxy
+ * Since all images are from trusted domains, use them directly
  */
 export function buildClientImageUrl(imageUrl: string): string {
-  // If image is already from Cloudflare Images, use it directly
-  if (imageUrl && imageUrl.includes('imagedelivery.net')) {
-    return imageUrl;
-  }
-  
-  // In development, use backend dev server
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return `http://localhost:8787/api/image?url=${encodeURIComponent(imageUrl)}`;
-  }
-  
-  // In production, use dedicated backend worker
-  return `https://admin.hararemetro.co.zw/api/image?url=${encodeURIComponent(imageUrl)}`;
+  // Return image URL directly - all images are from trusted domains
+  // (validated by backend's TRUSTED_IMAGE_DOMAINS list)
+  return imageUrl || '';
 }

@@ -35,7 +35,7 @@ export class D1Service {
     limit?: number;
     offset?: number;
   }): Promise<any[]>;
-  getArticleBySourceSlug(sourceId: number, slug: string): Promise<any | null>;
+  getArticleBySourceSlug(sourceId: string, slug: string): Promise<any | null>;
   getArticleById(articleId: number | string, options?: any): Promise<any | null>;
 
   // Cache

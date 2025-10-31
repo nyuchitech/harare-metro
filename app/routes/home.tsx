@@ -1,11 +1,11 @@
 import type { Route } from "./+types/home";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { AuthModal } from "../components/auth/AuthModal";
 import { UserProfile } from "../components/auth/UserProfile";
 import HeaderNavigation from "../components/HeaderNavigation";
 import MobileNavigation from "../components/MobileNavigation";
-import { Heart, Bookmark, ExternalLink } from "lucide-react";
+import { Heart, Bookmark, ExternalLink, Grid3x3, List, Loader2, Hash } from "lucide-react";
 import { buildApiUrl, buildClientImageUrl } from "../lib/api-utils";
 
 export function meta({}: Route.MetaArgs) {
@@ -23,28 +23,28 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const category = url.searchParams.get('category') || 'all';
   const limit = url.searchParams.get('limit') || '24';
-  
+
   try {
     // Fetch articles from backend API
     const apiUrl = buildApiUrl(request, '/api/feeds', new URLSearchParams({ category, limit }));
     const response = await fetch(apiUrl);
-    
+
     if (!response.ok) {
       throw new Error(`API responded with ${response.status}: ${response.statusText}`);
     }
-    
+
     const data = await response.json() as { articles?: any[]; total?: number; error?: string };
-    
+
     // Fetch categories from backend API
     const categoriesUrl = buildApiUrl(request, '/api/categories');
     const categoriesResponse = await fetch(categoriesUrl);
-    
+
     if (!categoriesResponse.ok) {
       throw new Error(`Categories API responded with ${categoriesResponse.status}: ${categoriesResponse.statusText}`);
     }
-    
+
     const categoriesData = await categoriesResponse.json() as { categories?: any[]; error?: string };
-    
+
     return {
       articles: data.articles || [],
       categories: categoriesData.categories || [],
@@ -64,18 +64,87 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   }
 }
 
+type ViewMode = 'grid' | 'list';
+
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { articles, categories, selectedCategory, total, error } = loaderData;
+  const { articles: initialArticles, categories, selectedCategory, total, error } = loaderData;
   const { user, loading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
+  // Infinite scroll state
+  const [displayedArticles, setDisplayedArticles] = useState(initialArticles);
+  const [hasMore, setHasMore] = useState(initialArticles.length < total);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [offset, setOffset] = useState(initialArticles.length);
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  // Load more articles
+  const loadMoreArticles = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const params = new URLSearchParams({
+        category: selectedCategory,
+        limit: '24',
+        offset: offset.toString()
+      });
+
+      const response = await fetch(`/api/feeds?${params}`);
+      const data = await response.json() as { articles?: any[]; total?: number };
+
+      if (data.articles && data.articles.length > 0) {
+        setDisplayedArticles(prev => [...prev, ...(data.articles || [])]);
+        setOffset(prev => prev + (data.articles?.length || 0));
+        setHasMore(offset + (data.articles?.length || 0) < total);
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Failed to load more articles:', error);
+      setHasMore(false);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [selectedCategory, offset, total, hasMore, isLoadingMore]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          loadMoreArticles();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [loadMoreArticles, hasMore, isLoadingMore]);
+
+  // Reset when category changes
+  useEffect(() => {
+    setDisplayedArticles(initialArticles);
+    setOffset(initialArticles.length);
+    setHasMore(initialArticles.length < total);
+  }, [initialArticles, total]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Zimbabwe Flag Strip */}
       <div className="zimbabwe-flag-strip" />
-      
+
       {/* Header Navigation */}
       <HeaderNavigation
         currentView="/"
@@ -88,15 +157,42 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-6 pl-6 sm:pl-10 lg:pl-12">
-        {/* Stats Bar */}
+        {/* Stats Bar with View Toggle */}
         <div className="mb-6 flex justify-between items-center">
           <div>
             <h1 className="font-serif text-2xl font-bold">Latest News</h1>
             <p className="text-muted-foreground text-sm">Zimbabwe's most trusted sources</p>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-zw-green font-medium">{total} Articles</div>
-            <div className="text-xs text-muted-foreground">Live Updates</div>
+          <div className="flex items-center gap-4">
+            {/* View Toggle */}
+            <div className="flex items-center gap-2 bg-card border border-border rounded-full p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-full transition-all ${
+                  viewMode === 'grid'
+                    ? 'bg-zw-green text-zw-white'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label="Grid view"
+              >
+                <Grid3x3 className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-full transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-zw-green text-zw-white'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label="List view"
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="text-right hidden sm:block">
+              <div className="text-sm text-zw-green font-medium">{total} Articles</div>
+              <div className="text-xs text-muted-foreground">Live Updates</div>
+            </div>
           </div>
         </div>
 
@@ -136,7 +232,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                   { bg: 'bg-mineral-coal', border: 'border-mineral-coal' }
                 ]
                 const { bg, border } = mineralColorPairs[index % mineralColorPairs.length]
-                
+
                 return (
                   <a
                     key={category.id}
@@ -168,7 +264,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         )}
 
         {/* Empty State */}
-        {articles.length === 0 && !error && (
+        {displayedArticles.length === 0 && !error && (
           <div className="text-center py-16">
             <div className="bg-card border border-border rounded-xl p-12 max-w-md mx-auto">
               <div className="text-6xl mb-4">📰</div>
@@ -183,83 +279,182 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </div>
         )}
 
-        {/* Articles Masonry Grid */}
-        {articles.length > 0 && (
-          <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-3 sm:gap-4 space-y-0">
-            {articles.map((article, index) => (
-              <article 
-                key={article.id || index}
-                className="bg-card border border-border rounded-xl overflow-hidden hover:border-border/80 transition-all duration-200 hover:shadow-lg break-inside-avoid mb-6"
-              >
-                {article.image_url && (
-                  <div className="overflow-hidden">
-                    <img 
-                      src={buildClientImageUrl(article.image_url)} 
-                      alt={article.title}
-                      className="w-full h-auto object-cover"
-                    />
-                  </div>
-                )}
-                
-                <div className="p-4">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <span className="text-xs px-2 py-1 bg-zw-green/20 text-zw-green rounded-full">
-                      {article.source || 'Unknown'}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {article.published_at ? new Date(article.published_at).toISOString().split('T')[0] : 'Today'}
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-serif font-bold text-lg leading-tight mb-3">
-                    {article.title}
-                  </h3>
-                  
-                  {article.description && (
-                    <p className="text-muted-foreground text-sm mb-4">
-                      {article.description}
-                    </p>
-                  )}
-                  
-                  <div className="flex flex-col space-y-3">
-                    <div className="flex items-center justify-between">
-                      <a 
-                        href={`/${article.source_id}/${article.slug}`}
-                        className="inline-flex items-center space-x-1 text-zw-green text-sm font-medium hover:text-zw-green/80 transition-colors"
-                      >
-                        <span>Read More</span>
-                      </a>
-                      
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          className="p-2 rounded-full hover:bg-muted transition-colors touch-target"
-                          aria-label="Like article"
-                        >
-                          <Heart className="h-4 w-4 text-muted-foreground hover:text-zw-red" />
-                        </button>
-                        <button 
-                          className="p-2 rounded-full hover:bg-muted transition-colors touch-target"
-                          aria-label="Bookmark article"
-                        >
-                          <Bookmark className="h-4 w-4 text-muted-foreground hover:text-zw-yellow" />
-                        </button>
+        {/* Articles - Grid or List View */}
+        {displayedArticles.length > 0 && (
+          <>
+            {viewMode === 'grid' ? (
+              // Masonry Grid View
+              <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-3 sm:gap-4 space-y-0">
+                {displayedArticles.map((article, index) => (
+                  <a
+                    key={article.id || index}
+                    href={`/${article.source_id}/${article.slug}`}
+                    className="block bg-card border border-border rounded-xl overflow-hidden hover:border-border/80 transition-all duration-200 hover:shadow-lg break-inside-avoid mb-6"
+                  >
+                    {article.image_url && (
+                      <div className="overflow-hidden">
+                        <img
+                          src={buildClientImageUrl(article.image_url)}
+                          alt={article.title}
+                          className="w-full h-auto object-cover hover:scale-105 transition-transform duration-200"
+                        />
+                      </div>
+                    )}
+
+                    <div className="p-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <span className="text-xs px-2 py-1 bg-zw-green/20 text-zw-green rounded-full">
+                          {article.source || 'Unknown'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {article.published_at ? new Date(article.published_at).toISOString().split('T')[0] : 'Today'}
+                        </span>
+                      </div>
+
+                      <h3 className="font-serif font-bold text-lg leading-tight mb-3">
+                        {article.title}
+                      </h3>
+
+                      {article.description && (
+                        <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
+                          {article.description}
+                        </p>
+                      )}
+
+                      {/* Keywords as hashtags */}
+                      {article.keywords && article.keywords.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {article.keywords.slice(0, 5).map((keyword: any) => (
+                            <span
+                              key={keyword.id}
+                              className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded-full hover:bg-zw-green/20 hover:text-zw-green transition-colors"
+                            >
+                              #{keyword.slug}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-zw-green text-sm font-medium">Read More</span>
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                            className="p-2 rounded-full hover:bg-muted transition-colors touch-target"
+                            aria-label="Like article"
+                          >
+                            <Heart className="h-4 w-4 text-muted-foreground hover:text-zw-red" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                            className="p-2 rounded-full hover:bg-muted transition-colors touch-target"
+                            aria-label="Bookmark article"
+                          >
+                            <Bookmark className="h-4 w-4 text-muted-foreground hover:text-zw-yellow" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    
-                    <a 
-                      href={article.original_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1 text-muted-foreground text-xs hover:text-foreground transition-colors"
-                    >
-                      <span>Original Source</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              // List View
+              <div className="space-y-4">
+                {displayedArticles.map((article, index) => (
+                  <a
+                    key={article.id || index}
+                    href={`/${article.source_id}/${article.slug}`}
+                    className="block bg-card border border-border rounded-xl overflow-hidden hover:border-border/80 transition-all duration-200 hover:shadow-lg"
+                  >
+                    <div className="flex flex-col sm:flex-row">
+                      {article.image_url && (
+                        <div className="w-full sm:w-48 h-48 sm:h-auto flex-shrink-0 overflow-hidden">
+                          <img
+                            src={buildClientImageUrl(article.image_url)}
+                            alt={article.title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                          />
+                        </div>
+                      )}
+
+                      <div className="p-4 flex-1">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <span className="text-xs px-2 py-1 bg-zw-green/20 text-zw-green rounded-full">
+                            {article.source || 'Unknown'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {article.published_at ? new Date(article.published_at).toISOString().split('T')[0] : 'Today'}
+                          </span>
+                        </div>
+
+                        <h3 className="font-serif font-bold text-xl leading-tight mb-3">
+                          {article.title}
+                        </h3>
+
+                        {article.description && (
+                          <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                            {article.description}
+                          </p>
+                        )}
+
+                        {/* Keywords as hashtags */}
+                        {article.keywords && article.keywords.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {article.keywords.slice(0, 5).map((keyword: any) => (
+                              <span
+                                key={keyword.id}
+                                className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded-full hover:bg-zw-green/20 hover:text-zw-green transition-colors"
+                              >
+                                #{keyword.slug}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-zw-green text-sm font-medium">Read More</span>
+
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                              className="p-2 rounded-full hover:bg-muted transition-colors touch-target"
+                              aria-label="Like article"
+                            >
+                              <Heart className="h-4 w-4 text-muted-foreground hover:text-zw-red" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                              className="p-2 rounded-full hover:bg-muted transition-colors touch-target"
+                              aria-label="Bookmark article"
+                            >
+                              <Bookmark className="h-4 w-4 text-muted-foreground hover:text-zw-yellow" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {/* Infinite Scroll Trigger */}
+            <div ref={observerTarget} className="py-8 flex justify-center">
+              {isLoadingMore && (
+                <div className="flex items-center space-x-2 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Loading more articles...</span>
                 </div>
-              </article>
-            ))}
-          </div>
+              )}
+              {!hasMore && displayedArticles.length > 0 && (
+                <div className="text-muted-foreground text-sm">
+                  You've reached the end of the feed
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* Footer */}
@@ -297,6 +492,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         isOpen={showUserProfile}
         onClose={() => setShowUserProfile(false)}
       />
+
     </div>
   );
 }
