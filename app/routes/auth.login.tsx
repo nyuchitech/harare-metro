@@ -1,5 +1,4 @@
 import { Form, Link, useActionData, useNavigate, redirect } from "react-router";
-import type { Route } from "./+types/auth.login";
 import { useState } from "react";
 import { LogIn } from "lucide-react";
 
@@ -8,7 +7,7 @@ export async function loader() {
   return null;
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -24,18 +23,18 @@ export async function action({ request }: Route.ActionArgs) {
     );
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json() as { error?: string };
       return { error: error.error || "Login failed" };
     }
 
-    const { session, user } = await response.json();
+    const data = await response.json() as { session: { access_token: string }; user: any };
 
     // Set cookie and redirect
     return new Response(null, {
       status: 302,
       headers: {
         Location: "/",
-        "Set-Cookie": `auth_token=${session.access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`,
+        "Set-Cookie": `auth_token=${data.session.access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`,
       },
     });
   } catch (error) {
@@ -44,7 +43,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Login() {
-  const actionData = useActionData<typeof action>();
+  const actionData = useActionData<{ error?: string }>();
   const [loading, setLoading] = useState(false);
 
   return (

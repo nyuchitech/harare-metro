@@ -1,9 +1,13 @@
-import { Form, useActionData, useNavigate, redirect } from "react-router";
-import type { Route } from "./+types/onboarding";
+import { Form, useActionData, useNavigate, redirect, useLoaderData } from "react-router";
 import { useState, useEffect } from "react";
 import { Check, ArrowRight, User, Sparkles } from "lucide-react";
 
-export async function loader({ request }: Route.LoaderArgs) {
+interface LoaderData {
+  categories: Array<{ id: string; name: string; emoji?: string }>;
+  authToken: string;
+}
+
+export async function loader({ request }: { request: Request }) {
   // Check if user is authenticated
   const cookies = request.headers.get("Cookie") || "";
   const tokenMatch = cookies.match(/auth_token=([^;]+)/);
@@ -30,7 +34,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const username = formData.get("username") as string;
   const selectedCategories = formData.get("categories") as string;
@@ -93,9 +97,10 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function Onboarding({ loaderData }: Route.ComponentProps) {
+export default function Onboarding() {
+  const loaderData = useLoaderData<LoaderData>();
   const { categories, authToken } = loaderData;
-  const actionData = useActionData<typeof action>();
+  const actionData = useActionData<{ error?: string }>();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);

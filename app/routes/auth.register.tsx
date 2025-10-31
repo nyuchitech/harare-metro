@@ -1,5 +1,4 @@
 import { Form, Link, useActionData } from "react-router";
-import type { Route } from "./+types/auth.register";
 import { useState } from "react";
 import { UserPlus } from "lucide-react";
 
@@ -8,7 +7,7 @@ export async function loader() {
   return null;
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -26,7 +25,7 @@ export async function action({ request }: Route.ActionArgs) {
     );
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json() as { error?: string };
       return { error: error.error || "Registration failed" };
     }
 
@@ -41,12 +40,12 @@ export async function action({ request }: Route.ActionArgs) {
     );
 
     if (loginResponse.ok) {
-      const { session } = await loginResponse.json();
+      const data = await loginResponse.json() as { session: { access_token: string } };
       return new Response(null, {
         status: 302,
         headers: {
           Location: "/onboarding",
-          "Set-Cookie": `auth_token=${session.access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`,
+          "Set-Cookie": `auth_token=${data.session.access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`,
         },
       });
     }
@@ -62,7 +61,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Register() {
-  const actionData = useActionData<typeof action>();
+  const actionData = useActionData<{ error?: string }>();
   const [loading, setLoading] = useState(false);
 
   return (
