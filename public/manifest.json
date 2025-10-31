@@ -51,7 +51,7 @@
       "url": "/?category=politics",
       "icons": [
         {
-          "src": "/favicon-192x192.png",
+          "src": "/android-chrome-192x192.png",
           "sizes": "192x192"
         }
       ]
@@ -63,7 +63,7 @@
       "url": "/?category=economy",
       "icons": [
         {
-          "src": "/favicon-192x192.png",
+          "src": "/android-chrome-192x192.png",
           "sizes": "192x192"
         }
       ]
@@ -75,7 +75,7 @@
       "url": "/?category=sports",
       "icons": [
         {
-          "src": "/favicon-192x192.png",
+          "src": "/android-chrome-192x192.png",
           "sizes": "192x192"
         }
       ]
@@ -87,7 +87,7 @@
       "url": "/?category=harare",
       "icons": [
         {
-          "src": "/favicon-192x192.png",
+          "src": "/android-chrome-192x192.png",
           "sizes": "192x192"
         }
       ]

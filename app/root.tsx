@@ -68,10 +68,10 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? "404 - Page Not Found" : `${error.status} - Error`;
     details =
       error.status === 404
-        ? "The requested page could not be found."
+        ? "The page you're looking for doesn't exist or has been moved."
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
@@ -79,28 +79,64 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white">
+    <div className="min-h-screen flex items-center justify-center bg-black text-white font-sans">
+      {/* Zimbabwe Flag Strip */}
+      <div className="fixed top-0 left-0 w-2 h-screen z-50 bg-gradient-to-b from-[hsl(var(--zw-green))] via-[hsl(var(--zw-yellow))] via-40% via-[hsl(var(--zw-red))] via-60% via-[hsl(var(--zw-black))] to-[hsl(var(--zw-white))]" />
+
       <div className="text-center p-8 max-w-md">
-        <h1 className="text-2xl font-bold text-red-500 mb-4 font-serif">
-          {message}
-        </h1>
-        <p className="text-gray-400 mb-6">
-          {details}
-        </p>
-        {stack && (
-          <pre className="w-full p-4 overflow-x-auto text-left bg-gray-900 rounded text-xs text-gray-300 mb-6">
-            <code>{stack}</code>
-          </pre>
-        )}
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
-        >
-          Refresh Page
-        </button>
-        
-        <div className="mt-8 text-sm text-gray-500">
-          <p>Harare Metro - Zimbabwe's Premier News Platform</p>
+        {/* Logo */}
+        <div className="mb-8">
+          <h1 className="text-5xl font-serif font-bold mb-2">
+            Harare <span className="text-[hsl(var(--zw-green))]">Metro</span>
+          </h1>
+          <p className="text-gray-500 text-sm">Zimbabwe's Premier News Platform</p>
+        </div>
+
+        {/* Error Message */}
+        <div className="bg-gray-900 rounded-2xl p-8 mb-6">
+          <h2 className="text-3xl font-serif font-bold text-[hsl(var(--zw-red))] mb-4">
+            {message}
+          </h2>
+          <p className="text-gray-400 mb-6 leading-relaxed">
+            {details}
+          </p>
+          {stack && (
+            <pre className="w-full p-4 overflow-x-auto text-left bg-black rounded-xl text-xs text-gray-300 mb-6 border border-gray-800">
+              <code>{stack}</code>
+            </pre>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3">
+            <a
+              href="/"
+              className="px-6 py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 text-white font-semibold rounded-xl transition-colors"
+            >
+              Go to Homepage
+            </a>
+            <button
+              onClick={() => window.history.back()}
+              className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Links */}
+        <div className="text-sm text-gray-500">
+          <p className="mb-2">Need help?</p>
+          <div className="flex justify-center gap-4">
+            <a href="/" className="hover:text-[hsl(var(--zw-green))] transition-colors">
+              Home
+            </a>
+            <a href="/search" className="hover:text-[hsl(var(--zw-green))] transition-colors">
+              Search
+            </a>
+            <a href="/bytes" className="hover:text-[hsl(var(--zw-green))] transition-colors">
+              Bytes
+            </a>
+          </div>
         </div>
       </div>
     </div>

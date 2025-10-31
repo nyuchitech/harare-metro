@@ -63,15 +63,25 @@ app.get("/api/feeds", async (c) => {
       category: category === 'all' ? null : category
     });
     
+    // Get total count (all articles)
     // @ts-ignore - D1Service method signature
     const total = await d1Service.getArticleCount({
       category_id: category === 'all' ? null : category,
       source_id: source
     });
 
+    // Get today's count for display
+    // @ts-ignore - D1Service method signature
+    const todayCount = await d1Service.getArticleCount({
+      category_id: category === 'all' ? null : category,
+      source_id: source,
+      today: true
+    });
+
     return c.json({
       articles,
       total,
+      todayCount,
       limit,
       offset,
       hasMore: offset + limit < total

@@ -7,6 +7,13 @@ export function getAdminHTML(): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Harare Metro Admin</title>
 
+    <!-- Favicons -->
+    <link rel="icon" href="https://www.hararemetro.co.zw/favicon.ico" sizes="any">
+    <link rel="icon" href="https://www.hararemetro.co.zw/favicon.png" type="image/png">
+    <link rel="icon" href="https://www.hararemetro.co.zw/favicon-16x16.png" sizes="16x16" type="image/png">
+    <link rel="icon" href="https://www.hararemetro.co.zw/favicon-32x32.png" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="https://www.hararemetro.co.zw/apple-touch-icon.png">
+
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
