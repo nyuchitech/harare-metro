@@ -102,6 +102,8 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
   const [username, setUsername] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
+  const [checkingUsername, setCheckingUsername] = useState(false);
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories((prev) =>
@@ -111,14 +113,72 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
     );
   };
 
+  // Check username availability as user types
+  const checkUsername = async (value: string) => {
+    if (!value || value.length < 3) {
+      setUsernameError("Username must be at least 3 characters");
+      return false;
+    }
+
+    // Validate format
+    const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+    if (!usernameRegex.test(value)) {
+      setUsernameError("Only letters, numbers, and underscores allowed");
+      return false;
+    }
+
+    setCheckingUsername(true);
+    try {
+      const response = await fetch(
+        `https://admin.hararemetro.co.zw/api/auth/check-username?username=${encodeURIComponent(value)}`
+      );
+      const data = await response.json();
+
+      if (!data.available) {
+        setUsernameError(data.error || "Username is already taken");
+        return false;
+      }
+
+      setUsernameError("");
+      return true;
+    } catch (error) {
+      setUsernameError("Error checking username");
+      return false;
+    } finally {
+      setCheckingUsername(false);
+    }
+  };
+
+  const handleUsernameChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsername(value);
+
+    // Debounce the check
+    if (value.length >= 3) {
+      setTimeout(() => {
+        if (value === username) {
+          checkUsername(value);
+        }
+      }, 500);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (step === 1) {
       // Validate username
       if (!username || username.length < 3) {
+        setUsernameError("Username must be at least 3 characters");
         return;
       }
+
+      // Final check before proceeding
+      const isAvailable = await checkUsername(username);
+      if (!isAvailable) {
+        return;
+      }
+
       setStep(2);
     } else {
       // Validate category selection
@@ -177,30 +237,54 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
                 <label htmlFor="username" className="block text-sm font-semibold mb-2">
                   Username
                 </label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  minLength={3}
-                  maxLength={30}
-                  pattern="^[a-zA-Z0-9_]+$"
-                  placeholder="johndoe"
-                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Letters, numbers, and underscores only. Minimum 3 characters.
-                </p>
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value={username}
+                    onChange={handleUsernameChange}
+                    required
+                    minLength={3}
+                    maxLength={30}
+                    pattern="^[a-zA-Z0-9_]+$"
+                    placeholder="johndoe"
+                    className={`w-full px-4 py-3 bg-black border rounded-xl focus:outline-none focus:ring-2 transition-colors ${
+                      usernameError
+                        ? 'border-[hsl(var(--zw-red))] focus:ring-[hsl(var(--zw-red))]/20'
+                        : username.length >= 3 && !checkingUsername
+                        ? 'border-[hsl(var(--zw-green))] focus:ring-[hsl(var(--zw-green))]/20'
+                        : 'border-gray-700 focus:border-[hsl(var(--zw-green))] focus:ring-[hsl(var(--zw-green))]/20'
+                    }`}
+                  />
+                  {checkingUsername && (
+                    <div className="absolute right-3 top-3">
+                      <div className="w-5 h-5 border-2 border-[hsl(var(--zw-green))] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                  {!checkingUsername && username.length >= 3 && !usernameError && (
+                    <div className="absolute right-3 top-3">
+                      <Check className="w-5 h-5 text-[hsl(var(--zw-green))]" />
+                    </div>
+                  )}
+                </div>
+                {usernameError ? (
+                  <p className="text-xs text-[hsl(var(--zw-red))] mt-2">
+                    {usernameError}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Letters, numbers, and underscores only. Minimum 3 characters.
+                  </p>
+                )}
               </div>
 
               <button
                 type="submit"
-                disabled={!username || username.length < 3}
+                disabled={!username || username.length < 3 || !!usernameError || checkingUsername}
                 className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Continue
+                {checkingUsername ? 'Checking...' : 'Continue'}
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>

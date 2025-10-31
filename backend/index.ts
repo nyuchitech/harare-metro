@@ -2547,6 +2547,130 @@ app.post("/api/auth/logout", async (c) => {
   }
 });
 
+// Update user profile (including username during onboarding)
+app.patch("/api/user/me/profile", async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const token = authHeader.substring(7);
+    const { username, displayName, bio, avatarUrl } = await c.req.json();
+
+    // Get user ID from session
+    const sessionResult = await c.env.DB.prepare(`
+      SELECT user_id FROM user_sessions WHERE token_hash = ? AND expires_at > datetime('now')
+    `).bind(token).first() as any;
+
+    if (!sessionResult) {
+      return c.json({ error: 'Invalid or expired token' }, 401);
+    }
+
+    const userId = sessionResult.user_id;
+
+    // If username is being updated, check uniqueness
+    if (username) {
+      // Validate username format
+      const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+      if (!usernameRegex.test(username)) {
+        return c.json({
+          error: 'Username must be 3-30 characters and contain only letters, numbers, and underscores'
+        }, 400);
+      }
+
+      // Check if username is already taken by another user
+      const existingUser = await c.env.DB.prepare(`
+        SELECT id FROM users WHERE username = ? AND id != ?
+      `).bind(username, userId).first() as any;
+
+      if (existingUser) {
+        return c.json({ error: 'Username is already taken' }, 409);
+      }
+    }
+
+    // Build update query dynamically
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (username !== undefined) {
+      updates.push('username = ?');
+      values.push(username);
+    }
+    if (displayName !== undefined) {
+      updates.push('display_name = ?');
+      values.push(displayName);
+    }
+    if (bio !== undefined) {
+      updates.push('bio = ?');
+      values.push(bio);
+    }
+    if (avatarUrl !== undefined) {
+      updates.push('avatar_url = ?');
+      values.push(avatarUrl);
+    }
+
+    if (updates.length === 0) {
+      return c.json({ error: 'No fields to update' }, 400);
+    }
+
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(userId);
+
+    await c.env.DB.prepare(`
+      UPDATE users SET ${updates.join(', ')} WHERE id = ?
+    `).bind(...values).run();
+
+    // Get updated user
+    const updatedUser = await c.env.DB.prepare(`
+      SELECT id, email, username, display_name, bio, avatar_url, user_number, user_uid, role, status, created_at
+      FROM users WHERE id = ?
+    `).bind(userId).first() as any;
+
+    return c.json({
+      success: true,
+      user: updatedUser,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[API] Error updating profile:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Check username availability
+app.get("/api/auth/check-username", async (c) => {
+  try {
+    const username = c.req.query('username');
+
+    if (!username) {
+      return c.json({ error: 'Username parameter required' }, 400);
+    }
+
+    // Validate format
+    const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+    if (!usernameRegex.test(username)) {
+      return c.json({
+        available: false,
+        error: 'Invalid username format'
+      });
+    }
+
+    // Check if taken
+    const existingUser = await c.env.DB.prepare(`
+      SELECT id FROM users WHERE username = ?
+    `).bind(username).first() as any;
+
+    return c.json({
+      available: !existingUser,
+      username
+    });
+  } catch (error: any) {
+    console.error('[API] Error checking username:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // ===== USER MANAGEMENT (ADMIN ONLY) =====
 
 // Get all users (admin only)
@@ -2570,7 +2694,7 @@ app.get("/api/admin/users", async (c) => {
     const search = c.req.query("search") || "";
 
     let query = `
-      SELECT id, email, display_name, role, status, email_verified,
+      SELECT id, email, username, display_name, user_number, user_uid, role, status, email_verified,
              created_at, updated_at, last_login_at, login_count
       FROM users
     `;
@@ -2578,19 +2702,19 @@ app.get("/api/admin/users", async (c) => {
     let params: any[] = [];
 
     if (search) {
-      query += ` WHERE email LIKE ? OR display_name LIKE ?`;
-      params.push(`%${search}%`, `%${search}%`);
+      query += ` WHERE email LIKE ? OR display_name LIKE ? OR username LIKE ? OR user_number LIKE ? OR user_uid LIKE ?`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    query += ` ORDER BY user_number ASC LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     const users = await c.env.DB.prepare(query).bind(...params).all();
     const totalResult = await c.env.DB.prepare(
       search
-        ? `SELECT COUNT(*) as total FROM users WHERE email LIKE ? OR display_name LIKE ?`
+        ? `SELECT COUNT(*) as total FROM users WHERE email LIKE ? OR display_name LIKE ? OR username LIKE ? OR user_number LIKE ? OR user_uid LIKE ?`
         : `SELECT COUNT(*) as total FROM users`
-    ).bind(...(search ? [`%${search}%`, `%${search}%`] : [])).first();
+    ).bind(...(search ? [`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`] : [])).first();
 
     return c.json({
       users: users.results,
