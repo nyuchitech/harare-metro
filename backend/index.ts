@@ -96,7 +96,8 @@ function initializeServices(env: Bindings) {
     console.warn('[INIT] CloudflareImagesService not initialized - IMAGES binding or CLOUDFLARE_ACCOUNT_ID not configured. RSS images will not be optimized.');
   }
 
-  const rssService = new RSSFeedService(env.DB, imagesService); // Fix: RSSFeedService takes database directly
+  // Initialize RSSFeedService with AI support for author recognition
+  const rssService = new RSSFeedService(env.DB, imagesService, env.AI);
 
   return {
     d1Service,

@@ -2,6 +2,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { CategoryManager } from './CategoryManager.js';
 import { NewsSourceManager } from './NewsSourceManager.js';
 import { CloudflareImagesService } from './CloudflareImagesService.js';
+import { ContentProcessingPipeline } from './ContentProcessingPipeline.js';
 
 export interface RSSSource {
   id: string;
@@ -32,8 +33,13 @@ export class RSSFeedService {
   private categoryManager: CategoryManager;
   private sourceManager: NewsSourceManager;
   private imagesService?: CloudflareImagesService;
-  
-  constructor(private db: D1Database, imagesService?: CloudflareImagesService) {
+  private processingPipeline?: ContentProcessingPipeline;
+
+  constructor(
+    private db: D1Database,
+    imagesService?: CloudflareImagesService,
+    private ai?: any
+  ) {
     // Initialize XML parser with enhanced options
     this.parser = new XMLParser({
       ignoreAttributes: false,
@@ -47,15 +53,20 @@ export class RSSFeedService {
       processEntities: true,
       htmlEntities: true
     });
-    
+
     // Initialize CategoryManager for intelligent classification
     this.categoryManager = new CategoryManager(this.db);
-    
+
     // Initialize NewsSourceManager for performance tracking
     this.sourceManager = new NewsSourceManager(this.db);
-    
+
     // Store images service for image optimization
     this.imagesService = imagesService;
+
+    // Initialize ContentProcessingPipeline for AI enhancement (including author recognition)
+    if (ai) {
+      this.processingPipeline = new ContentProcessingPipeline(db, ai);
+    }
   }
 
   /**

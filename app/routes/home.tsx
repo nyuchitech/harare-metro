@@ -23,7 +23,15 @@ export function meta({}: Route.MetaArgs) {
 export async function loader({ context, request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const category = url.searchParams.get('category') || 'all';
-  const limit = url.searchParams.get('limit') || '24';
+
+  // Check if user is authenticated
+  const cookies = request.headers.get("Cookie") || "";
+  const tokenMatch = cookies.match(/auth_token=([^;]+)/);
+  const isAuthenticated = !!tokenMatch;
+
+  // Guests limited to 20 articles, authenticated users get full access
+  const limit = url.searchParams.get('limit') || (isAuthenticated ? '24' : '20');
+  const maxArticles = isAuthenticated ? undefined : 20;
 
   try {
     // Fetch articles from backend API
@@ -36,6 +44,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 
     const data = await response.json() as { articles?: any[]; total?: number; todayCount?: number; error?: string };
 
+    // Limit articles for guests
+    const articles = maxArticles ? (data.articles || []).slice(0, maxArticles) : (data.articles || []);
+
     // Fetch categories from backend API
     const categoriesUrl = buildApiUrl(request, '/api/categories');
     const categoriesResponse = await fetch(categoriesUrl);
@@ -47,11 +58,13 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     const categoriesData = await categoriesResponse.json() as { categories?: any[]; error?: string };
 
     return {
-      articles: data.articles || [],
+      articles,
       categories: categoriesData.categories || [],
       selectedCategory: category,
       total: data.total || 0,
-      todayCount: data.todayCount || 0
+      todayCount: data.todayCount || 0,
+      isAuthenticated,
+      isLimitedAccess: !isAuthenticated && articles.length >= 20
     };
   } catch (error) {
     console.error('Failed to load data:', error);
@@ -62,6 +75,8 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       selectedCategory: 'all',
       total: 0,
       todayCount: 0,
+      isAuthenticated,
+      isLimitedAccess: false,
       error: 'Failed to load articles. Please check if backend service is running.'
     };
   }
@@ -70,7 +85,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 type ViewMode = 'grid' | 'list';
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { articles: initialArticles, categories, selectedCategory, total, todayCount, error } = loaderData;
+  const { articles: initialArticles, categories, selectedCategory, total, todayCount, error, isAuthenticated, isLimitedAccess } = loaderData;
   const { user, loading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
@@ -449,7 +464,31 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                   <span>Loading more articles...</span>
                 </div>
               )}
-              {!hasMore && displayedArticles.length > 0 && (
+              {isLimitedAccess && displayedArticles.length >= 20 && (
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-md mx-auto text-center">
+                  <h3 className="font-serif text-xl font-bold text-white mb-3">
+                    Sign in to Read More
+                  </h3>
+                  <p className="text-gray-400 mb-6">
+                    You've viewed 20 articles. Create a free account to access unlimited news, personalized feeds, and exclusive features.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <a
+                      href="/auth/login"
+                      className="px-6 py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 text-white font-semibold rounded-full transition-colors"
+                    >
+                      Sign In
+                    </a>
+                    <a
+                      href="/auth/register"
+                      className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-full transition-colors"
+                    >
+                      Create Account
+                    </a>
+                  </div>
+                </div>
+              )}
+              {!hasMore && displayedArticles.length > 0 && !isLimitedAccess && (
                 <div className="text-muted-foreground text-sm">
                   You've reached the end of the feed
                 </div>

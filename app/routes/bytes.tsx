@@ -17,34 +17,51 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
+  // Check if user is authenticated - bytes are for logged-in users only
+  const cookies = request.headers.get("Cookie") || "";
+  const tokenMatch = cookies.match(/auth_token=([^;]+)/);
+  const isAuthenticated = !!tokenMatch;
+
+  // If not authenticated, return empty data with auth required flag
+  if (!isAuthenticated) {
+    return {
+      articles: [],
+      total: 0,
+      error: null,
+      requiresAuth: true
+    };
+  }
+
   try {
     // Fetch articles with images for bytes view
     const apiUrl = buildApiUrl(request, '/api/feeds', new URLSearchParams({ limit: '50', with_images: 'true' }));
     const response = await fetch(apiUrl);
     const data = await response.json() as { articles?: any[]; total?: number; error?: string };
-    
+
     // Filter articles that have images
-    const articlesWithImages = (data.articles || []).filter((article: any) => 
+    const articlesWithImages = (data.articles || []).filter((article: any) =>
       article.image_url
     );
-    
+
     return {
       articles: articlesWithImages,
       total: articlesWithImages.length,
-      error: null
+      error: null,
+      requiresAuth: false
     };
   } catch (error) {
     console.error('Failed to load news bytes:', error);
     return {
       articles: [],
       total: 0,
-      error: 'Failed to load news bytes'
+      error: 'Failed to load news bytes',
+      requiresAuth: false
     };
   }
 }
 
 export default function Bytes({ loaderData }: Route.ComponentProps) {
-  const { articles, error } = loaderData;
+  const { articles, error, requiresAuth } = loaderData;
   const { user, loading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
@@ -269,6 +286,42 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
     scrollToArticle(0);
   }, [scrollToArticle]);
 
+  // Auth gate for unauthenticated users
+  if (requiresAuth) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-black text-white">
+        <div className="fixed top-0 left-0 w-2 h-screen z-50 bg-gradient-to-b from-[hsl(var(--zw-green))] via-[hsl(var(--zw-yellow))] via-40% via-[hsl(var(--zw-red))] via-60% via-[hsl(var(--zw-black))] to-[hsl(var(--zw-white))]" />
+        <div className="text-center space-y-6 px-6 max-w-md">
+          <div className="text-6xl">🔒</div>
+          <h3 className="font-serif text-2xl font-bold">News Bytes</h3>
+          <p className="text-white/70">
+            TikTok-style visual news is exclusive to registered users. Sign in to enjoy unlimited visual stories, personalized content, and engagement features.
+          </p>
+          <div className="flex flex-col gap-3">
+            <a
+              href="/auth/login"
+              className="px-6 py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 text-white font-semibold rounded-full transition-colors"
+            >
+              Sign In
+            </a>
+            <a
+              href="/auth/register"
+              className="px-6 py-3 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-semibold rounded-full transition-colors"
+            >
+              Create Account
+            </a>
+            <a
+              href="/"
+              className="text-white/70 hover:text-white transition-colors"
+            >
+              ← Back to Home
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Loading/Error states
   if (error || articles.length === 0) {
     return (
@@ -279,7 +332,7 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
           <p className="text-white/70 max-w-md">
             {error ? error : "No articles with images found. Pull down to refresh or try again later."}
           </p>
-          <button 
+          <button
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="inline-flex items-center space-x-2 px-6 py-3 bg-white/10 border border-white/20 text-white hover:bg-white/20 rounded-full transition-colors disabled:opacity-50"
