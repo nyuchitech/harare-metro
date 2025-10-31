@@ -1,11 +1,13 @@
 // app/components/HeaderNavigation.tsx
 import React, { useState, useEffect } from 'react'
-import { 
+import { Link } from 'react-router'
+import {
   Search,
   Sun,
   Moon,
   User as UserIcon,
-  Home
+  Home,
+  Settings
 } from 'lucide-react'
 import Logo from './Logo'
 import type { User, Profile } from '~/types/api'
@@ -161,27 +163,64 @@ const HeaderNavigation: React.FC<HeaderNavigationProps> = ({
               )}
             </button>
 
-            {/* Profile/Auth Icon */}
-            <button
-              onClick={() => handleNavClick('profile')}
-              className={`
-                hidden lg:block p-2 rounded-full transition-all duration-200 touch-target
-                hover:bg-muted/50
-                ${currentView === 'profile' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
-              `}
-              aria-label={isAuthenticated ? "View Profile" : "Sign In"}
-              title={isAuthenticated ? `Profile: ${profile?.full_name || user?.email?.split('@')[0] || 'User'}` : "Sign In"}
-            >
+            {/* Profile/Auth Links */}
+            <div className="hidden lg:flex items-center space-x-2">
               {isAuthenticated ? (
-                <div className="relative">
-                  <UserIcon className="h-5 w-5" />
-                  {/* Online indicator */}
-                  <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-zw-green rounded-full border border-background"></div>
-                </div>
+                <>
+                  {/* Profile Link */}
+                  <Link
+                    to={`/@${profile?.username || user?.username || 'profile'}`}
+                    className={`
+                      p-2 rounded-full transition-all duration-200 touch-target
+                      hover:bg-muted/50
+                      ${currentView.startsWith('/@') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
+                    `}
+                    aria-label="View Profile"
+                    title={`Profile: ${profile?.full_name || user?.email?.split('@')[0] || 'User'}`}
+                  >
+                    <div className="relative">
+                      <UserIcon className="h-5 w-5" />
+                      {/* Online indicator */}
+                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-zw-green rounded-full border border-background"></div>
+                    </div>
+                  </Link>
+                  {/* Settings Link */}
+                  <Link
+                    to="/settings/profile"
+                    className={`
+                      p-2 rounded-full transition-all duration-200 touch-target
+                      hover:bg-muted/50
+                      ${currentView.startsWith('/settings') ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
+                    `}
+                    aria-label="Settings"
+                    title="Profile Settings"
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Link>
+                </>
               ) : (
-                <UserIcon className="h-5 w-5" />
+                <>
+                  {/* Login Link */}
+                  <Link
+                    to="/auth/login"
+                    className="px-4 py-2 rounded-full text-sm font-semibold
+                      text-muted-foreground hover:text-foreground hover:bg-muted/50
+                      transition-all duration-200"
+                  >
+                    Sign In
+                  </Link>
+                  {/* Register Link */}
+                  <Link
+                    to="/auth/register"
+                    className="px-4 py-2 rounded-full text-sm font-semibold
+                      bg-zw-green hover:bg-zw-green/80 text-white
+                      transition-all duration-200"
+                  >
+                    Sign Up
+                  </Link>
+                </>
               )}
-            </button>
+            </div>
           </div>
         </div>
       </div>
