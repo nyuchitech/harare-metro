@@ -17,6 +17,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2025-10-31
+
+### Added
+- **Today's article count** - Home page now shows daily article count instead of total database count
+  - More relevant metric for users to see fresh content
+  - Backend still tracks total count for analytics
+- **PWA icon files** - Added icon-192x192.png and icon-512x512.png for proper PWA support
+- **Backend favicon support** - Admin dashboard and login page now display proper favicons
+- **D1Service today filter** - Added `today` parameter to `getArticleCount()` method using SQLite date filtering
+
+### Changed
+- **API response structure** - `/api/feeds` now returns both `total` and `todayCount`
+- **Home page display** - Changed from "352 Articles" to "55 Articles Today" (dynamic)
+- **PWA manifest** - Fixed all icon references to use correct android-chrome files
+
+### Fixed
+- **Auth page routing** - Added missing routes for /auth/login, /auth/register, /auth/forgot-password
+- **404 error page** - Complete redesign with Zimbabwe flag branding and proper navigation
+- **Backend favicons** - Added favicon links to admin HTML templates
+- **PWA shortcuts** - Fixed icon paths in manifest.json shortcuts (politics, economy, sports, harare)
+
+### Deployed
+- ✅ Frontend: www.hararemetro.co.zw (Version: 47f7aba5-578f-4482-a3e1-6f10d9fb3ea8)
+- ✅ Backend: admin.hararemetro.co.zw (Version: 60f6150e-7d66-45f3-a44a-58ea133a4880)
+- ✅ Verified: API returning todayCount=55, total=352
+
+---
+
 ## [0.6.0] - 2025-10-29
 
 ### Added

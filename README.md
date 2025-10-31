@@ -14,6 +14,28 @@ A modern, AI-powered news aggregation platform built on Cloudflare's edge infras
 - **Frontend**: [www.hararemetro.co.zw](https://www.hararemetro.co.zw)
 - **Admin Panel**: [admin.hararemetro.co.zw](https://admin.hararemetro.co.zw)
 
+## 🆕 What's New (October 31, 2025)
+
+### Today's Article Count
+The homepage now displays **daily article count** instead of total database count, showing users fresh content published today. Currently showing 55 articles published today out of 352 total.
+
+### Complete Auth System
+- ✅ Login, Register, and Forgot Password pages now live at `/auth/*`
+- ✅ User profile pages at `/@/:username`
+- ✅ Settings pages at `/settings/profile`
+- ✅ Enhanced 404 error page with Zimbabwe flag branding
+
+### PWA & Favicon Improvements
+- ✅ Proper favicon support across frontend and backend
+- ✅ PWA icons configured for mobile installation
+- ✅ Manifest shortcuts with correct icon references
+
+### Live Metrics
+- **352 articles** in database from Zimbabwe news sources
+- **55 articles** published today
+- **9 active routes** including auth and profile pages
+- **Sub-100ms** response times globally
+
 ## ✨ Features
 
 ### Platform Features

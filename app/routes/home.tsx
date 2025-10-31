@@ -33,7 +33,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       throw new Error(`API responded with ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json() as { articles?: any[]; total?: number; error?: string };
+    const data = await response.json() as { articles?: any[]; total?: number; todayCount?: number; error?: string };
 
     // Fetch categories from backend API
     const categoriesUrl = buildApiUrl(request, '/api/categories');
@@ -49,7 +49,8 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       articles: data.articles || [],
       categories: categoriesData.categories || [],
       selectedCategory: category,
-      total: data.total || 0
+      total: data.total || 0,
+      todayCount: data.todayCount || 0
     };
   } catch (error) {
     console.error('Failed to load data:', error);
@@ -59,6 +60,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       categories: [],
       selectedCategory: 'all',
       total: 0,
+      todayCount: 0,
       error: 'Failed to load articles. Please check if backend service is running.'
     };
   }
@@ -67,7 +69,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 type ViewMode = 'grid' | 'list';
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { articles: initialArticles, categories, selectedCategory, total, error } = loaderData;
+  const { articles: initialArticles, categories, selectedCategory, total, todayCount, error } = loaderData;
   const { user, loading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
@@ -190,7 +192,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               </button>
             </div>
             <div className="text-right hidden sm:block">
-              <div className="text-sm text-zw-green font-medium">{total} Articles</div>
+              <div className="text-sm text-zw-green font-medium">{todayCount} Articles Today</div>
               <div className="text-xs text-muted-foreground">Live Updates</div>
             </div>
           </div>

@@ -319,10 +319,10 @@ export class D1Service {
     try {
       let query = "SELECT COUNT(*) as count FROM articles WHERE status = 'published'"
       const params = []
-      
+
       // Handle both old category parameter and new options object
       const category = typeof options === 'string' ? options : options?.category_id || options?.source_id;
-      
+
       if (options && typeof options === 'object') {
         if (options.category_id && options.category_id !== 'all') {
           query += ' AND category_id = ?'
@@ -332,11 +332,15 @@ export class D1Service {
           query += ' AND source_id = ?'
           params.push(options.source_id)
         }
+        // Add today filter if requested
+        if (options.today) {
+          query += " AND date(published_at) = date('now')"
+        }
       } else if (category && category !== 'all') {
         query += ' AND category_id = ?'
         params.push(category)
       }
-      
+
       const result = await this.db.prepare(query).bind(...params).first()
       return result?.count || 0
     } catch (error) {

@@ -37,7 +37,7 @@ Harare Metro is Zimbabwe's premier news aggregation platform, providing real-tim
 
 ## 🚧 Current Phase: Phase 2 - User Profiles & Authentication
 
-**Status:** 🔄 IN PROGRESS (80% Complete)
+**Status:** 🔄 IN PROGRESS (95% Complete)
 
 **Timeline:** October 28 - November 15, 2025
 
@@ -55,35 +55,38 @@ Harare Metro is Zimbabwe's premier news aggregation platform, providing real-tim
    - User profile data structure
    - Backend API endpoints for profiles
    - Bookmarks, likes, reading history tracking
+   - ✅ **Profile pages at /@username** (October 31)
+   - ✅ **Profile edit functionality** (October 31)
+   - ✅ **User activity displays** (October 31)
 
-3. **Search Enhancement**
+3. **Standalone Auth Pages** ✅ (October 31)
+   - ✅ Login page at `/auth/login`
+   - ✅ Registration page at `/auth/register`
+   - ✅ Forgot password flow at `/auth/forgot-password`
+   - ✅ Profile settings page at `/settings/profile`
+   - ✅ Enhanced 404 error page with branding
+
+4. **Search Enhancement**
    - Unified search API (articles, keywords, categories, authors)
    - Keyword-based search
    - Author-based search
    - Pagination support
 
-4. **Admin Features**
+5. **Admin Features**
    - User management endpoints
    - Role management
    - User suspension/activation
    - Admin dashboard backend
 
+6. **Platform Improvements** ✅ (October 31)
+   - ✅ Today's article count display (55 today vs 352 total)
+   - ✅ PWA icons and manifest configuration
+   - ✅ Favicon support for frontend and backend
+   - ✅ All routes properly configured
+
 ### In Progress 🔄
 
-1. **Frontend User Profiles**
-   - Profile pages at /@username
-   - Profile edit functionality
-   - User activity displays (bookmarks, likes, history)
-   - Profile statistics dashboard
-
-2. **Standalone Auth Pages**
-   - Replace modal auth with dedicated pages
-   - Login page
-   - Registration page
-   - Forgot password flow
-   - Profile settings page
-
-3. **Author System**
+1. **Author System**
    - Auto-generate author profiles from RSS feeds
    - Author profile pages
    - Cross-outlet author tracking
@@ -92,11 +95,10 @@ Harare Metro is Zimbabwe's premier news aggregation platform, providing real-tim
 ### Remaining Tasks 📋
 
 **Priority 1 (This Week):**
-- [ ] Create /@username profile routes
-- [ ] Build profile page UI with tabs (Bookmarks, Likes, History)
-- [ ] Implement standalone login/register pages
 - [ ] Complete author profile auto-generation
-- [ ] Add profile edit functionality
+- [ ] Add author following system
+- [ ] Migrate frontend auth from Supabase to OpenAuth
+- [ ] Full integration testing of auth flow
 
 **Priority 2 (Next Week):**
 - [ ] Author profile pages
