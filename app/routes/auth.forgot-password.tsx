@@ -3,6 +3,11 @@ import type { Route } from "./+types/auth.forgot-password";
 import { useState } from "react";
 import { Mail, Key } from "lucide-react";
 
+export async function loader() {
+  // Simple loader to prevent 404 on data fetches
+  return null;
+}
+
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const step = formData.get("step") as string;
