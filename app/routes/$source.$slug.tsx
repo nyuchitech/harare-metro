@@ -5,8 +5,14 @@ import { AuthModal } from "../components/auth/AuthModal";
 import { UserProfile } from "../components/auth/UserProfile";
 import HeaderNavigation from "../components/HeaderNavigation";
 import MobileNavigation from "../components/MobileNavigation";
-import { Heart, Bookmark, ExternalLink, ArrowLeft } from "lucide-react";
+import { ExternalLink, ArrowLeft } from "lucide-react";
 import { buildApiUrl } from "../lib/api-utils";
+import {
+  ArticleLikeButton,
+  ArticleSaveButton,
+  ArticleViewTracker,
+  CommentList,
+} from "../components/engagement";
 
 export function meta({ params }: Route.MetaArgs) {
   const { source, slug } = params;
@@ -162,24 +168,23 @@ export default function Article({ loaderData }: Route.ComponentProps) {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t border-border">
-                <div className="flex items-center space-x-4">
-                  <button 
-                    className="inline-flex items-center space-x-2 p-3 rounded-full hover:bg-muted transition-colors touch-target"
-                    aria-label="Like article"
-                  >
-                    <Heart className="h-5 w-5 text-muted-foreground hover:text-zw-red" />
-                    <span className="text-sm">Like</span>
-                  </button>
-                  <button 
-                    className="inline-flex items-center space-x-2 p-3 rounded-full hover:bg-muted transition-colors touch-target"
-                    aria-label="Bookmark article"
-                  >
-                    <Bookmark className="h-5 w-5 text-muted-foreground hover:text-zw-yellow" />
-                    <span className="text-sm">Save</span>
-                  </button>
+                <div className="flex items-center space-x-2">
+                  <ArticleLikeButton
+                    articleId={article.id}
+                    initialLiked={article.isLiked}
+                    initialCount={article.likesCount || 0}
+                    size="md"
+                    showCount={true}
+                  />
+                  <ArticleSaveButton
+                    articleId={article.id}
+                    initialSaved={article.isSaved}
+                    size="md"
+                    showLabel={true}
+                  />
                 </div>
-                
-                <a 
+
+                <a
                   href={article.original_url}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -191,6 +196,28 @@ export default function Article({ loaderData }: Route.ComponentProps) {
               </div>
             </div>
           </article>
+        )}
+
+        {/* Comments Section */}
+        {article && (
+          <div className="mt-8">
+            <CommentList
+              articleId={article.id}
+              initialComments={article.comments || []}
+              initialCount={article.commentsCount || 0}
+              showForm={true}
+            />
+          </div>
+        )}
+
+        {/* Article View Tracker */}
+        {article && (
+          <ArticleViewTracker
+            articleId={article.id}
+            articleTitle={article.title}
+            articleSource={article.source}
+            articleCategory={article.category}
+          />
         )}
 
         {/* Footer */}
