@@ -1,12 +1,48 @@
 # Harare Metro - Project Status Report
 **Last Updated:** October 31, 2025
-**Project Phase:** Phase 1+ - RSS Aggregation with Keywords & Auth Setup (ACTIVE)
+**Project Phase:** Phase 2 - User Engagement Features (ACTIVE)
 
 ---
 
-## 🆕 Recent Updates (October 31, 2025)
+## 🆕 Recent Updates (October 31, 2025 - Latest)
 
-### ✅ Completed This Session
+### ✅ Completed Today
+
+1. **Today's Article Count Feature**
+   - Home page now shows "55 Articles Today" instead of "352 Articles"
+   - More relevant metric for users to see daily fresh content
+   - Backend API returns both `total` and `todayCount`
+   - D1Service enhanced with `today` filter using SQLite date filtering
+
+2. **Routing & Navigation Fixes**
+   - ✅ Auth pages now working: `/auth/login`, `/auth/register`, `/auth/forgot-password`
+   - ✅ Profile settings route: `/settings/profile`
+   - ✅ User profile route: `/@/:username`
+   - ✅ 404 page redesigned with Zimbabwe flag branding and proper navigation
+
+3. **Favicon & PWA Improvements**
+   - ✅ Backend admin dashboard now displays proper favicon
+   - ✅ Backend login page has favicon support
+   - ✅ PWA icon files added (icon-192x192.png, icon-512x512.png)
+   - ✅ PWA manifest fixed with correct icon references
+   - ✅ All shortcuts (politics, economy, sports, harare) use proper icons
+
+4. **Deployment Status**
+   - ✅ Frontend deployed: Version 47f7aba5-578f-4482-a3e1-6f10d9fb3ea8
+   - ✅ Backend deployed: Version 60f6150e-7d66-45f3-a44a-58ea133a4880
+   - ✅ Verified: API returning todayCount=55, total=352
+
+### 📊 Current Metrics (Live)
+- **Total Articles**: 352 in database
+- **Today's Articles**: 55 published today ✨
+- **Active Routes**: 9 (home, search, bytes, 3 auth, profile, user profile, article)
+- **PWA Ready**: ✅ Proper icons and manifest configured
+
+---
+
+## 🆕 Earlier Updates (October 31, 2025)
+
+### ✅ Completed Earlier Today
 
 1. **Keywords System - NOW OPERATIONAL**
    - Backend API returns keywords with every article
@@ -31,12 +67,6 @@
    - HTML entity decoding (removes &#8230; etc.)
    - Expanded trusted image domains from 40 to 80+
    - Better image coverage from Zimbabwe news sources
-
-### 📊 Current Metrics
-- **Keywords**: ✅ ACTIVE (130+ patterns, displayed as hashtags)
-- **Image Domains**: 80+ trusted domains
-- **Auth Tables**: ✅ Created with super admin
-- **Mobile UX**: ✅ Fixed navigation overlap
 
 ---
 

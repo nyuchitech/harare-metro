@@ -627,6 +627,9 @@ try {
 **Public Endpoints:**
 - `GET /api/health` - Health check
 - `GET /api/feeds?limit=20&offset=0&category=politics` - Get articles
+  - Returns: `{ articles: [], total: 352, todayCount: 55, limit: 20, offset: 0, hasMore: true }`
+  - `total` - Total articles in database (for backend analytics)
+  - `todayCount` - Articles published today (displayed to users)
 - `GET /api/categories` - Get all categories
 - `GET /api/article/by-source-slug?source=herald&slug=article-slug` - Get single article
 - `GET /api/manifest.json` - PWA manifest
