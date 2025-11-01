@@ -485,8 +485,22 @@ export default {
 
 ## Design System & Branding
 
+### Frontend vs Backend Design Systems
+
+**Frontend (www.hararemetro.co.zw):**
+- **Framework**: Tailwind CSS 4.x with custom Zimbabwe flag colors
+- **Style**: TikTok-like mobile-first experience
+- **Typography**: Georgia serif (headings) + Inter sans-serif (body)
+
+**Backend Admin (admin.hararemetro.co.zw):**
+- **Framework**: Material UI (MUI) v5+ with React
+- **Style**: Professional desktop-first admin interface
+- **Typography**: Georgia serif (headings) + Inter sans-serif (body)
+- **Build**: React SPA bundled with Vite, served by Hono backend
+- **Components**: Material UI components customized with Zimbabwe flag colors
+
 ### Typography System
-**IMPORTANT**: The application uses a dual-font system for optimal readability and brand consistency:
+**IMPORTANT**: Both frontend and backend use a dual-font system for brand consistency:
 
 - **Headings** (h1-h6): Georgia serif font (matches logo aesthetic)
   ```css
@@ -508,6 +522,46 @@ export default {
   --zw-black: 0 0% 0%;        /* #000000 - African heritage, strength */
   --zw-white: 0 0% 100%;      /* #FFFFFF - Peace, unity, progress */
 }
+```
+
+### Material UI Theme Configuration (Backend Admin Only)
+
+**Zimbabwe Flag Colors in Material UI:**
+```typescript
+import { createTheme } from '@mui/material/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#00A651', // Zimbabwe Green
+      contrastText: '#FFFFFF',
+    },
+    secondary: {
+      main: '#FDD116', // Zimbabwe Yellow
+      contrastText: '#000000',
+    },
+    error: {
+      main: '#EF3340', // Zimbabwe Red
+    },
+    background: {
+      default: '#0a0a0a',
+      paper: '#1a1a1a',
+    },
+    text: {
+      primary: '#e8e8e8',
+      secondary: '#9ca3af',
+    },
+  },
+  typography: {
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    h1: { fontFamily: "Georgia, 'Times New Roman', serif" },
+    h2: { fontFamily: "Georgia, 'Times New Roman', serif" },
+    h3: { fontFamily: "Georgia, 'Times New Roman', serif" },
+    h4: { fontFamily: "Georgia, 'Times New Roman', serif" },
+    h5: { fontFamily: "Georgia, 'Times New Roman', serif" },
+    h6: { fontFamily: "Georgia, 'Times New Roman', serif" },
+  },
+});
 ```
 
 ### Color Usage Guidelines
