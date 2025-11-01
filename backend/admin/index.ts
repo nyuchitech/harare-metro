@@ -1407,175 +1407,434 @@ export function getAdminHTML(): string {
 }
 
 export function getLoginHTML(): string {
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Harare Metro</title>
+
+    <!-- Favicons -->
+    <link rel="icon" href="https://www.hararemetro.co.zw/favicon.ico" sizes="any">
+    <link rel="icon" href="https://www.hararemetro.co.zw/favicon.png" type="image/png">
+    <link rel="icon" href="https://www.hararemetro.co.zw/favicon-16x16.png" sizes="16x16" type="image/png">
+    <link rel="icon" href="https://www.hararemetro.co.zw/favicon-32x32.png" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="https://www.hararemetro.co.zw/apple-touch-icon.png">
+
+    <!-- Google Fonts - Inter & Georgia -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Zimbabwe Flag Colors */
+            --zw-green: 140 100% 32%;
+            --zw-yellow: 48 98% 54%;
+            --zw-red: 354 85% 57%;
+            --zw-black: 0 0% 0%;
+            --zw-white: 0 0% 100%;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #00A651 0%, #006633 100%);
+            background: #000000;
+            color: #ffffff;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 16px;
         }
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 420px;
-            width: 100%;
-        }
-        h1 {
-            font-family: Georgia, serif;
-            color: #00A651;
-            font-size: 32px;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-        .subtitle {
-            color: #666;
-            text-align: center;
-            margin-bottom: 32px;
-            font-size: 14px;
-        }
-        .form-group { margin-bottom: 24px; }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-            font-size: 14px;
-        }
-        input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
-        }
-        input:focus {
-            outline: none;
-            border-color: #00A651;
-            box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.1);
-        }
-        button {
-            width: 100%;
-            padding: 14px;
-            background: #00A651;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
-        }
-        button:hover {
-            background: #008f47;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 166, 81, 0.3);
-        }
-        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
-        .error {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #991b1b;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: none;
-        }
-        .error.show { display: block; }
-        .info {
-            background: #fef9c3;
-            border: 1px solid #fde047;
-            color: #854d0e;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
+
+        /* Zimbabwe Flag Strip */
         .zimbabwe-flag-strip {
             position: fixed;
             top: 0;
             left: 0;
             width: 8px;
             height: 100vh;
-            z-index: 1000;
-            background: linear-gradient(to bottom, #00A651 0% 20%, #FDD116 20% 40%, #EF3340 40% 60%, #000000 60% 80%, #FFFFFF 80% 100%);
+            z-index: 50;
+            background: linear-gradient(to bottom,
+                hsl(var(--zw-green)) 0% 20%,
+                hsl(var(--zw-yellow)) 20% 40%,
+                hsl(var(--zw-red)) 40% 60%,
+                hsl(var(--zw-black)) 60% 80%,
+                hsl(var(--zw-white)) 80% 100%
+            );
+        }
+
+        /* Device Restriction Overlay */
+        .device-restriction {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000000;
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .device-restriction-content {
+            max-width: 400px;
+        }
+
+        .device-restriction h2 {
+            font-family: Georgia, serif;
+            font-size: 32px;
+            margin-bottom: 16px;
+            color: hsl(var(--zw-green));
+        }
+
+        .device-restriction p {
+            color: #9ca3af;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .device-restriction .icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+            opacity: 0.5;
+        }
+
+        /* Show restriction on mobile/small tablets */
+        @media (max-width: 1023px) {
+            .device-restriction {
+                display: flex;
+            }
+            .container {
+                display: none !important;
+            }
+        }
+
+        /* Container */
+        .container {
+            width: 100%;
+            max-width: 28rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-family: Georgia, serif;
+            font-size: 2.25rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        h1 .highlight {
+            color: hsl(var(--zw-green));
+        }
+
+        .subtitle {
+            color: #9ca3af;
+        }
+
+        /* Login Form Card */
+        .login-card {
+            background: #111827;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Form */
+        .form-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #000000;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: hsl(var(--zw-green));
+            ring: 2px;
+            ring-color: hsla(var(--zw-green) / 0.2);
+            box-shadow: 0 0 0 3px hsla(var(--zw-green) / 0.2);
+        }
+
+        input::placeholder {
+            color: #6b7280;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background: hsl(var(--zw-green));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button[type="submit"]:hover:not(:disabled) {
+            background: hsl(var(--zw-green) / 0.8);
+        }
+
+        button[type="submit"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error Alert */
+        .error-alert {
+            display: none;
+            background: hsla(var(--zw-red) / 0.1);
+            border: 1px solid hsla(var(--zw-red) / 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            color: hsl(var(--zw-red));
+        }
+
+        .error-alert.show {
+            display: block;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+        }
+
+        .footer p {
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+
+        .footer a {
+            color: hsl(var(--zw-green));
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .back-link {
+            margin-top: 24px;
+            text-align: center;
+        }
+
+        .back-link a {
+            color: #9ca3af;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .back-link a:hover {
+            color: #ffffff;
         }
     </style>
 </head>
 <body>
     <div class="zimbabwe-flag-strip"></div>
-    <div class="login-container">
-        <h1>Harare Metro</h1>
-        <p class="subtitle">Admin Panel Login</p>
-        <div class="info">
-            <strong>Demo Credentials:</strong><br>
-            Email: admin@hararemetro.co.zw<br>
-            Password: admin123
+
+    <!-- Device Restriction Overlay -->
+    <div class="device-restriction">
+        <div class="device-restriction-content">
+            <div class="icon">💻</div>
+            <h2>Desktop Only</h2>
+            <p>
+                The Harare Metro Admin Panel is designed for desktop and tablet (landscape) use only.
+            </p>
+            <p>
+                Please access this page on a larger screen for the best experience.
+            </p>
         </div>
-        <div class="error" id="error"></div>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="admin@hararemetro.co.zw" autocomplete="email">
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password" autocomplete="current-password">
-            </div>
-            <button type="submit" id="submitBtn">Sign In</button>
-        </form>
     </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Logo/Header -->
+        <div class="header">
+            <h1>Harare <span class="highlight">Metro</span></h1>
+            <p class="subtitle">Admin Panel Login</p>
+        </div>
+
+        <!-- Login Form Card -->
+        <div class="login-card">
+            <form id="loginForm" class="form-container">
+                <!-- Error Alert -->
+                <div class="error-alert" id="errorAlert"></div>
+
+                <!-- Email Field -->
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        autocomplete="email"
+                        placeholder="you@example.com"
+                    />
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        autocomplete="current-password"
+                        placeholder="••••••••"
+                    />
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submitBtn">
+                    <span id="buttonText">Sign In</span>
+                    <div class="spinner" id="loadingSpinner" style="display: none;"></div>
+                </button>
+            </form>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p>Admin access only • <a href="https://www.hararemetro.co.zw">Return to site</a></p>
+            </div>
+        </div>
+
+        <!-- Back to Home -->
+        <div class="back-link">
+            <a href="https://www.hararemetro.co.zw">← Back to Home</a>
+        </div>
+    </div>
+
     <script>
         const form = document.getElementById('loginForm');
-        const errorDiv = document.getElementById('error');
+        const errorAlert = document.getElementById('errorAlert');
         const submitBtn = document.getElementById('submitBtn');
+        const buttonText = document.getElementById('buttonText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const emailField = document.getElementById('email');
+        const passwordField = document.getElementById('password');
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            errorDiv.classList.remove('show');
+
+            // Hide error
+            errorAlert.classList.remove('show');
+            errorAlert.textContent = '';
+
+            // Show loading state
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Signing in...';
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            buttonText.textContent = 'Signing in...';
+            buttonText.style.display = 'none';
+            loadingSpinner.style.display = 'block';
+
+            const email = emailField.value;
+            const password = passwordField.value;
+
             try {
                 const response = await fetch('/api/admin/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({ email, password }),
                 });
+
                 const data = await response.json();
+
                 if (response.ok) {
+                    // Store session token in cookie
                     document.cookie = \`admin_session=\${data.token}; path=/; max-age=\${7 * 24 * 60 * 60}; secure; samesite=strict\`;
-                    window.location.href = '/admin';
+
+                    // Success state
+                    loadingSpinner.style.display = 'none';
+                    buttonText.style.display = 'inline';
+                    buttonText.textContent = 'Success! Redirecting...';
+
+                    // Redirect to admin dashboard
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 500);
                 } else {
-                    errorDiv.textContent = data.error || 'Login failed. Please check your credentials.';
-                    errorDiv.classList.add('show');
+                    // Show error
+                    errorAlert.textContent = data.error || 'Login failed. Please check your credentials.';
+                    errorAlert.classList.add('show');
+
+                    // Reset button
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'Sign In';
+                    loadingSpinner.style.display = 'none';
+                    buttonText.style.display = 'inline';
+                    buttonText.textContent = 'Sign In';
                 }
             } catch (error) {
-                errorDiv.textContent = 'Network error. Please try again.';
-                errorDiv.classList.add('show');
+                // Network error
+                errorAlert.textContent = 'Network error. Please try again.';
+                errorAlert.classList.add('show');
+
+                // Reset button
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Sign In';
+                loadingSpinner.style.display = 'none';
+                buttonText.style.display = 'inline';
+                buttonText.textContent = 'Sign In';
             }
         });
     </script>
 </body>
 </html>`;
-  return html;
 }
