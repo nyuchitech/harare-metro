@@ -14,8 +14,27 @@ export function getAdminHTML(): string {
     <link rel="icon" href="https://www.hararemetro.co.zw/favicon-32x32.png" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="https://www.hararemetro.co.zw/apple-touch-icon.png">
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- Material Design Web Components -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@material/web/": "https://esm.run/@material/web/"
+        }
+      }
+    </script>
+    <script type="module">
+      import '@material/web/all.js';
+      import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
+      document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    </script>
 
     <style>
         * {
@@ -24,56 +43,120 @@ export function getAdminHTML(): string {
             box-sizing: border-box;
         }
 
+        :root {
+            /* Zimbabwe Flag Colors */
+            --zw-green: #00A651;
+            --zw-yellow: #FDD116;
+            --zw-red: #EF3340;
+            --zw-black: #000000;
+            --zw-white: #FFFFFF;
+
+            /* Material Design Dark Theme */
+            --md-sys-color-primary: var(--zw-green);
+            --md-sys-color-on-primary: var(--zw-white);
+            --md-sys-color-primary-container: #1a3a2a;
+            --md-sys-color-on-primary-container: #b8f4d7;
+
+            --md-sys-color-secondary: var(--zw-yellow);
+            --md-sys-color-on-secondary: var(--zw-black);
+
+            --md-sys-color-tertiary: var(--zw-red);
+            --md-sys-color-on-tertiary: var(--zw-white);
+
+            --md-sys-color-background: #0a0a0a;
+            --md-sys-color-on-background: #e8e8e8;
+
+            --md-sys-color-surface: #1a1a1a;
+            --md-sys-color-on-surface: #e8e8e8;
+            --md-sys-color-surface-variant: #2a2a2a;
+            --md-sys-color-on-surface-variant: #c8c8c8;
+
+            --md-sys-color-outline: #3a3a3a;
+            --md-sys-color-outline-variant: #2a2a2a;
+        }
+
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: #000000;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--md-sys-color-background);
             min-height: 100vh;
-            color: #ffffff;
+            color: var(--md-sys-color-on-background);
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 24px;
+        }
+
+        /* Material Design Card Elevation */
+        .md-elevation-1 {
+            box-shadow:
+                0px 1px 2px rgba(0, 0, 0, 0.3),
+                0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+        }
+
+        .md-elevation-2 {
+            box-shadow:
+                0px 1px 2px rgba(0, 0, 0, 0.3),
+                0px 2px 6px 2px rgba(0, 0, 0, 0.15);
         }
 
         .header {
-            background: #1a1a1a;
+            background: var(--md-sys-color-surface);
             border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 20px;
-            border: 1px solid #333;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--md-sys-color-outline-variant);
         }
 
         .header h1 {
-            font-family: Georgia, 'Times New Roman', serif;
+            font-family: Georgia, serif;
             font-size: 2rem;
             font-weight: bold;
             margin-bottom: 8px;
-            color: #fff;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .header h1 .highlight {
+            color: var(--zw-green);
         }
 
         .header p {
-            color: #999;
+            color: var(--md-sys-color-on-surface-variant);
             font-size: 0.95rem;
         }
 
         .nav {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 24px;
             overflow-x: auto;
-            padding-bottom: 5px;
+            padding-bottom: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--md-sys-color-outline) transparent;
+        }
+
+        .nav::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .nav::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .nav::-webkit-scrollbar-thumb {
+            background: var(--md-sys-color-outline);
+            border-radius: 4px;
         }
 
         .nav-item {
-            background: #1a1a1a;
-            color: #999;
-            border: 1px solid #333;
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface-variant);
+            border: 1px solid var(--md-sys-color-outline);
             padding: 12px 24px;
-            border-radius: 9999px;
+            border-radius: 100px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 0.9rem;
             font-weight: 500;
             white-space: nowrap;
@@ -82,16 +165,22 @@ export function getAdminHTML(): string {
             gap: 8px;
         }
 
+        .nav-item .material-icons {
+            font-size: 20px;
+        }
+
         .nav-item:hover {
-            background: #2a2a2a;
-            color: #fff;
-            border-color: #555;
+            background: var(--md-sys-color-outline);
+            color: var(--md-sys-color-on-surface);
+            transform: translateY(-1px);
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .nav-item.active {
-            background: #fff;
-            color: #000;
-            border-color: #fff;
+            background: var(--zw-green);
+            color: var(--zw-white);
+            border-color: var(--zw-green);
+            box-shadow: 0px 2px 8px rgba(0, 166, 81, 0.3);
         }
 
         .content {
@@ -107,67 +196,85 @@ export function getAdminHTML(): string {
         }
 
         .card {
-            background: #1a1a1a;
+            background: var(--md-sys-color-surface);
             border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 20px;
-            border: 1px solid #333;
+            padding: 28px;
+            margin-bottom: 24px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
         }
 
         .card h3 {
-            font-family: Georgia, 'Times New Roman', serif;
-            color: #fff;
+            font-family: Georgia, serif;
+            color: var(--md-sys-color-on-surface);
             margin-bottom: 20px;
             font-size: 1.3rem;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+        }
+
+        .card h3 .material-icons {
+            color: var(--zw-green);
+            font-size: 24px;
         }
 
         .btn {
-            background: #fff;
-            color: #000;
-            border: 1px solid #fff;
-            padding: 10px 20px;
-            border-radius: 9999px;
+            background: var(--zw-green);
+            color: var(--zw-white);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 100px;
             cursor: pointer;
             font-size: 0.9rem;
             font-weight: 500;
-            transition: all 0.2s;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn .material-icons {
+            font-size: 18px;
         }
 
         .btn:hover {
-            background: #e5e5e5;
+            background: hsl(140 100% 28%);
             transform: translateY(-1px);
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3), 0px 4px 8px rgba(0, 166, 81, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
         }
 
         .btn:disabled {
-            opacity: 0.5;
+            opacity: 0.38;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .btn-secondary {
-            background: transparent;
-            color: #fff;
-            border: 1px solid #555;
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface);
+            border: 1px solid var(--md-sys-color-outline);
         }
 
         .btn-secondary:hover {
-            background: #2a2a2a;
-            border-color: #777;
+            background: var(--md-sys-color-outline);
+            border-color: var(--md-sys-color-outline);
         }
 
         .btn-danger {
-            background: #333;
-            color: #fff;
-            border: 1px solid #555;
+            background: var(--zw-red);
+            color: var(--zw-white);
+            border: none;
         }
 
         .btn-danger:hover {
-            background: #444;
+            background: hsl(354 85% 50%);
         }
 
         .btn-group {
@@ -185,38 +292,46 @@ export function getAdminHTML(): string {
         }
 
         .stat-card {
-            background: #2a2a2a;
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #444;
-            transition: transform 0.2s;
+            background: var(--md-sys-color-surface-variant);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--md-sys-color-outline);
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
         }
 
         .stat-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-4px);
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3), 0px 4px 8px 2px rgba(0, 0, 0, 0.15);
         }
 
         .stat-icon {
-            width: 40px;
-            height: 40px;
-            background: #fff;
-            border-radius: 10px;
+            width: 48px;
+            height: 48px;
+            background: var(--zw-green);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-icon .material-icons {
+            color: var(--zw-white);
+            font-size: 24px;
         }
 
         .stat-number {
             font-size: 2rem;
             font-weight: bold;
-            color: #fff;
-            margin-bottom: 5px;
+            color: var(--md-sys-color-on-surface);
+            margin-bottom: 6px;
         }
 
         .stat-label {
-            color: #999;
+            color: var(--md-sys-color-on-surface-variant);
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         /* Data Tables */
@@ -541,31 +656,31 @@ export function getAdminHTML(): string {
 
     <div class="container">
         <div class="header">
-            <h1>Harare Metro Admin</h1>
+            <h1>Harare <span class="highlight">Metro</span> Admin</h1>
             <p>Backend Management & Analytics Dashboard</p>
         </div>
 
         <div class="nav">
             <button class="nav-item active" onclick="showSection('dashboard')">
-                <i data-lucide="layout-dashboard"></i> Dashboard
+                <span class="material-icons">dashboard</span> Dashboard
             </button>
             <button class="nav-item" onclick="showSection('sources')">
-                <i data-lucide="rss"></i> RSS Sources
+                <span class="material-icons">rss_feed</span> RSS Sources
             </button>
             <button class="nav-item" onclick="showSection('articles')">
-                <i data-lucide="newspaper"></i> Articles
+                <span class="material-icons">article</span> Articles
             </button>
             <button class="nav-item" onclick="showSection('authors')">
-                <i data-lucide="users"></i> Authors
+                <span class="material-icons">group</span> Authors
             </button>
             <button class="nav-item" onclick="showSection('categories')">
-                <i data-lucide="folder"></i> Categories
+                <span class="material-icons">folder</span> Categories
             </button>
             <button class="nav-item" onclick="showSection('analytics')">
-                <i data-lucide="bar-chart-3"></i> Analytics
+                <span class="material-icons">analytics</span> Analytics
             </button>
             <button class="nav-item" onclick="showSection('system')">
-                <i data-lucide="settings"></i> System
+                <span class="material-icons">settings</span> System
             </button>
         </div>
 
@@ -575,28 +690,28 @@ export function getAdminHTML(): string {
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i data-lucide="file-text" stroke="#000"></i>
+                            <span class="material-icons">article</span>
                         </div>
                         <div class="stat-number" id="totalArticles">-</div>
                         <div class="stat-label">Total Articles</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i data-lucide="rss" stroke="#000"></i>
+                            <span class="material-icons">rss_feed</span>
                         </div>
                         <div class="stat-number" id="activeSources">-</div>
                         <div class="stat-label">Active Sources</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i data-lucide="folder" stroke="#000"></i>
+                            <span class="material-icons">folder</span>
                         </div>
                         <div class="stat-number" id="totalCategories">-</div>
                         <div class="stat-label">Categories</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i data-lucide="database" stroke="#000"></i>
+                            <span class="material-icons">storage</span>
                         </div>
                         <div class="stat-number" id="dbSize">-</div>
                         <div class="stat-label">Database Size</div>
@@ -604,16 +719,16 @@ export function getAdminHTML(): string {
                 </div>
 
                 <div class="card">
-                    <h3><i data-lucide="zap"></i> Quick Actions</h3>
+                    <h3><span class="material-icons">bolt</span> Quick Actions</h3>
                     <div class="btn-group">
                         <button class="btn" onclick="refreshRSS()">
-                            <i data-lucide="refresh-cw"></i> Refresh RSS Feeds
+                            <span class="material-icons">refresh</span> Refresh RSS Feeds
                         </button>
                         <button class="btn btn-secondary" onclick="bulkPull()">
-                            <i data-lucide="download"></i> Bulk Pull Articles
+                            <span class="material-icons">download</span> Bulk Pull Articles
                         </button>
                         <button class="btn btn-secondary" onclick="viewLogs()">
-                            <i data-lucide="terminal"></i> View Logs
+                            <span class="material-icons">terminal</span> View Logs
                         </button>
                     </div>
                     <div id="actionResult"></div>
@@ -623,13 +738,13 @@ export function getAdminHTML(): string {
             <!-- RSS Sources Section -->
             <div id="sources" class="section">
                 <div class="card">
-                    <h3><i data-lucide="rss"></i> RSS Source Management</h3>
+                    <h3><span class="material-icons">rss_feed</span> RSS Source Management</h3>
                     <div class="btn-group">
                         <button class="btn" onclick="loadSources()">
-                            <i data-lucide="refresh-cw"></i> Refresh
+                            <span class="material-icons">refresh</span> Refresh
                         </button>
                         <button class="btn btn-secondary" onclick="addSource()">
-                            <i data-lucide="plus"></i> Add Source
+                            <span class="material-icons">add</span> Add Source
                         </button>
                     </div>
 
@@ -657,13 +772,13 @@ export function getAdminHTML(): string {
             <!-- Articles Section -->
             <div id="articles" class="section">
                 <div class="card">
-                    <h3><i data-lucide="newspaper"></i> Article Management</h3>
+                    <h3><span class="material-icons">article</span> Article Management</h3>
                     <div class="btn-group">
                         <button class="btn" onclick="loadArticles()">
-                            <i data-lucide="refresh-cw"></i> Refresh
+                            <span class="material-icons">refresh</span> Refresh
                         </button>
                         <button class="btn btn-secondary" onclick="exportArticles()">
-                            <i data-lucide="download"></i> Export
+                            <span class="material-icons">download</span> Export
                         </button>
                     </div>
 
@@ -691,10 +806,10 @@ export function getAdminHTML(): string {
             <!-- Authors Section -->
             <div id="authors" class="section">
                 <div class="card">
-                    <h3><i data-lucide="users"></i> Author Profiles</h3>
+                    <h3><span class="material-icons">group</span> Author Profiles</h3>
                     <div class="btn-group">
                         <button class="btn" onclick="loadAuthors()">
-                            <i data-lucide="refresh-cw"></i> Refresh
+                            <span class="material-icons">refresh</span> Refresh
                         </button>
                     </div>
 
@@ -720,13 +835,13 @@ export function getAdminHTML(): string {
             <!-- Categories Section -->
             <div id="categories" class="section">
                 <div class="card">
-                    <h3><i data-lucide="folder"></i> Category Management</h3>
+                    <h3><span class="material-icons">folder</span> Category Management</h3>
                     <div class="btn-group">
                         <button class="btn" onclick="loadCategories()">
-                            <i data-lucide="refresh-cw"></i> Refresh
+                            <span class="material-icons">refresh</span> Refresh
                         </button>
                         <button class="btn btn-secondary" onclick="addCategory()">
-                            <i data-lucide="plus"></i> Add Category
+                            <span class="material-icons">add</span> Add Category
                         </button>
                     </div>
 
@@ -752,17 +867,17 @@ export function getAdminHTML(): string {
             <!-- Analytics Section -->
             <div id="analytics" class="section">
                 <div class="card">
-                    <h3><i data-lucide="bar-chart-3"></i> Analytics & Insights</h3>
+                    <h3><span class="material-icons">analytics</span> Analytics & Insights</h3>
                     <div class="btn-group">
                         <button class="btn" onclick="loadAnalytics()">
-                            <i data-lucide="refresh-cw"></i> Load Analytics
+                            <span class="material-icons">refresh</span> Load Analytics
                         </button>
                     </div>
 
                     <div id="analyticsContainer">
                         <div class="empty-state">
                             <div class="empty-state-icon">
-                                <i data-lucide="bar-chart-3"></i>
+                                <span class="material-icons" style="font-size: 80px;">analytics</span>
                             </div>
                             <p>Click "Load Analytics" to view insights</p>
                         </div>
@@ -773,13 +888,13 @@ export function getAdminHTML(): string {
             <!-- System Section -->
             <div id="system" class="section">
                 <div class="card">
-                    <h3><i data-lucide="activity"></i> System Health</h3>
+                    <h3><span class="material-icons">monitor_heart</span> System Health</h3>
                     <div class="btn-group">
                         <button class="btn" onclick="checkHealth()">
-                            <i data-lucide="heart-pulse"></i> Health Check
+                            <span class="material-icons">health_and_safety</span> Health Check
                         </button>
                         <button class="btn btn-secondary" onclick="viewAPIEndpoints()">
-                            <i data-lucide="list"></i> API Endpoints
+                            <span class="material-icons">list</span> API Endpoints
                         </button>
                     </div>
 
@@ -840,9 +955,8 @@ export function getAdminHTML(): string {
             return response;
         };
 
-        // Initialize Lucide icons
+        // Initialize dashboard on load
         document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
             loadDashboard();
         });
 
@@ -862,7 +976,6 @@ export function getAdminHTML(): string {
             else if (sectionId === 'categories') loadCategories();
 
             // Reinitialize icons
-            lucide.createIcons();
         }
 
         // Dashboard
@@ -894,7 +1007,7 @@ export function getAdminHTML(): string {
                 if (data.success) {
                     resultDiv.innerHTML = \`
                         <div class="alert alert-success">
-                            <i data-lucide="check-circle"></i>
+                            <span class="material-icons">check_circle</span>
                             <div>
                                 <strong>Success!</strong> Added \${data.results?.newArticles || 0} new articles.
                             </div>
@@ -904,26 +1017,23 @@ export function getAdminHTML(): string {
                 } else {
                     resultDiv.innerHTML = \`
                         <div class="alert alert-error">
-                            <i data-lucide="x-circle"></i>
+                            <span class="material-icons">cancel</span>
                             <div><strong>Error:</strong> \${data.message}</div>
                         </div>
                     \`;
                 }
-                lucide.createIcons();
 
                 setTimeout(() => resultDiv.innerHTML = '', 5000);
             } catch (error) {
                 document.getElementById('actionResult').innerHTML = \`
                     <div class="alert alert-error">
-                        <i data-lucide="x-circle"></i>
+                        <span class="material-icons">cancel</span>
                         <div><strong>Error:</strong> \${error.message}</div>
                     </div>
                 \`;
-                lucide.createIcons();
             } finally {
                 button.innerHTML = originalHTML;
                 button.disabled = false;
-                lucide.createIcons();
             }
         }
 
@@ -942,26 +1052,23 @@ export function getAdminHTML(): string {
                 const resultDiv = document.getElementById('actionResult');
                 resultDiv.innerHTML = \`
                     <div class="alert alert-success">
-                        <i data-lucide="check-circle"></i>
+                        <span class="material-icons">check_circle</span>
                         <div><strong>Bulk pull completed!</strong> Check system logs for details.</div>
                     </div>
                 \`;
-                lucide.createIcons();
 
                 setTimeout(() => resultDiv.innerHTML = '', 5000);
                 loadDashboard();
             } catch (error) {
                 document.getElementById('actionResult').innerHTML = \`
                     <div class="alert alert-error">
-                        <i data-lucide="x-circle"></i>
+                        <span class="material-icons">cancel</span>
                         <div><strong>Error:</strong> \${error.message}</div>
                     </div>
                 \`;
-                lucide.createIcons();
             } finally {
                 button.innerHTML = originalHTML;
                 button.disabled = false;
-                lucide.createIcons();
             }
         }
 
@@ -989,13 +1096,13 @@ export function getAdminHTML(): string {
                             <td>
                                 <div class="table-actions">
                                     <button class="icon-btn" onclick="editSource(\${source.id})" title="Edit">
-                                        <i data-lucide="edit"></i>
+                                        <i class="material-icons">edit</span>></i>
                                     </button>
                                     <button class="icon-btn" onclick="toggleSource(\${source.id}, \${source.enabled})" title="Toggle">
                                         <i data-lucide="\${source.enabled ? 'eye-off' : 'eye'}"></i>
                                     </button>
                                     <button class="icon-btn" onclick="deleteSource(\${source.id})" title="Delete">
-                                        <i data-lucide="trash-2"></i>
+                                        <i class="material-icons">delete</span>></i>
                                     </button>
                                 </div>
                             </td>
@@ -1005,7 +1112,6 @@ export function getAdminHTML(): string {
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">No sources found</td></tr>';
                 }
 
-                lucide.createIcons();
             } catch (error) {
                 console.error('Failed to load sources:', error);
             }
@@ -1057,10 +1163,10 @@ export function getAdminHTML(): string {
                             <td>
                                 <div class="table-actions">
                                     <button class="icon-btn" onclick="viewArticle('\${article.id}')" title="View">
-                                        <i data-lucide="eye"></i>
+                                        <i class="material-icons">visibility</span>></i>
                                     </button>
                                     <button class="icon-btn" onclick="editArticle('\${article.id}')" title="Edit">
-                                        <i data-lucide="edit"></i>
+                                        <i class="material-icons">edit</span>></i>
                                     </button>
                                 </div>
                             </td>
@@ -1070,7 +1176,6 @@ export function getAdminHTML(): string {
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">No articles found</td></tr>';
                 }
 
-                lucide.createIcons();
             } catch (error) {
                 console.error('Failed to load articles:', error);
             }
@@ -1106,7 +1211,7 @@ export function getAdminHTML(): string {
                             <td>
                                 <div class="table-actions">
                                     <button class="icon-btn" onclick="viewAuthor('\${author.slug}')" title="View">
-                                        <i data-lucide="eye"></i>
+                                        <i class="material-icons">visibility</span>></i>
                                     </button>
                                 </div>
                             </td>
@@ -1116,7 +1221,6 @@ export function getAdminHTML(): string {
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #666;">No authors found</td></tr>';
                 }
 
-                lucide.createIcons();
             } catch (error) {
                 console.error('Failed to load authors:', error);
             }
@@ -1148,7 +1252,7 @@ export function getAdminHTML(): string {
                             <td>
                                 <div class="table-actions">
                                     <button class="icon-btn" onclick="editCategory(\${category.id})" title="Edit">
-                                        <i data-lucide="edit"></i>
+                                        <i class="material-icons">edit</span>></i>
                                     </button>
                                 </div>
                             </td>
@@ -1158,7 +1262,6 @@ export function getAdminHTML(): string {
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #666;">No categories found</td></tr>';
                 }
 
-                lucide.createIcons();
             } catch (error) {
                 console.error('Failed to load categories:', error);
             }
@@ -1187,11 +1290,10 @@ export function getAdminHTML(): string {
             } catch (error) {
                 container.innerHTML = \`
                     <div class="alert alert-error">
-                        <i data-lucide="x-circle"></i>
+                        <span class="material-icons">cancel</span>
                         <div><strong>Error:</strong> Failed to load analytics</div>
                     </div>
                 \`;
-                lucide.createIcons();
             }
         }
 
@@ -1216,15 +1318,13 @@ export function getAdminHTML(): string {
                     </div>
                 \`;
 
-                lucide.createIcons();
             } catch (error) {
                 statusDiv.innerHTML = \`
                     <div class="alert alert-error">
-                        <i data-lucide="x-circle"></i>
+                        <span class="material-icons">cancel</span>
                         <div><strong>Health check failed:</strong> \${error.message}</div>
                     </div>
                 \`;
-                lucide.createIcons();
             }
         }
 
