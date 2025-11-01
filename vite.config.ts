@@ -12,6 +12,8 @@ export default defineConfig({
     tsconfigPaths(),
   ],
   build: {
+    // Disable gzip reporting in CI to prevent hanging
+    reportCompressedSize: false,
     rollupOptions: {
       onwarn(warning, warn) {
         // Suppress fast-xml-parser dynamic/static import warnings
