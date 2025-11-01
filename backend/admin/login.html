@@ -12,6 +12,29 @@
     <link rel="icon" href="https://www.hararemetro.co.zw/favicon-32x32.png" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="https://www.hararemetro.co.zw/apple-touch-icon.png">
 
+    <!-- Google Fonts - Inter & Georgia -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- Material Design Web Components -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@material/web/": "https://esm.run/@material/web/"
+        }
+      }
+    </script>
+    <script type="module">
+      import '@material/web/all.js';
+      import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
+
+      document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    </script>
+
     <style>
         * {
             margin: 0;
@@ -20,17 +43,41 @@
         }
 
         :root {
-            --zw-green: 140 100% 32%;
-            --zw-yellow: 48 98% 54%;
-            --zw-red: 354 85% 57%;
-            --zw-black: 0 0% 0%;
-            --zw-white: 0 0% 100%;
+            /* Zimbabwe Flag Colors */
+            --zw-green: #00A651;
+            --zw-yellow: #FDD116;
+            --zw-red: #EF3340;
+            --zw-black: #000000;
+            --zw-white: #FFFFFF;
+
+            /* Material Design Dark Theme */
+            --md-sys-color-primary: var(--zw-green);
+            --md-sys-color-on-primary: var(--zw-white);
+            --md-sys-color-primary-container: #1a3a2a;
+            --md-sys-color-on-primary-container: #b8f4d7;
+
+            --md-sys-color-secondary: var(--zw-yellow);
+            --md-sys-color-on-secondary: var(--zw-black);
+
+            --md-sys-color-error: var(--zw-red);
+            --md-sys-color-on-error: var(--zw-white);
+
+            --md-sys-color-background: #0a0a0a;
+            --md-sys-color-on-background: #e8e8e8;
+
+            --md-sys-color-surface: #1a1a1a;
+            --md-sys-color-on-surface: #e8e8e8;
+            --md-sys-color-surface-variant: #2a2a2a;
+            --md-sys-color-on-surface-variant: #c8c8c8;
+
+            --md-sys-color-outline: #3a3a3a;
+            --md-sys-color-outline-variant: #2a2a2a;
         }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #000000;
-            color: #ffffff;
+            background: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -47,11 +94,11 @@
             height: 100vh;
             z-index: 1000;
             background: linear-gradient(to bottom,
-                hsl(var(--zw-green)) 0% 20%,
-                hsl(var(--zw-yellow)) 20% 40%,
-                hsl(var(--zw-red)) 40% 60%,
-                hsl(var(--zw-black)) 60% 80%,
-                hsl(var(--zw-white)) 80% 100%
+                var(--zw-green) 0% 20%,
+                var(--zw-yellow) 20% 40%,
+                var(--zw-red) 40% 60%,
+                var(--zw-black) 60% 80%,
+                var(--zw-white) 80% 100%
             );
         }
 
@@ -63,7 +110,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: #000000;
+            background: var(--md-sys-color-background);
             z-index: 9999;
             align-items: center;
             justify-content: center;
@@ -79,11 +126,11 @@
             font-family: Georgia, serif;
             font-size: 32px;
             margin-bottom: 16px;
-            color: hsl(var(--zw-green));
+            color: var(--zw-green);
         }
 
         .device-restriction p {
-            color: #999;
+            color: var(--md-sys-color-on-surface-variant);
             font-size: 16px;
             line-height: 1.6;
             margin-bottom: 24px;
@@ -101,19 +148,22 @@
                 display: flex;
             }
             .login-container {
-                display: none;
+                display: none !important;
             }
         }
 
         /* Login Container */
         .login-container {
-            background: #1a1a1a;
+            background: var(--md-sys-color-surface);
             padding: 48px;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border-radius: 28px;
+            box-shadow:
+                0 2px 4px rgba(0, 0, 0, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.1),
+                0 16px 32px rgba(0, 0, 0, 0.1);
             max-width: 480px;
             width: 100%;
-            border: 1px solid #2a2a2a;
+            border: 1px solid var(--md-sys-color-outline-variant);
         }
 
         /* Header */
@@ -127,133 +177,107 @@
             font-size: 36px;
             font-weight: bold;
             margin-bottom: 8px;
+            color: var(--md-sys-color-on-surface);
         }
 
         h1 .highlight {
-            color: hsl(var(--zw-green));
+            color: var(--zw-green);
         }
 
         .subtitle {
-            color: #999;
+            color: var(--md-sys-color-on-surface-variant);
             font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.1px;
         }
 
-        /* Form */
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #ffffff;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px 16px;
-            background: #000000;
-            border: 1px solid #3a3a3a;
-            border-radius: 12px;
-            font-size: 16px;
-            color: #ffffff;
-            transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
-        }
-
-        input::placeholder {
-            color: #666;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: hsl(var(--zw-green));
-            box-shadow: 0 0 0 3px hsla(var(--zw-green), 0.1);
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            background: hsl(var(--zw-green));
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
+        /* Material Design Form */
+        .form-container {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            flex-direction: column;
+            gap: 24px;
         }
 
-        button:hover {
-            background: hsl(140 100% 28%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px hsla(var(--zw-green), 0.3);
+        md-filled-text-field {
+            --md-filled-text-field-container-color: var(--md-sys-color-surface-variant);
+            --md-filled-text-field-label-text-color: var(--md-sys-color-on-surface-variant);
+            --md-filled-text-field-input-text-color: var(--md-sys-color-on-surface);
+            --md-filled-text-field-active-indicator-color: var(--zw-green);
+            --md-filled-text-field-focus-active-indicator-color: var(--zw-green);
+            --md-filled-text-field-hover-active-indicator-color: var(--zw-green);
+            width: 100%;
         }
 
-        button:active {
-            transform: translateY(0);
+        md-filled-button {
+            --md-filled-button-container-color: var(--zw-green);
+            --md-filled-button-label-text-color: var(--zw-white);
+            --md-filled-button-hover-state-layer-color: rgba(255, 255, 255, 0.08);
+            --md-filled-button-pressed-state-layer-color: rgba(255, 255, 255, 0.12);
+            width: 100%;
+            height: 48px;
+            margin-top: 8px;
         }
 
-        button:disabled {
-            background: #3a3a3a;
-            color: #666;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Error Message */
-        .error {
-            background: hsla(var(--zw-red), 0.1);
-            border: 1px solid hsla(var(--zw-red), 0.2);
-            color: hsl(var(--zw-red));
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            font-size: 14px;
+        /* Error Alert */
+        .error-alert {
             display: none;
+            background: rgba(239, 51, 64, 0.1);
+            border: 1px solid rgba(239, 51, 64, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
         }
 
-        .error.show {
-            display: block;
+        .error-alert.show {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .error-alert .material-icons {
+            color: var(--zw-red);
+            font-size: 20px;
+        }
+
+        .error-alert-content {
+            flex: 1;
+        }
+
+        .error-alert-title {
+            color: var(--zw-red);
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .error-alert-message {
+            color: var(--zw-red);
+            font-size: 13px;
+            opacity: 0.9;
         }
 
         /* Footer */
         .footer {
             margin-top: 24px;
             text-align: center;
-            color: #666;
+            color: var(--md-sys-color-on-surface-variant);
             font-size: 12px;
         }
 
         .footer a {
-            color: hsl(var(--zw-green));
+            color: var(--zw-green);
             text-decoration: none;
+            font-weight: 500;
         }
 
         .footer a:hover {
             text-decoration: underline;
         }
 
-        /* Loading Spinner */
-        .spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        /* Loading State */
+        md-circular-progress {
+            --md-circular-progress-active-indicator-color: var(--zw-white);
+            --md-circular-progress-size: 20px;
         }
     </style>
 </head>
@@ -281,37 +305,47 @@
             <p class="subtitle">Admin Panel Login</p>
         </div>
 
-        <div class="error" id="error"></div>
-
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    placeholder="admin@hararemetro.co.zw"
-                    autocomplete="email"
-                >
+        <!-- Error Alert -->
+        <div class="error-alert" id="errorAlert">
+            <span class="material-icons">error</span>
+            <div class="error-alert-content">
+                <div class="error-alert-title">Login Failed</div>
+                <div class="error-alert-message" id="errorMessage">
+                    Please check your credentials and try again.
+                </div>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    required
-                    placeholder="Enter your password"
-                    autocomplete="current-password"
-                >
-            </div>
+        <!-- Login Form -->
+        <form id="loginForm" class="form-container">
+            <md-filled-text-field
+                id="email"
+                name="email"
+                type="email"
+                label="Email Address"
+                required
+                autocomplete="email"
+                supporting-text="Enter your admin email address"
+            >
+                <span slot="leading-icon" class="material-icons">email</span>
+            </md-filled-text-field>
 
-            <button type="submit" id="submitBtn">
+            <md-filled-text-field
+                id="password"
+                name="password"
+                type="password"
+                label="Password"
+                required
+                autocomplete="current-password"
+                supporting-text="Enter your password"
+            >
+                <span slot="leading-icon" class="material-icons">lock</span>
+            </md-filled-text-field>
+
+            <md-filled-button type="submit" id="submitBtn">
                 <span id="buttonText">Sign In</span>
-                <div class="spinner" id="spinner" style="display: none;"></div>
-            </button>
+                <md-circular-progress indeterminate style="display: none;" id="loadingSpinner"></md-circular-progress>
+            </md-filled-button>
         </form>
 
         <div class="footer">
@@ -321,24 +355,27 @@
 
     <script>
         const form = document.getElementById('loginForm');
-        const errorDiv = document.getElementById('error');
+        const errorAlert = document.getElementById('errorAlert');
+        const errorMessage = document.getElementById('errorMessage');
         const submitBtn = document.getElementById('submitBtn');
         const buttonText = document.getElementById('buttonText');
-        const spinner = document.getElementById('spinner');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const emailField = document.getElementById('email');
+        const passwordField = document.getElementById('password');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             // Hide error
-            errorDiv.classList.remove('show');
+            errorAlert.classList.remove('show');
 
             // Show loading state
             submitBtn.disabled = true;
             buttonText.textContent = 'Signing in...';
-            spinner.style.display = 'block';
+            loadingSpinner.style.display = 'inline-block';
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            const email = emailField.value;
+            const password = passwordField.value;
 
             try {
                 const response = await fetch('/api/admin/login', {
@@ -357,6 +394,7 @@
 
                     // Success state
                     buttonText.textContent = 'Success! Redirecting...';
+                    loadingSpinner.style.display = 'none';
 
                     // Redirect to admin dashboard
                     setTimeout(() => {
@@ -364,24 +402,41 @@
                     }, 500);
                 } else {
                     // Show error
-                    errorDiv.textContent = data.error || 'Login failed. Please check your credentials.';
-                    errorDiv.classList.add('show');
+                    errorMessage.textContent = data.error || 'Login failed. Please check your credentials.';
+                    errorAlert.classList.add('show');
 
                     // Reset button
                     submitBtn.disabled = false;
                     buttonText.textContent = 'Sign In';
-                    spinner.style.display = 'none';
+                    loadingSpinner.style.display = 'none';
+
+                    // Set error state on fields
+                    emailField.error = true;
+                    emailField.errorText = 'Invalid credentials';
+                    passwordField.error = true;
+                    passwordField.errorText = 'Invalid credentials';
                 }
             } catch (error) {
                 // Network error
-                errorDiv.textContent = 'Network error. Please try again.';
-                errorDiv.classList.add('show');
+                errorMessage.textContent = 'Network error. Please try again.';
+                errorAlert.classList.add('show');
 
                 // Reset button
                 submitBtn.disabled = false;
                 buttonText.textContent = 'Sign In';
-                spinner.style.display = 'none';
+                loadingSpinner.style.display = 'none';
             }
+        });
+
+        // Clear error states on input
+        emailField.addEventListener('input', () => {
+            emailField.error = false;
+            emailField.errorText = '';
+        });
+
+        passwordField.addEventListener('input', () => {
+            passwordField.error = false;
+            passwordField.errorText = '';
         });
     </script>
 </body>
