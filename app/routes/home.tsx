@@ -515,6 +515,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       {/* Mobile Navigation */}
       <MobileNavigation
         currentView="/"
+        isAuthenticated={!!user}
+        username={user?.username || undefined}
         onHomeClick={() => window.location.href = '/'}
         onSearchClick={() => window.location.href = '/search'}
         onProfileClick={() => user ? setShowUserProfile(true) : setShowAuthModal(true)}

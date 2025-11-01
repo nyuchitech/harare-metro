@@ -238,6 +238,8 @@ export default function Article({ loaderData }: Route.ComponentProps) {
       {/* Mobile Navigation */}
       <MobileNavigation
         currentView="/article"
+        isAuthenticated={!!user}
+        username={user?.username || undefined}
         onHomeClick={() => window.location.href = '/'}
         onSearchClick={() => window.location.href = '/search'}
         onProfileClick={() => user ? setShowUserProfile(true) : setShowAuthModal(true)}

@@ -196,17 +196,36 @@ app.get("/login", (c) => {
   return c.html(getLoginHTML());
 });
 
-// Login API endpoint
+// Login API endpoint - uses D1 users table with role-based access
 app.post("/api/admin/login", async (c) => {
   try {
     const { email, password } = await c.req.json();
 
-    // Hardcoded admin credentials (TODO: Move to database)
-    const ADMIN_EMAIL = "admin@hararemetro.co.zw";
-    const ADMIN_PASSWORD_HASH = await hashPassword("admin123");
-    const inputPasswordHash = await hashPassword(password);
+    // Initialize OpenAuthService
+    const openAuthService = new OpenAuthService({
+      DB: c.env.DB,
+      AUTH_STORAGE: c.env.AUTH_STORAGE
+    });
 
-    if (email !== ADMIN_EMAIL || inputPasswordHash !== ADMIN_PASSWORD_HASH) {
+    // Get user from D1 database
+    const user = await openAuthService.getUserByEmail(email);
+
+    if (!user) {
+      return c.json({ error: "Invalid email or password" }, 401);
+    }
+
+    // Check if user has admin role
+    const adminRoles = c.env.ADMIN_ROLES?.split(',') || ['admin', 'super_admin', 'moderator'];
+    if (!adminRoles.includes(user.role)) {
+      console.log('[AUTH] Login denied - user lacks admin role:', { email, role: user.role, requiredRoles: adminRoles });
+      return c.json({ error: "Insufficient permissions - admin access required" }, 403);
+    }
+
+    // Validate password (for now, using simple hash - TODO: use bcrypt)
+    const inputPasswordHash = await hashPassword(password);
+    const storedPasswordHash = user.password_hash;
+
+    if (!storedPasswordHash || inputPasswordHash !== storedPasswordHash) {
       return c.json({ error: "Invalid email or password" }, 401);
     }
 
@@ -216,11 +235,23 @@ app.post("/api/admin/login", async (c) => {
     // Store session in KV (expires in 7 days)
     await c.env.AUTH_STORAGE.put(
       `session:${sessionToken}`,
-      JSON.stringify({ email, role: "admin", loginAt: new Date().toISOString() }),
+      JSON.stringify({
+        email: user.email,
+        userId: user.id,
+        username: user.username,
+        role: user.role,
+        loginAt: new Date().toISOString()
+      }),
       { expirationTtl: 7 * 24 * 60 * 60 }
     );
 
-    console.log('[AUTH] Admin login successful:', email);
+    // Update user last login timestamp
+    await c.env.DB
+      .prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP, login_count = login_count + 1 WHERE id = ?')
+      .bind(user.id)
+      .run();
+
+    console.log('[AUTH] Admin login successful:', { email, role: user.role, userId: user.id });
 
     return c.json({ success: true, token: sessionToken });
   } catch (error: any) {
@@ -240,6 +271,15 @@ app.post("/api/admin/logout", async (c) => {
   }
 
   return c.json({ success: true });
+});
+
+// Profile page redirect - redirect to frontend for user profile management
+app.get("/profile", (c) => {
+  return c.redirect("https://www.hararemetro.co.zw/settings/profile", 302);
+});
+
+app.get("/settings/profile", (c) => {
+  return c.redirect("https://www.hararemetro.co.zw/settings/profile", 302);
 });
 
 // Admin dashboard - PROTECTED route
