@@ -477,6 +477,8 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
       {/* Mobile Navigation */}
       <MobileNavigation
         currentView="/bytes"
+        isAuthenticated={!!user}
+        username={user?.username || undefined}
         onHomeClick={() => window.location.href = '/'}
         onSearchClick={() => window.location.href = '/search'}
         onProfileClick={() => user ? setShowUserProfile(true) : setShowAuthModal(true)}

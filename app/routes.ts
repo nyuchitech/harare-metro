@@ -10,6 +10,9 @@ export default [
   route("auth/register", "routes/auth.register.tsx"),
   route("auth/forgot-password", "routes/auth.forgot-password.tsx"),
 
+  // Onboarding route
+  route("onboarding", "routes/onboarding.tsx"),
+
   // Settings routes
   route("settings/profile", "routes/settings.profile.tsx"),
 

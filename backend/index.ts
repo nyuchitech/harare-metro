@@ -273,6 +273,15 @@ app.post("/api/admin/logout", async (c) => {
   return c.json({ success: true });
 });
 
+// Profile page redirect - redirect to frontend for user profile management
+app.get("/profile", (c) => {
+  return c.redirect("https://www.hararemetro.co.zw/settings/profile", 302);
+});
+
+app.get("/settings/profile", (c) => {
+  return c.redirect("https://www.hararemetro.co.zw/settings/profile", 302);
+});
+
 // Admin dashboard - PROTECTED route
 app.get("/", requireAdmin, (c) => {
   c.header("Content-Type", "text/html");
