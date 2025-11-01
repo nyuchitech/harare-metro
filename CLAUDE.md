@@ -4,17 +4,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Workflow - CRITICAL
 
+**⚠️ NEVER COMMIT DIRECTLY TO MAIN BRANCH ⚠️**
+
+All changes MUST go through Pull Requests. This is non-negotiable.
+
 **ALWAYS follow these steps before making ANY changes:**
 
 1. **Pull from main first**: `git checkout main && git pull origin main`
-2. **Review documentation**: Read CLAUDE.md, PROJECT-STATUS.md, and PHASE-2-COMPLETION-PLAN.md
-3. **Check CHANGELOG.md**: Review recent changes to understand project history
-4. **Code review**: Review the current state of the codebase on main branch
-5. **Check project status**: Verify what phase we're in and what's complete
-6. **Plan changes**: Understand what needs to be added or fixed
-7. **Apply changes**: Make your changes on a feature branch
-8. **Update documentation**: Keep CLAUDE.md and PROJECT-STATUS.md in sync with code changes
-9. **Update CHANGELOG.md**: Add entry for significant changes
+2. **Create feature branch**: `git checkout -b <type>/<description>`
+   - Types: `feat/`, `fix/`, `docs/`, `refactor/`, `test/`, `chore/`
+   - Example: `feat/user-authentication`, `fix/profile-navigation`, `docs/deployment-guide`
+3. **Review documentation**: Read CLAUDE.md, PROJECT-STATUS.md, and PHASE-2-COMPLETION-PLAN.md
+4. **Check CHANGELOG.md**: Review recent changes to understand project history
+5. **Code review**: Review the current state of the codebase on main branch
+6. **Check project status**: Verify what phase we're in and what's complete
+7. **Plan changes**: Understand what needs to be added or fixed
+8. **Apply changes**: Make your changes on the feature branch
+9. **Update documentation**: Keep CLAUDE.md and PROJECT-STATUS.md in sync with code changes
+10. **Update CHANGELOG.md**: Add entry for significant changes
+11. **Create Pull Request**: ALWAYS create a PR, never push directly to main
+12. **Wait for review**: Do not merge without approval
+
+**Git Branch Rules:**
+- ✅ **DO**: Create feature branches for all changes
+- ✅ **DO**: Create PRs for every change, even documentation
+- ✅ **DO**: Use descriptive branch names (e.g., `feat/add-onboarding-route`)
+- ❌ **DON'T**: Ever use `git push origin main`
+- ❌ **DON'T**: Ever commit directly to main branch
+- ❌ **DON'T**: Skip the PR process
 
 **Never skip these steps**. Always ensure you're working from the latest main branch and understand the full context before making changes.
 
