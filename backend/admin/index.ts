@@ -472,9 +472,73 @@ export function getAdminHTML(): string {
             font-size: 0.85rem;
             margin-top: 15px;
         }
+
+        /* Device Restriction for Mobile */
+        .device-restriction {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000000;
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .device-restriction-content {
+            max-width: 400px;
+        }
+
+        .device-restriction h2 {
+            font-family: Georgia, serif;
+            font-size: 32px;
+            margin-bottom: 16px;
+            color: #00A651;
+        }
+
+        .device-restriction p {
+            color: #999;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .device-restriction .icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+            opacity: 0.5;
+        }
+
+        /* Show restriction on mobile/small tablets */
+        @media (max-width: 1023px) {
+            .device-restriction {
+                display: flex;
+            }
+            .container {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Device Restriction Overlay -->
+    <div class="device-restriction">
+        <div class="device-restriction-content">
+            <div class="icon">💻</div>
+            <h2>Desktop Only</h2>
+            <p>
+                The Harare Metro Admin Panel is designed for desktop and tablet (landscape) use only.
+            </p>
+            <p>
+                Please access this page on a larger screen for the best experience.
+            </p>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>Harare Metro Admin</h1>
