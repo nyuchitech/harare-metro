@@ -72,7 +72,7 @@ export default function Bytes({ loaderData }: Route.ComponentProps) {
   const articlesRef = useRef<HTMLDivElement[]>([]);
   const touchStartRef = useRef({ y: 0, time: 0 });
   const isScrollingRef = useRef(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollTimeoutRef = useRef<number | null>(null);
 
   // Format time ago
   const formatTimeAgo = useCallback((dateString: string) => {

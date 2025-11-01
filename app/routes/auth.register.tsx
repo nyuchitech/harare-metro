@@ -45,7 +45,7 @@ export async function action({ request }: { request: Request }) {
         status: 302,
         headers: {
           Location: "/onboarding",
-          "Set-Cookie": `auth_token=${data.session.access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`,
+          "Set-Cookie": `auth_token=${data.session.access_token}; Domain=.hararemetro.co.zw; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`,
         },
       });
     }

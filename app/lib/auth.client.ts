@@ -1,11 +1,10 @@
 /**
  * Simple Auth Client for Harare Metro
  * Replaces Supabase with backend API calls
- * Uses localStorage for session storage (client-side only)
+ * Uses cookies for session storage (cross-worker compatible)
  */
 
 const BACKEND_URL = 'https://admin.hararemetro.co.zw';
-const SESSION_KEY = 'harare_metro_session';
 
 export interface User {
   id: string;
@@ -68,6 +67,7 @@ class AuthClient {
 
   /**
    * Sign in with email and password
+   * Note: Cookie is set by the backend via Set-Cookie header
    */
   async signIn(email: string, password: string): Promise<AuthResponse> {
     try {
@@ -76,6 +76,7 @@ class AuthClient {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies in request
         body: JSON.stringify({ email, password }),
       });
 
@@ -89,11 +90,7 @@ class AuthClient {
         };
       }
 
-      // Store session in localStorage
-      if (typeof window !== 'undefined' && data.session) {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(data.session));
-      }
-
+      // Cookie is set by backend, no need to store locally
       return {
         user: data.user,
         session: data.session,
@@ -110,51 +107,36 @@ class AuthClient {
 
   /**
    * Sign out
+   * Cookie is cleared by backend
    */
   async signOut(): Promise<void> {
     try {
-      const session = this.getStoredSession();
-      if (session) {
-        await fetch(`${BACKEND_URL}/api/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        });
-      }
+      await fetch(`${BACKEND_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include', // Include cookies in request
+      });
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      // Always clear local session
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(SESSION_KEY);
-      }
     }
   }
 
   /**
    * Get current session from API
+   * Uses cookie authentication
    */
   async getSession(): Promise<AuthResponse> {
     try {
-      const storedSession = this.getStoredSession();
-      if (!storedSession) {
+      const response = await fetch(`${BACKEND_URL}/api/auth/session`, {
+        credentials: 'include', // Include cookies in request
+      });
+
+      if (!response.ok) {
         return { user: null, session: null };
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/auth/session`, {
-        headers: {
-          'Authorization': `Bearer ${storedSession.access_token}`,
-        },
-      });
-
       const data: any = await response.json();
 
-      if (!response.ok || !data.session) {
-        // Session invalid, clear it
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(SESSION_KEY);
-        }
+      if (!data.session) {
         return { user: null, session: null };
       }
 
@@ -169,28 +151,14 @@ class AuthClient {
   }
 
   /**
-   * Get stored session from localStorage
-   */
-  private getStoredSession(): Session | null {
-    if (typeof window === 'undefined') return null;
-
-    try {
-      const stored = localStorage.getItem(SESSION_KEY);
-      if (!stored) return null;
-      return JSON.parse(stored);
-    } catch {
-      return null;
-    }
-  }
-
-  /**
    * Subscribe to auth state changes
-   * Simple implementation - just returns initial state
+   * Simple implementation - checks session on mount
    */
   onAuthStateChange(callback: (event: string, session: Session | null) => void) {
-    // For now, just call the callback immediately with current session
-    const session = this.getStoredSession();
-    callback(session ? 'SIGNED_IN' : 'SIGNED_OUT', session);
+    // Check current session from API
+    this.getSession().then(({ session }) => {
+      callback(session ? 'SIGNED_IN' : 'SIGNED_OUT', session);
+    });
 
     // Return unsubscribe function
     return {

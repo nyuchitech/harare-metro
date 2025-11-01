@@ -2555,12 +2555,18 @@ app.post("/api/auth/login", async (c) => {
 // Get current session
 app.get("/api/auth/session", async (c) => {
   try {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return c.json({ session: null, user: null });
+    // Try to get token from cookie first, then Authorization header
+    const cookieHeader = c.req.header('cookie');
+    let token = getCookie(cookieHeader, 'auth_token');
+
+    if (!token) {
+      const authHeader = c.req.header('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return c.json({ session: null, user: null });
+      }
+      token = authHeader.substring(7);
     }
 
-    const token = authHeader.substring(7);
     const authService = new OpenAuthService({ DB: c.env.DB, AUTH_STORAGE: c.env.AUTH_STORAGE });
 
     const session = await authService.validateSession(token);
@@ -2587,17 +2593,29 @@ app.get("/api/auth/session", async (c) => {
 // Logout
 app.post("/api/auth/logout", async (c) => {
   try {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return c.json({ success: true });
+    // Try to get token from cookie first, then Authorization header
+    const cookieHeader = c.req.header('cookie');
+    let token = getCookie(cookieHeader, 'auth_token');
+
+    if (!token) {
+      const authHeader = c.req.header('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
     }
 
-    const token = authHeader.substring(7);
-    const authService = new OpenAuthService({ DB: c.env.DB, AUTH_STORAGE: c.env.AUTH_STORAGE });
+    if (token) {
+      const authService = new OpenAuthService({ DB: c.env.DB, AUTH_STORAGE: c.env.AUTH_STORAGE });
+      await authService.revokeSession(token);
+    }
 
-    await authService.revokeSession(token);
-
-    return c.json({ success: true });
+    // Clear the cookie by setting it with Max-Age=0
+    return new Response(JSON.stringify({ success: true }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'auth_token=; Domain=.hararemetro.co.zw; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0'
+      }
+    });
   } catch (error: any) {
     console.error("[AUTH] Logout error:", error);
     return c.json({ error: "Logout failed" }, 500);
