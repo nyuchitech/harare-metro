@@ -61,6 +61,17 @@
   ],
 
   /**
+   * KV Namespaces - Shared authentication storage
+   * AUTH_STORAGE is shared between frontend and backend workers
+   */
+  "kv_namespaces": [
+    {
+      "binding": "AUTH_STORAGE",
+      "id": "28448bdb9dd041dcaaefe292a7651c8a"
+    }
+  ],
+
+  /**
    * Cron Triggers - Background RSS refresh
    */
   "triggers": {

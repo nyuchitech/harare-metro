@@ -154,46 +154,55 @@ function getCookie(cookieHeader: string | null, name: string): string | null {
 }
 
 // Authentication middleware - protect admin routes
+// Uses shared auth_token cookie from frontend
 const requireAdmin = async (c: any, next: any) => {
   const cookieHeader = c.req.header('cookie');
-  const sessionToken = getCookie(cookieHeader, 'admin_session');
+  const sessionToken = getCookie(cookieHeader, 'auth_token'); // Changed from admin_session
   const isApiRequest = c.req.path.startsWith('/api/');
 
   if (!sessionToken) {
-    // No session - return JSON for API, redirect for pages
+    // No session - redirect to frontend login
     if (isApiRequest) {
       return c.json({ error: 'Authentication required' }, 401);
     }
-    return c.redirect('/login');
+    return c.redirect('https://www.hararemetro.co.zw/auth/login', 302);
   }
 
-  // Check if session token is valid (stored in KV)
+  // Check if session token is valid (stored in shared KV)
   try {
-    const session = await c.env.AUTH_STORAGE.get(`session:${sessionToken}`);
-    if (!session) {
-      // Invalid session - return JSON for API, redirect for pages
+    const sessionData = await c.env.AUTH_STORAGE.get(`session:${sessionToken}`, 'json');
+    if (!sessionData || !sessionData.userId) {
+      // Invalid session - redirect to frontend login
       if (isApiRequest) {
         return c.json({ error: 'Session expired or invalid' }, 401);
       }
-      return c.redirect('/login');
+      return c.redirect('https://www.hararemetro.co.zw/auth/login', 302);
     }
 
-    // Session valid, continue
-    c.set('admin', JSON.parse(session));
+    // Check if user has admin role
+    const adminRoles = c.env.ADMIN_ROLES?.split(',') || ['admin', 'super_admin', 'moderator'];
+    if (!adminRoles.includes(sessionData.role)) {
+      if (isApiRequest) {
+        return c.json({ error: 'Admin access required' }, 403);
+      }
+      return c.redirect('https://www.hararemetro.co.zw', 302); // Redirect to homepage
+    }
+
+    // Session valid and user is admin, continue
+    c.set('user', sessionData);
     await next();
   } catch (error) {
     console.error('[AUTH] Session validation error:', error);
     if (isApiRequest) {
       return c.json({ error: 'Authentication error' }, 401);
     }
-    return c.redirect('/login');
+    return c.redirect('https://www.hararemetro.co.zw/auth/login', 302);
   }
 };
 
-// Login page - public route
+// Login page - redirect to frontend
 app.get("/login", (c) => {
-  c.header("Content-Type", "text/html");
-  return c.html(getLoginHTML());
+  return c.redirect("https://www.hararemetro.co.zw/auth/login", 302);
 });
 
 // Login API endpoint - uses D1 users table with role-based access
@@ -263,22 +272,30 @@ app.post("/api/admin/login", async (c) => {
 // Logout API endpoint
 app.post("/api/admin/logout", async (c) => {
   const cookieHeader = c.req.header('cookie');
-  const sessionToken = getCookie(cookieHeader, 'admin_session');
+  const sessionToken = getCookie(cookieHeader, 'auth_token'); // Changed from admin_session
 
   if (sessionToken) {
-    // Delete session from KV
+    // Delete session from shared KV
     await c.env.AUTH_STORAGE.delete(`session:${sessionToken}`);
   }
 
   return c.json({ success: true });
 });
 
-// Profile page redirect - redirect to frontend for user profile management
+// User management redirects - all redirect to frontend
+app.get("/register", (c) => {
+  return c.redirect("https://www.hararemetro.co.zw/auth/register", 302);
+});
+
+app.get("/onboarding", (c) => {
+  return c.redirect("https://www.hararemetro.co.zw/onboarding", 302);
+});
+
 app.get("/profile", (c) => {
   return c.redirect("https://www.hararemetro.co.zw/settings/profile", 302);
 });
 
-app.get("/settings/profile", (c) => {
+app.get("/settings/*", (c) => {
   return c.redirect("https://www.hararemetro.co.zw/settings/profile", 302);
 });
 
@@ -2538,12 +2555,18 @@ app.post("/api/auth/login", async (c) => {
 // Get current session
 app.get("/api/auth/session", async (c) => {
   try {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return c.json({ session: null, user: null });
+    // Try to get token from cookie first, then Authorization header
+    const cookieHeader = c.req.header('cookie');
+    let token = getCookie(cookieHeader, 'auth_token');
+
+    if (!token) {
+      const authHeader = c.req.header('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return c.json({ session: null, user: null });
+      }
+      token = authHeader.substring(7);
     }
 
-    const token = authHeader.substring(7);
     const authService = new OpenAuthService({ DB: c.env.DB, AUTH_STORAGE: c.env.AUTH_STORAGE });
 
     const session = await authService.validateSession(token);
@@ -2570,17 +2593,29 @@ app.get("/api/auth/session", async (c) => {
 // Logout
 app.post("/api/auth/logout", async (c) => {
   try {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return c.json({ success: true });
+    // Try to get token from cookie first, then Authorization header
+    const cookieHeader = c.req.header('cookie');
+    let token = getCookie(cookieHeader, 'auth_token');
+
+    if (!token) {
+      const authHeader = c.req.header('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
     }
 
-    const token = authHeader.substring(7);
-    const authService = new OpenAuthService({ DB: c.env.DB, AUTH_STORAGE: c.env.AUTH_STORAGE });
+    if (token) {
+      const authService = new OpenAuthService({ DB: c.env.DB, AUTH_STORAGE: c.env.AUTH_STORAGE });
+      await authService.revokeSession(token);
+    }
 
-    await authService.revokeSession(token);
-
-    return c.json({ success: true });
+    // Clear the cookie by setting it with Max-Age=0
+    return new Response(JSON.stringify({ success: true }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'auth_token=; Domain=.hararemetro.co.zw; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0'
+      }
+    });
   } catch (error: any) {
     console.error("[AUTH] Logout error:", error);
     return c.json({ error: "Logout failed" }, 500);

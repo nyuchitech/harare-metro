@@ -341,29 +341,47 @@ Key tables:
 - `daily_source_stats` - RSS fetch statistics
 - `ai_processing_log` - AI pipeline execution logs
 
-**No KV Storage** - All caching and storage uses D1 database.
+**Shared KV Storage** - `AUTH_STORAGE` KV namespace shared between frontend and backend for sessions.
 
-**No Supabase** - All authentication and user data in D1.
+**No Supabase** - All authentication uses D1 + KV. Zero Supabase dependencies.
 
 ### Authentication & User Management
 
-**Current State (Transitioning):**
-- **Backend**: Ready for OpenAuth.js (Cloudflare-native authentication)
-  - `OpenAuthService.ts` implemented in `backend/services/`
-  - Auth tables created in D1 (`users`, `user_sessions`, `user_bookmarks`, `user_likes`, etc.)
-  - Supports roles: `creator`, `business-creator`, `moderator`, `admin`
-  - Uses KV namespace `AUTH_STORAGE` for session management
+**Architecture: Centralized Auth in Frontend, Validated by Backend**
 
-- **Frontend**: Currently using legacy Supabase auth (TO BE MIGRATED)
-  - `AuthContext.tsx` imports from `lib/supabase.client`
-  - `UserProfile.tsx` uses Supabase for user data
-  - **Migration needed**: Update to use OpenAuth backend endpoints
+- **Frontend (www.hararemetro.co.zw)**: Manages all user operations
+  - User registration and login
+  - Creates sessions in `AUTH_STORAGE` KV
+  - Sets cookie: `auth_token` with domain `.hararemetro.co.zw`
+  - Profile management, settings, onboarding
+  - Password reset and email verification
+
+- **Backend (admin.hararemetro.co.zw)**: Validates sessions only
+  - Reads `auth_token` cookie from frontend
+  - Validates session from `AUTH_STORAGE` KV
+  - Checks user role for admin access
+  - Redirects all user management to frontend
+  - No login page (redirects to frontend)
+
+**Shared Session Storage (AUTH_STORAGE KV):**
+```typescript
+// Key format
+`session:${sessionId}`
+
+// Value format
+{
+  userId: string;
+  email: string;
+  username: string;
+  role: 'admin' | 'super_admin' | 'moderator' | 'creator' | 'business-creator';
+  loginAt: string; // ISO8601
+  expiresAt: string; // ISO8601
+}
+```
 
 **Auth Tables in D1:**
 ```sql
--- Core auth tables
 users                    -- User accounts with role-based access
-user_sessions            -- Session management with device tracking
 user_bookmarks           -- Article bookmarks
 user_likes               -- Article likes
 user_reading_history     -- Reading engagement metrics
@@ -376,27 +394,45 @@ audit_log               -- Security and compliance audit trail
 - `creator` - Default role, can create and manage own content
 - `business-creator` - Business/organization accounts with enhanced features
 - `moderator` - Can moderate content and users
-- `admin` - Full platform access and management
+- `admin` - Full platform access and management (backend admin access)
+- `super_admin` - Full platform access and management (backend admin access)
 
 **Super Admin Account:**
 - Email: bryan@nyuchi.com
 - Role: admin
 - Status: active
-- Created: 2025-10-31
+- Password: admin123 (change in production)
 
-**Authentication Flow (Target with OpenAuth):**
-1. User registers/logs in via backend OpenAuth endpoints
-2. Backend validates credentials and creates session in D1 + KV
-3. Frontend receives session token
-4. Subsequent requests include session token for authentication
-5. Backend validates token against KV and D1 user data
+**Shared Authentication Flow:**
+1. User logs in at www.hararemetro.co.zw
+2. Frontend validates credentials against D1
+3. Frontend creates session in `AUTH_STORAGE` KV
+4. Frontend sets cookie: `auth_token` with domain `.hararemetro.co.zw`
+5. User navigates to admin.hararemetro.co.zw
+6. Backend reads `auth_token` cookie
+7. Backend validates session from `AUTH_STORAGE` KV
+8. Backend checks if user.role is admin/super_admin/moderator
+9. If yes: grant admin access; If no: deny access
 
-**Migration TODO:**
-- [ ] Update `AuthContext.tsx` to use OpenAuth backend endpoints instead of Supabase
-- [ ] Update `UserProfile.tsx` to fetch from D1/OpenAuth
-- [ ] Remove Supabase client dependencies from frontend
-- [ ] Update login/signup flows to use backend auth API
-- [ ] Test full authentication flow end-to-end
+**Cookie Configuration:**
+```typescript
+{
+  name: 'auth_token',
+  domain: '.hararemetro.co.zw', // Leading dot for subdomain sharing
+  path: '/',
+  httpOnly: true,
+  secure: true,
+  sameSite: 'Lax',
+  maxAge: 7 * 24 * 60 * 60 // 7 days
+}
+```
+
+**Backend Redirects to Frontend:**
+- `/login` → `https://www.hararemetro.co.zw/auth/login`
+- `/register` → `https://www.hararemetro.co.zw/auth/register`
+- `/profile` → `https://www.hararemetro.co.zw/settings/profile`
+- `/settings/*` → `https://www.hararemetro.co.zw/settings/profile`
+- `/onboarding` → `https://www.hararemetro.co.zw/onboarding`
 
 ### Cloudflare Configuration
 
@@ -485,8 +521,22 @@ export default {
 
 ## Design System & Branding
 
+### Frontend vs Backend Design Systems
+
+**Frontend (www.hararemetro.co.zw):**
+- **Framework**: Tailwind CSS 4.x with custom Zimbabwe flag colors
+- **Style**: TikTok-like mobile-first experience
+- **Typography**: Georgia serif (headings) + Inter sans-serif (body)
+
+**Backend Admin (admin.hararemetro.co.zw):**
+- **Framework**: Material UI (MUI) v5+ with React
+- **Style**: Professional desktop-first admin interface
+- **Typography**: Georgia serif (headings) + Inter sans-serif (body)
+- **Build**: React SPA bundled with Vite, served by Hono backend
+- **Components**: Material UI components customized with Zimbabwe flag colors
+
 ### Typography System
-**IMPORTANT**: The application uses a dual-font system for optimal readability and brand consistency:
+**IMPORTANT**: Both frontend and backend use a dual-font system for brand consistency:
 
 - **Headings** (h1-h6): Georgia serif font (matches logo aesthetic)
   ```css
@@ -508,6 +558,46 @@ export default {
   --zw-black: 0 0% 0%;        /* #000000 - African heritage, strength */
   --zw-white: 0 0% 100%;      /* #FFFFFF - Peace, unity, progress */
 }
+```
+
+### Material UI Theme Configuration (Backend Admin Only)
+
+**Zimbabwe Flag Colors in Material UI:**
+```typescript
+import { createTheme } from '@mui/material/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#00A651', // Zimbabwe Green
+      contrastText: '#FFFFFF',
+    },
+    secondary: {
+      main: '#FDD116', // Zimbabwe Yellow
+      contrastText: '#000000',
+    },
+    error: {
+      main: '#EF3340', // Zimbabwe Red
+    },
+    background: {
+      default: '#0a0a0a',
+      paper: '#1a1a1a',
+    },
+    text: {
+      primary: '#e8e8e8',
+      secondary: '#9ca3af',
+    },
+  },
+  typography: {
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    h1: { fontFamily: "Georgia, 'Times New Roman', serif" },
+    h2: { fontFamily: "Georgia, 'Times New Roman', serif" },
+    h3: { fontFamily: "Georgia, 'Times New Roman', serif" },
+    h4: { fontFamily: "Georgia, 'Times New Roman', serif" },
+    h5: { fontFamily: "Georgia, 'Times New Roman', serif" },
+    h6: { fontFamily: "Georgia, 'Times New Roman', serif" },
+  },
+});
 ```
 
 ### Color Usage Guidelines
@@ -722,11 +812,12 @@ try {
 4. **Services Location**: All business logic in `backend/services/`
 5. **Cron Implementation**: Frontend calls backend via HTTP POST for RSS refresh
 6. **Authentication**:
-   - Backend ready for OpenAuth.js (D1 + KV session management)
-   - Frontend currently using Supabase (migration needed)
-   - Super admin: bryan@nyuchi.com (role: admin)
-   - Auth tables in D1: users, user_sessions, user_bookmarks, user_likes
-7. **No Supabase (Target)**: Migrating all auth from Supabase to OpenAuth.js + D1
+   - Shared KV sessions (`AUTH_STORAGE`) between frontend and backend
+   - Frontend manages all user operations (login, register, profile, settings)
+   - Backend validates sessions and checks admin role
+   - Super admin: bryan@nyuchi.com (role: admin, password: admin123)
+   - Auth tables in D1: users, user_bookmarks, user_likes, user_preferences
+7. **No Supabase**: Zero Supabase dependencies - all auth uses D1 + KV
 8. **Typography**: Georgia for headings, Inter for body - NO EXCEPTIONS
 9. **Colors**: Zimbabwe flag palette only - maintain consistency
 10. **Mobile**: Mobile-first design with TikTok-like experience

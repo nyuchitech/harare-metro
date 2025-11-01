@@ -27,14 +27,17 @@ export async function action({ request }: { request: Request }) {
       return { error: error.error || "Login failed" };
     }
 
-    const data = await response.json() as { session: { access_token: string }; user: any };
+    const data = await response.json() as {
+      session: { access_token: string };
+      user: { id: string; email: string; username: string; display_name?: string; role: string }
+    };
 
-    // Set cookie and redirect
+    // Set cookie with .hararemetro.co.zw domain for cross-worker sharing and redirect to user profile
     return new Response(null, {
       status: 302,
       headers: {
-        Location: "/",
-        "Set-Cookie": `auth_token=${data.session.access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`,
+        Location: `/@/${data.user.username}`,
+        "Set-Cookie": `auth_token=${data.session.access_token}; Domain=.hararemetro.co.zw; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`,
       },
     });
   } catch (error) {
