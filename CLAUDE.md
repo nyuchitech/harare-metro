@@ -82,11 +82,34 @@ All changes MUST go through Pull Requests. This is non-negotiable.
 - `npm run preview` - Preview production build locally
 
 ### Build and Deployment
-- `npm run build` - Build React Router frontend application
-- `npm run deploy` - Deploy frontend worker to www.hararemetro.co.zw
-- `npm run deploy:backend` - Deploy backend worker to admin.hararemetro.co.zw
-- `npm run deploy:all` - Deploy both frontend and backend workers
-- `npm run typecheck` - Run TypeScript type checking
+
+**⚠️ CRITICAL: Monorepo Deployment Structure**
+
+This is a **monorepo** with separate frontend and backend workers that deploy differently:
+
+**Frontend Worker** (www.hararemetro.co.zw):
+- Build from: **Root directory**
+- Deploy via: **Cloudflare Workers CI/CD** (automatic on push to main)
+- Commands: `npm run build`, `npm run deploy`
+- Worker name: `harare-metro-frontend`
+- Config: `wrangler.jsonc` (root)
+
+**Backend Worker** (admin.hararemetro.co.zw):
+- Build from: **backend/ directory**
+- Deploy via: **Manual only** (CI/CD DISABLED)
+- Commands: `cd backend && npm run deploy`
+- Worker name: `harare-metro-backend`
+- Config: `backend/wrangler.jsonc`
+
+**Why Backend is Manual:**
+The Cloudflare Workers CI system builds from the repository root, which contains the frontend (React Router) application. When it tries to deploy the backend worker, it builds the frontend instead, causing route conflicts.
+
+**Deployment Commands:**
+- `npm run build` - Build frontend (from root)
+- `npm run deploy` - Deploy frontend via wrangler (from root)
+- `cd backend && npm run deploy` - Deploy backend (from backend dir)
+- `npm run typecheck` - TypeScript check (frontend)
+- `cd backend && npm run typecheck` - TypeScript check (backend)
 
 ### Testing and Utilities
 - `npm run test` - Run build as test (no automated tests configured)
