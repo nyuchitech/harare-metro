@@ -1522,20 +1522,15 @@ export function getLoginHTML(): string {
     <div class="login-container">
         <h1>Harare Metro</h1>
         <p class="subtitle">Admin Panel Login</p>
-        <div class="info">
-            <strong>Demo Credentials:</strong><br>
-            Email: admin@hararemetro.co.zw<br>
-            Password: admin123
-        </div>
         <div class="error" id="error"></div>
         <form id="loginForm">
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="admin@hararemetro.co.zw" autocomplete="email">
+                <input type="email" id="email" name="email" required placeholder="you@example.com" autocomplete="email">
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password" autocomplete="current-password">
+                <input type="password" id="password" name="password" required placeholder="••••••••" autocomplete="current-password">
             </div>
             <button type="submit" id="submitBtn">Sign In</button>
         </form>
