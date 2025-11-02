@@ -48,8 +48,8 @@ export function CommentForm({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
           },
+          credentials: "include",
           body: JSON.stringify({ content: content.trim() }),
         }
       );

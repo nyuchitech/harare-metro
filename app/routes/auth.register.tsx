@@ -1,13 +1,14 @@
 import { Form, Link, useActionData } from "react-router";
+import type { Route } from "./+types/auth.register";
 import { useState } from "react";
 import { UserPlus } from "lucide-react";
 
-export async function loader() {
+export async function loader({ request }: Route.LoaderArgs) {
   // Simple loader to prevent 404 on data fetches
   return null;
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -106,7 +107,7 @@ export default function Register() {
                   name="username"
                   pattern="[a-zA-Z0-9_-]{3,30}"
                   title="3-30 characters, letters, numbers, underscore, and hyphen only"
-                  className="w-full pl-8 pr-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors"
+                  className="w-full pl-8 pr-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
                   placeholder="johndoe"
                 />
               </div>
@@ -127,7 +128,7 @@ export default function Register() {
                 type="text"
                 id="displayName"
                 name="displayName"
-                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors"
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
                 placeholder="John Doe"
               />
               <p className="text-xs text-gray-500 mt-1">Optional</p>
@@ -146,7 +147,7 @@ export default function Register() {
                 id="email"
                 name="email"
                 required
-                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors"
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
                 placeholder="you@example.com"
               />
             </div>
@@ -165,7 +166,7 @@ export default function Register() {
                 name="password"
                 required
                 minLength={8}
-                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors"
+                className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
                 placeholder="••••••••"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -177,7 +178,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

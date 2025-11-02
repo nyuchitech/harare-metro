@@ -80,7 +80,8 @@ export function ArticleViewTracker({
           headers: {
             "Content-Type": "application/json",
             ...(user
-              ? { Authorization: `Bearer ${localStorage.getItem("auth_token")}` }
+              ? { Authorization: `Bearer ${localStorage.getItem("auth_token")}
+          credentials: "include",` }
               : {}),
           },
           body: JSON.stringify(payload),

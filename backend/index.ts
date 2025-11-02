@@ -56,8 +56,14 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// Add CORS and logging middleware
-app.use("*", cors());
+// Add CORS middleware - allow credentials from frontend
+app.use("*", cors({
+  origin: ['https://www.hararemetro.co.zw', 'http://localhost:5173', 'http://localhost:3000'],
+  credentials: true,
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposeHeaders: ['Set-Cookie'],
+}));
 app.use("*", logger());
 
 // Protect all admin API routes (except login and backfill)
@@ -2536,7 +2542,8 @@ app.post("/api/auth/login", async (c) => {
       os: 'unknown'
     });
 
-    return c.json({
+    // Set cookie with proper domain for cross-worker sharing
+    return new Response(JSON.stringify({
       session: { access_token: sessionToken },
       user: {
         id: user.id,
@@ -2544,6 +2551,12 @@ app.post("/api/auth/login", async (c) => {
         username: user.username,
         display_name: user.display_name,
         role: user.role
+      }
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Set-Cookie': `auth_token=${sessionToken}; Domain=.hararemetro.co.zw; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`
       }
     });
   } catch (error: any) {

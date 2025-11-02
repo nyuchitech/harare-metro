@@ -1,13 +1,14 @@
 import { Form, Link, useActionData } from "react-router";
+import type { Route } from "./+types/auth.forgot-password";
 import { useState } from "react";
 import { Mail, Key } from "lucide-react";
 
-export async function loader() {
+export async function loader({ request }: Route.LoaderArgs) {
   // Simple loader to prevent 404 on data fetches
   return null;
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const step = formData.get("step") as string;
 
@@ -126,7 +127,7 @@ export default function ForgotPassword() {
                   id="email"
                   name="email"
                   required
-                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors"
+                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
                   placeholder="you@example.com"
                 />
               </div>
@@ -135,7 +136,7 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -180,7 +181,7 @@ export default function ForgotPassword() {
                   required
                   pattern="[0-9]{6}"
                   maxLength={6}
-                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors text-center text-2xl tracking-widest"
+                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors text-center text-2xl tracking-widest"
                   placeholder="000000"
                 />
               </div>
@@ -199,7 +200,7 @@ export default function ForgotPassword() {
                   name="newPassword"
                   required
                   minLength={8}
-                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors"
+                  className="w-full px-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
                   placeholder="••••••••"
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -211,7 +212,7 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>

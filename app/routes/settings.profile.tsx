@@ -212,7 +212,7 @@ export default function ProfileSettings() {
                     id="displayName"
                     name="displayName"
                     defaultValue={profile.displayName || ""}
-                    className="w-full pl-12 pr-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors"
+                    className="w-full pl-12 pr-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
                     placeholder="Your Name"
                   />
                 </div>
@@ -234,7 +234,7 @@ export default function ProfileSettings() {
                     rows={4}
                     defaultValue={profile.bio || ""}
                     maxLength={160}
-                    className="w-full pl-12 pr-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors resize-none"
+                    className="w-full pl-12 pr-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors resize-none"
                     placeholder="Tell us about yourself..."
                   />
                 </div>
@@ -255,7 +255,7 @@ export default function ProfileSettings() {
                     id="avatarUrl"
                     name="avatarUrl"
                     defaultValue={profile.avatarUrl || ""}
-                    className="w-full pl-12 pr-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors"
+                    className="w-full pl-12 pr-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
                     placeholder="https://example.com/avatar.jpg"
                   />
                 </div>
@@ -289,7 +289,7 @@ export default function ProfileSettings() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -349,7 +349,7 @@ export default function ProfileSettings() {
                     required
                     pattern="[a-zA-Z0-9_-]{3,30}"
                     title="3-30 characters, letters, numbers, underscore, and hyphen only"
-                    className="w-full pl-12 pr-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 transition-colors"
+                    className="w-full pl-12 pr-4 py-3 bg-black border border-gray-700 rounded-xl focus:border-[hsl(var(--zw-green))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--zw-green))]/20 focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-colors"
                     placeholder="new_username"
                   />
                 </div>
@@ -362,7 +362,7 @@ export default function ProfileSettings() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 bg-[hsl(var(--zw-green))] hover:bg-[hsl(var(--zw-green))]/80 rounded-xl font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--zw-green))] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
