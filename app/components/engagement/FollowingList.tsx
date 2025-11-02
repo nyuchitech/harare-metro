@@ -50,8 +50,7 @@ export function FollowingList({
       const response = await fetch(endpoint, {
         headers: isOwnProfile
           ? {
-              Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-            }
+                          }
           : {},
       });
 
@@ -76,9 +75,7 @@ export function FollowingList({
         `https://admin.hararemetro.co.zw/api/user/me/follows/${item.followType}/${item.followId}`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-          },
+          credentials: "include",
         }
       );
 

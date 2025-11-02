@@ -2542,7 +2542,8 @@ app.post("/api/auth/login", async (c) => {
       os: 'unknown'
     });
 
-    return c.json({
+    // Set cookie with proper domain for cross-worker sharing
+    return new Response(JSON.stringify({
       session: { access_token: sessionToken },
       user: {
         id: user.id,
@@ -2550,6 +2551,12 @@ app.post("/api/auth/login", async (c) => {
         username: user.username,
         display_name: user.display_name,
         role: user.role
+      }
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Set-Cookie': `auth_token=${sessionToken}; Domain=.hararemetro.co.zw; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`
       }
     });
   } catch (error: any) {
