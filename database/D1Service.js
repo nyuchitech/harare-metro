@@ -293,18 +293,30 @@ export class D1Service {
 
   async getArticleBySourceSlug(sourceId, slug) {
     try {
-      const result = await this.db.prepare(`
+      // Try to find by source_id first, then fallback to source name
+      let result = await this.db.prepare(`
         SELECT a.*, c.name as category_name, c.emoji as category_emoji, c.color as category_color
         FROM articles a
         LEFT JOIN categories c ON a.category_id = c.id
         WHERE a.source_id = ? AND a.slug = ? AND a.status = 'published'
         LIMIT 1
       `).bind(sourceId, slug).first()
-      
+
+      // If not found by source_id, try by source name
+      if (!result) {
+        result = await this.db.prepare(`
+          SELECT a.*, c.name as category_name, c.emoji as category_emoji, c.color as category_color
+          FROM articles a
+          LEFT JOIN categories c ON a.category_id = c.id
+          WHERE a.source = ? AND a.slug = ? AND a.status = 'published'
+          LIMIT 1
+        `).bind(sourceId, slug).first()
+      }
+
       if (!result) {
         return null
       }
-      
+
       return {
         ...result,
         tags: result.tags ? JSON.parse(result.tags) : [],

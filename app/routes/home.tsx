@@ -306,7 +306,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 {displayedArticles.map((article, index) => (
                   <a
                     key={article.id || index}
-                    href={`/${article.source_id}/${article.slug}`}
+                    href={`/${article.source_id || article.source || 'unknown'}/${article.slug}`}
                     className="block bg-card border border-border rounded-xl overflow-hidden hover:border-border/80 transition-all duration-200 hover:shadow-lg break-inside-avoid mb-6"
                   >
                     {article.image_url && (
@@ -382,7 +382,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 {displayedArticles.map((article, index) => (
                   <a
                     key={article.id || index}
-                    href={`/${article.source_id}/${article.slug}`}
+                    href={`/${article.source_id || article.source || 'unknown'}/${article.slug}`}
                     className="block bg-card border border-border rounded-xl overflow-hidden hover:border-border/80 transition-all duration-200 hover:shadow-lg"
                   >
                     <div className="flex flex-col sm:flex-row">
