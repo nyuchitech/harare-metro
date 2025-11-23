@@ -2,10 +2,10 @@
 
 @theme {
   --font-sans:
-    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Noto Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-serif:
-    Georgia, "Times New Roman", serif;
+    "Noto Serif", Georgia, "Times New Roman", serif;
 }
 
 @layer base {
@@ -90,20 +90,20 @@
     --warning-foreground: 0 0% 15%;
   }
 
-  /* Import fonts - Logo font (Georgia/serif) for headings, Inter for body */
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  /* Import fonts - Noto Serif for headings, Noto Sans for body */
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
 
-  /* Body uses Inter for maximum readability */
+  /* Body uses Noto Sans for maximum readability */
   html {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
-  
+
   body {
     margin: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     font-display: swap;
     line-height: 1.6;
     letter-spacing: -0.01em;
@@ -113,9 +113,9 @@
     font-size: 16px;
   }
 
-  /* Headings use serif font to match logo - elegant and authoritative */
+  /* Headings use Noto Serif font - elegant and authoritative */
   h1, h2, h3, h4, h5, h6 {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
     font-weight: 700;
     line-height: 1.3;
     letter-spacing: -0.01em;
@@ -128,22 +128,22 @@
     font-weight: 800;
   }
 
-  /* Body text uses Inter for maximum readability */
+  /* Body text uses Noto Sans for maximum readability */
   p, span, div {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     color: hsl(var(--foreground));
   }
 
-  /* Better button typography with Inter */
+  /* Better button typography with Noto Sans */
   button {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     font-weight: 500;
     letter-spacing: -0.01em;
   }
 
-  /* Input typography with Inter */
+  /* Input typography with Noto Sans */
   input, textarea {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segue UI', 'Roboto', sans-serif;
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     font-weight: 400;
     letter-spacing: -0.01em;
   }
@@ -156,11 +156,11 @@
 @layer utilities {
   /* Font utilities */
   .font-sans {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   }
-  
+
   .font-serif {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
   }
   
   /* Zimbabwe brand utility classes */

@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import {
   Home,
   Search,
-  User,
+  UserCircle,
   Video,
   LogIn
 } from 'lucide-react'
@@ -55,7 +55,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
     {
       id: 'profile',
       name: isAuthenticated ? 'Profile' : 'Login',
-      icon: isAuthenticated ? User : LogIn,
+      icon: isAuthenticated ? UserCircle : LogIn,
       action: onProfileClick || (() => {}),
       href: isAuthenticated ? (username ? `/@${username}` : '/auth/login') : '/auth/login'
     }
@@ -93,8 +93,8 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     className={`
                       p-3 rounded-full transition-all duration-200 touch-target
                       ${isActive ?
-                        'bg-zw-green/10 text-zw-green' :
-                        'text-muted-foreground hover:text-zw-green hover:bg-zw-green/5'
+                        'text-foreground dark:text-white' :
+                        'text-muted-foreground hover:text-foreground dark:hover:text-white'
                       }
                     `}
                     aria-current={isActive ? 'page' : undefined}
@@ -108,8 +108,8 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                     className={`
                       p-3 rounded-full transition-all duration-200 touch-target
                       ${isActive ?
-                        'bg-zw-green/10 text-zw-green' :
-                        'text-muted-foreground hover:text-zw-green hover:bg-zw-green/5'
+                        'text-foreground dark:text-white' :
+                        'text-muted-foreground hover:text-foreground dark:hover:text-white'
                       }
                     `}
                     aria-current={isActive ? 'page' : undefined}
@@ -122,7 +122,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                 {/* Active indicator dot */}
                 <div className={`
                   w-1 h-1 rounded-full mt-1 transition-all duration-200
-                  ${isActive ? 'bg-zw-green opacity-100' : 'bg-transparent opacity-0'}
+                  ${isActive ? 'bg-foreground dark:bg-white opacity-100' : 'bg-transparent opacity-0'}
                 `} />
               </div>
             )
