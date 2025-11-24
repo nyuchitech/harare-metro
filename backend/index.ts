@@ -163,7 +163,7 @@ function getCookie(cookieHeader: string | null, name: string): string | null {
 // Uses shared auth_token cookie from frontend
 const requireAdmin = async (c: any, next: any) => {
   const cookieHeader = c.req.header('cookie');
-  const sessionToken = getCookie(cookieHeader, 'auth_token'); // Changed from admin_session
+  const sessionToken = getCookie(cookieHeader, 'auth_token');
   const isApiRequest = c.req.path.startsWith('/api/');
 
   if (!sessionToken) {
@@ -174,11 +174,13 @@ const requireAdmin = async (c: any, next: any) => {
     return c.redirect('https://www.hararemetro.co.zw/auth/login', 302);
   }
 
-  // Check if session token is valid (stored in shared KV)
+  // Validate session from D1 database using OpenAuthService
   try {
-    const sessionData = await c.env.AUTH_STORAGE.get(`session:${sessionToken}`, 'json');
-    if (!sessionData || !sessionData.userId) {
-      // Invalid session - redirect to frontend login
+    const authService = new OpenAuthService({ DB: c.env.DB, AUTH_STORAGE: c.env.AUTH_STORAGE });
+    const session = await authService.validateSession(sessionToken);
+
+    if (!session || !session.user_id) {
+      // Invalid or expired session - redirect to frontend login
       if (isApiRequest) {
         return c.json({ error: 'Session expired or invalid' }, 401);
       }
@@ -187,7 +189,7 @@ const requireAdmin = async (c: any, next: any) => {
 
     // Check if user has admin role
     const adminRoles = c.env.ADMIN_ROLES?.split(',') || ['admin', 'super_admin', 'moderator'];
-    if (!adminRoles.includes(sessionData.role)) {
+    if (!adminRoles.includes(session.role)) {
       if (isApiRequest) {
         return c.json({ error: 'Admin access required' }, 403);
       }
@@ -195,7 +197,12 @@ const requireAdmin = async (c: any, next: any) => {
     }
 
     // Session valid and user is admin, continue
-    c.set('user', sessionData);
+    c.set('user', {
+      userId: session.user_id,
+      email: session.email,
+      username: session.username,
+      role: session.role
+    });
     await next();
   } catch (error) {
     console.error('[AUTH] Session validation error:', error);
