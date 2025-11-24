@@ -1,15 +1,17 @@
-// OpenAuth library not needed - using simple D1 + KV auth
+// OpenAuth library not needed - using simple D1-first auth
 // import { createAuthHandler } from '@openauthjs/openauth'
 import * as v from 'valibot'
+import { PasswordHashingService } from './PasswordHashingService.js'
 
 /**
  * OpenAuth Service for Harare Metro
- * Cloudflare-native authentication replacing Supabase
- * Supports: creator, business-creator, moderator, admin roles
+ * D1-First authentication architecture - all auth data in database
+ * KV only used for temporary verification codes and rate limiting
+ * Supports: creator, business-creator, moderator, admin, super_admin roles
  */
 
 // User role validation schema
-const UserRole = v.picklist(['creator', 'business-creator', 'moderator', 'admin'])
+const UserRole = v.picklist(['creator', 'business-creator', 'moderator', 'admin', 'super_admin'])
 const UserStatus = v.picklist(['active', 'suspended', 'deleted'])
 
 // User schema for database operations
@@ -199,6 +201,151 @@ export class OpenAuthService {
       .prepare('SELECT * FROM users WHERE username = ? AND status = "active"')
       .bind(username)
       .first()
+  }
+
+  /**
+   * Create new user with password (D1-first architecture)
+   * Stores password hash directly in users.password_hash column
+   */
+  async createUserWithPassword(
+    email: string,
+    password: string,
+    metadata?: {
+      username?: string;
+      displayName?: string;
+      role?: string;
+      ip_address?: string;
+    }
+  ): Promise<{ success: boolean; user?: any; error?: string }> {
+    try {
+      // Check if user already exists
+      const existingUser = await this.getUserByEmail(email);
+      if (existingUser) {
+        return { success: false, error: 'Email already registered' };
+      }
+
+      // Validate password strength
+      const passwordValidation = PasswordHashingService.validatePasswordStrength(password);
+      if (!passwordValidation.valid) {
+        return { success: false, error: passwordValidation.error };
+      }
+
+      // Hash password with salt
+      const passwordHash = await PasswordHashingService.hashPassword(password);
+
+      // Generate username if not provided
+      let username = metadata?.username;
+      if (!username) {
+        username = email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+
+        // Ensure uniqueness
+        let attempts = 0;
+        let uniqueUsername = username;
+        while (attempts < 10) {
+          const existing = await this.getUserByUsername(uniqueUsername);
+          if (!existing) break;
+
+          const randomArray = new Uint32Array(1);
+          crypto.getRandomValues(randomArray);
+          const randomSuffix = randomArray[0] % 10000;
+          uniqueUsername = `${username}${randomSuffix}`;
+          attempts++;
+        }
+        username = uniqueUsername;
+      } else {
+        // Check if username is already taken
+        const existingUsername = await this.getUserByUsername(username);
+        if (existingUsername) {
+          return { success: false, error: 'Username already taken' };
+        }
+      }
+
+      // Create user with password hash in D1
+      const userId = crypto.randomUUID();
+      const role = metadata?.role || 'creator';
+
+      const user = await this.db
+        .prepare(`
+          INSERT INTO users (
+            id, email, username, display_name, password_hash,
+            role, status, email_verified, login_count,
+            analytics_consent, preferences
+          ) VALUES (?, ?, ?, ?, ?, ?, 'active', TRUE, 0, TRUE, '{}')
+          RETURNING id, email, username, display_name, role, status, created_at
+        `)
+        .bind(userId, email, username, metadata?.displayName || null, passwordHash, role)
+        .first();
+
+      // Log user creation
+      await this.logAuditEvent('user_created', 'user', userId, null, {
+        email,
+        username,
+        role,
+        ip_address: metadata?.ip_address
+      });
+
+      return { success: true, user };
+    } catch (error: any) {
+      console.error('Error creating user with password:', error);
+      return { success: false, error: 'Failed to create user' };
+    }
+  }
+
+  /**
+   * Authenticate user with email and password (D1-first architecture)
+   * Validates password from users.password_hash column
+   */
+  async authenticateUser(
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; user?: any; error?: string }> {
+    try {
+      // Get user with password hash
+      const user = await this.db
+        .prepare('SELECT * FROM users WHERE email = ? AND status = "active"')
+        .bind(email)
+        .first();
+
+      if (!user) {
+        // Use constant-time delay to prevent user enumeration
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return { success: false, error: 'Invalid credentials' };
+      }
+
+      if (!user.password_hash) {
+        return { success: false, error: 'Account not configured for password login' };
+      }
+
+      // Verify password
+      const isValid = await PasswordHashingService.verifyPassword(password, user.password_hash);
+
+      if (!isValid) {
+        // Log failed login attempt
+        await this.logAuditEvent('login_failed', 'user', user.id, null, {
+          email,
+          reason: 'invalid_password'
+        });
+
+        return { success: false, error: 'Invalid credentials' };
+      }
+
+      // Check if password needs rehashing (legacy format)
+      if (PasswordHashingService.needsRehash(user.password_hash)) {
+        const newHash = await PasswordHashingService.hashPassword(password);
+        await this.db
+          .prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+          .bind(newHash, user.id)
+          .run();
+      }
+
+      // Return user without password hash
+      const { password_hash, ...userWithoutPassword } = user;
+
+      return { success: true, user: userWithoutPassword };
+    } catch (error: any) {
+      console.error('Error authenticating user:', error);
+      return { success: false, error: 'Authentication failed' };
+    }
   }
 
   /**
