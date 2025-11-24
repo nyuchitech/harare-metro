@@ -5,9 +5,8 @@ import { AuthModal } from "../components/auth/AuthModal";
 import { UserProfile } from "../components/auth/UserProfile";
 import HeaderNavigation from "../components/HeaderNavigation";
 import MobileNavigation from "../components/MobileNavigation";
-import { Grid3x3, List, Loader2, Hash } from "lucide-react";
+import { Grid3x3, List, Loader2 } from "lucide-react";
 import { buildApiUrl, buildClientImageUrl } from "../lib/api-utils";
-import { ArticleLikeButton, ArticleSaveButton } from "../components/engagement";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -214,57 +213,34 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
 
-        {/* Categories Filter */}
+        {/* Categories Filter - Simplified */}
         {categories.length > 0 && (
-          <div className="mb-6">
-            <div className="flex gap-3 pb-4 mb-4 scrollbar-hide overflow-x-auto">
+          <div className="mb-8">
+            <div className="flex gap-2 pb-4 mb-4 scrollbar-hide overflow-x-auto">
               {/* All Categories Button */}
               <a
                 href="/"
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border-2 ${
+                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
                   selectedCategory === 'all' || !selectedCategory
-                    ? 'bg-zw-green text-zw-white border-zw-green shadow-sm'
-                    : 'bg-card border-border text-foreground hover:bg-muted hover:scale-[1.02]'
+                    ? 'bg-zw-green text-white'
+                    : 'bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
-                🏠 All
+                All
               </a>
-              {categories.slice(0, 15).map((category: any, index: number) => {
-                // Assign mineral colors cyclically with matching borders
-                const mineralColorPairs = [
-                  { bg: 'bg-mineral-gold', border: 'border-mineral-gold' },
-                  { bg: 'bg-mineral-chrome', border: 'border-mineral-chrome' },
-                  { bg: 'bg-mineral-platinum', border: 'border-mineral-platinum' },
-                  { bg: 'bg-mineral-diamond', border: 'border-mineral-diamond' },
-                  { bg: 'bg-mineral-iron', border: 'border-mineral-iron' },
-                  { bg: 'bg-mineral-copper', border: 'border-mineral-copper' },
-                  { bg: 'bg-mineral-nickel', border: 'border-mineral-nickel' },
-                  { bg: 'bg-mineral-emerald', border: 'border-mineral-emerald' },
-                  { bg: 'bg-mineral-tin', border: 'border-mineral-tin' },
-                  { bg: 'bg-mineral-lithium', border: 'border-mineral-lithium' },
-                  { bg: 'bg-mineral-tantalite', border: 'border-mineral-tantalite' },
-                  { bg: 'bg-mineral-aquamarine', border: 'border-mineral-aquamarine' },
-                  { bg: 'bg-mineral-amethyst', border: 'border-mineral-amethyst' },
-                  { bg: 'bg-mineral-granite', border: 'border-mineral-granite' },
-                  { bg: 'bg-mineral-marble', border: 'border-mineral-marble' },
-                  { bg: 'bg-mineral-coal', border: 'border-mineral-coal' }
-                ]
-                const { bg, border } = mineralColorPairs[index % mineralColorPairs.length]
-
-                return (
-                  <a
-                    key={category.id}
-                    href={`/?category=${category.id}`}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border-2 ${
-                      selectedCategory === category.id
-                        ? 'bg-zw-green text-zw-white border-zw-green shadow-sm'
-                        : `bg-card ${border} text-foreground hover:${bg} hover:shadow-sm hover:scale-[1.02]`
-                    }`}
-                  >
-                    {category.emoji} {category.name}
-                  </a>
-                )
-              })}
+              {categories.slice(0, 15).map((category: any) => (
+                <a
+                  key={category.id}
+                  href={`/?category=${category.id}`}
+                  className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                    selectedCategory === category.id
+                      ? 'bg-zw-green text-white'
+                      : 'bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {category.name}
+                </a>
+              ))}
             </div>
           </div>
         )}
@@ -301,154 +277,88 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         {displayedArticles.length > 0 && (
           <>
             {viewMode === 'grid' ? (
-              // Masonry Grid View
-              <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-3 sm:gap-4 space-y-0">
+              // Simple Grid View
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {displayedArticles.map((article, index) => (
                   <a
                     key={article.id || index}
                     href={`/${article.source_id || article.source || 'unknown'}/${article.slug}`}
-                    className="block bg-card border border-border rounded-xl overflow-hidden hover:border-border/80 transition-all duration-200 hover:shadow-lg break-inside-avoid mb-6"
+                    className="group block bg-card rounded-2xl overflow-hidden hover:bg-muted transition-colors duration-200"
                   >
                     {article.image_url && (
-                      <div className="overflow-hidden">
+                      <div className="aspect-video overflow-hidden bg-muted">
                         <img
                           src={buildClientImageUrl(article.image_url)}
                           alt={article.title}
-                          className="w-full h-auto object-cover hover:scale-105 transition-transform duration-200"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>
                     )}
 
-                    <div className="p-4">
-                      <div className="flex items-center space-x-2 mb-3">
-                        <span className="text-xs px-2 py-1 bg-zw-green/20 text-zw-green rounded-full">
+                    <div className="p-5">
+                      <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+                        <span className="font-medium text-zw-green">
                           {article.source || 'Unknown'}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span>•</span>
+                        <span>
                           {article.published_at ? new Date(article.published_at).toISOString().split('T')[0] : 'Today'}
                         </span>
                       </div>
 
-                      <h3 className="font-serif font-bold text-lg leading-tight mb-3">
+                      <h3 className="font-serif font-bold text-xl leading-snug mb-3 line-clamp-3">
                         {article.title}
                       </h3>
 
                       {article.description && (
-                        <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
+                        <p className="text-muted-foreground leading-relaxed line-clamp-2">
                           {article.description}
                         </p>
                       )}
-
-                      {/* Keywords as hashtags */}
-                      {article.keywords && article.keywords.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          {article.keywords.slice(0, 5).map((keyword: any) => (
-                            <span
-                              key={keyword.id}
-                              className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded-full hover:bg-zw-green/20 hover:text-zw-green transition-colors"
-                            >
-                              #{keyword.slug}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-zw-green text-sm font-medium">Read More</span>
-
-                        <div className="flex items-center space-x-1" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                          <ArticleLikeButton
-                            articleId={article.id}
-                            initialLiked={article.isLiked}
-                            initialCount={article.likesCount || 0}
-                            size="sm"
-                            showCount={false}
-                          />
-                          <ArticleSaveButton
-                            articleId={article.id}
-                            initialSaved={article.isSaved}
-                            size="sm"
-                            showLabel={false}
-                          />
-                        </div>
-                      </div>
                     </div>
                   </a>
                 ))}
               </div>
             ) : (
-              // List View
-              <div className="space-y-4">
+              // Simple List View
+              <div className="space-y-6">
                 {displayedArticles.map((article, index) => (
                   <a
                     key={article.id || index}
                     href={`/${article.source_id || article.source || 'unknown'}/${article.slug}`}
-                    className="block bg-card border border-border rounded-xl overflow-hidden hover:border-border/80 transition-all duration-200 hover:shadow-lg"
+                    className="group block bg-card rounded-2xl overflow-hidden hover:bg-muted transition-colors duration-200"
                   >
-                    <div className="flex flex-col sm:flex-row">
+                    <div className="flex flex-col sm:flex-row gap-5 p-5">
                       {article.image_url && (
-                        <div className="w-full sm:w-48 h-48 sm:h-auto flex-shrink-0 overflow-hidden">
+                        <div className="w-full sm:w-56 aspect-video sm:aspect-square flex-shrink-0 overflow-hidden rounded-xl bg-muted">
                           <img
                             src={buildClientImageUrl(article.image_url)}
                             alt={article.title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
                       )}
 
-                      <div className="p-4 flex-1">
-                        <div className="flex items-center space-x-2 mb-3">
-                          <span className="text-xs px-2 py-1 bg-zw-green/20 text-zw-green rounded-full">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+                          <span className="font-medium text-zw-green">
                             {article.source || 'Unknown'}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span>•</span>
+                          <span>
                             {article.published_at ? new Date(article.published_at).toISOString().split('T')[0] : 'Today'}
                           </span>
                         </div>
 
-                        <h3 className="font-serif font-bold text-xl leading-tight mb-3">
+                        <h3 className="font-serif font-bold text-2xl leading-snug mb-3">
                           {article.title}
                         </h3>
 
                         {article.description && (
-                          <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                          <p className="text-muted-foreground leading-relaxed line-clamp-3">
                             {article.description}
                           </p>
                         )}
-
-                        {/* Keywords as hashtags */}
-                        {article.keywords && article.keywords.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-3">
-                            {article.keywords.slice(0, 5).map((keyword: any) => (
-                              <span
-                                key={keyword.id}
-                                className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded-full hover:bg-zw-green/20 hover:text-zw-green transition-colors"
-                              >
-                                #{keyword.slug}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-zw-green text-sm font-medium">Read More</span>
-
-                          <div className="flex items-center space-x-1" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                            <ArticleLikeButton
-                              articleId={article.id}
-                              initialLiked={article.isLiked}
-                              initialCount={article.likesCount || 0}
-                              size="sm"
-                              showCount={false}
-                            />
-                            <ArticleSaveButton
-                              articleId={article.id}
-                              initialSaved={article.isSaved}
-                              size="sm"
-                              showLabel={false}
-                            />
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </a>
