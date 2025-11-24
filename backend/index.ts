@@ -163,7 +163,7 @@ function getCookie(cookieHeader: string | null, name: string): string | null {
 // Uses shared auth_token cookie from frontend
 const requireAdmin = async (c: any, next: any) => {
   const cookieHeader = c.req.header('cookie');
-  const sessionToken = getCookie(cookieHeader, 'auth_token'); // Changed from admin_session
+  const sessionToken = getCookie(cookieHeader, 'auth_token');
   const isApiRequest = c.req.path.startsWith('/api/');
 
   if (!sessionToken) {
@@ -174,11 +174,13 @@ const requireAdmin = async (c: any, next: any) => {
     return c.redirect('https://www.hararemetro.co.zw/auth/login', 302);
   }
 
-  // Check if session token is valid (stored in shared KV)
+  // Validate session from D1 database using OpenAuthService
   try {
-    const sessionData = await c.env.AUTH_STORAGE.get(`session:${sessionToken}`, 'json');
-    if (!sessionData || !sessionData.userId) {
-      // Invalid session - redirect to frontend login
+    const authService = new OpenAuthService({ DB: c.env.DB, AUTH_STORAGE: c.env.AUTH_STORAGE });
+    const session = await authService.validateSession(sessionToken);
+
+    if (!session || !session.user_id) {
+      // Invalid or expired session - redirect to frontend login
       if (isApiRequest) {
         return c.json({ error: 'Session expired or invalid' }, 401);
       }
@@ -187,7 +189,7 @@ const requireAdmin = async (c: any, next: any) => {
 
     // Check if user has admin role
     const adminRoles = c.env.ADMIN_ROLES?.split(',') || ['admin', 'super_admin', 'moderator'];
-    if (!adminRoles.includes(sessionData.role)) {
+    if (!adminRoles.includes(session.role)) {
       if (isApiRequest) {
         return c.json({ error: 'Admin access required' }, 403);
       }
@@ -195,7 +197,12 @@ const requireAdmin = async (c: any, next: any) => {
     }
 
     // Session valid and user is admin, continue
-    c.set('user', sessionData);
+    c.set('user', {
+      userId: session.user_id,
+      email: session.email,
+      username: session.username,
+      role: session.role
+    });
     await next();
   } catch (error) {
     console.error('[AUTH] Session validation error:', error);
@@ -2413,10 +2420,24 @@ app.get("/api/user/stats", async (c) => {
 });
 
 // ===== AUTHENTICATION ENDPOINTS =====
-// Simple password-based authentication using D1 + KV
-// Replaces Supabase with OpenAuth service
+// D1-FIRST AUTHENTICATION ARCHITECTURE
+//
+// All authentication data stored in D1 database:
+// - Passwords: users.password_hash (salted SHA-256)
+// - Sessions: user_sessions table
+// - User data: users table
+//
+// KV namespace (AUTH_STORAGE) only used for:
+// - Temporary verification codes (10-minute TTL)
+// - Rate limiting (future enhancement)
+//
+// Why D1-first?
+// - Scales better for thousands of users
+// - Lower cost than KV for core auth data
+// - Persistent, reliable storage
+// - Single source of truth for all user data
 
-// Register new user
+// Register new user - D1-first architecture
 app.post("/api/auth/register", async (c) => {
   try {
     const { email, password, displayName, username } = await c.req.json();
@@ -2425,73 +2446,26 @@ app.post("/api/auth/register", async (c) => {
       return c.json({ error: "Email and password are required" }, 400);
     }
 
-    const services = initializeServices(c.env);
     const authService = new OpenAuthService({ DB: c.env.DB, AUTH_STORAGE: c.env.AUTH_STORAGE });
 
-    // Check if user already exists
-    const existingUser = await authService.getUserByEmail(email);
-    if (existingUser) {
-      return c.json({ error: "User already exists" }, 409);
+    // Create user with password in D1 (password stored in users.password_hash)
+    const result = await authService.createUserWithPassword(email, password, {
+      username,
+      displayName,
+      ip_address: c.req.header('CF-Connecting-IP')
+    });
+
+    if (!result.success) {
+      return c.json({ error: result.error }, 400);
     }
-
-    // Check if username is already taken (if provided)
-    if (username) {
-      const existingUsername = await authService.getUserByUsername(username);
-      if (existingUsername) {
-        return c.json({ error: "Username is already taken" }, 409);
-      }
-    }
-
-    // Hash password
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    // Generate username if not provided
-    let finalUsername = username;
-    if (!finalUsername) {
-      finalUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-
-      // Ensure uniqueness
-      let attempts = 0;
-      let uniqueUsername = finalUsername;
-      while (attempts < 10) {
-        const existing = await authService.getUserByUsername(uniqueUsername);
-        if (!existing) break;
-        // Use cryptographically secure random number
-        const randomArray = new Uint32Array(1);
-        crypto.getRandomValues(randomArray);
-        const randomSuffix = randomArray[0] % 10000;
-        uniqueUsername = `${finalUsername}${randomSuffix}`;
-        attempts++;
-      }
-      finalUsername = uniqueUsername;
-    }
-
-    // Create user
-    const userId = crypto.randomUUID();
-    await c.env.DB.prepare(`
-      INSERT INTO users (
-        id, email, username, display_name, role, status, email_verified,
-        login_count, analytics_consent, preferences, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, 'creator', 'active', TRUE, 0, TRUE, '{}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `).bind(userId, email, finalUsername, displayName || null).run();
-
-    // Store password hash in KV
-    await c.env.AUTH_STORAGE.put(`password:${email}`, passwordHash);
-
-    // Get the created user
-    const user = await authService.getUserById(userId);
 
     return c.json({
       user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        display_name: user.display_name,
-        role: user.role
+        id: result.user.id,
+        email: result.user.email,
+        username: result.user.username,
+        display_name: result.user.display_name,
+        role: result.user.role
       }
     }, 201);
   } catch (error: any) {
@@ -2500,7 +2474,7 @@ app.post("/api/auth/register", async (c) => {
   }
 });
 
-// Login
+// Login - D1-first architecture
 app.post("/api/auth/login", async (c) => {
   try {
     const { email, password } = await c.req.json();
@@ -2511,29 +2485,16 @@ app.post("/api/auth/login", async (c) => {
 
     const authService = new OpenAuthService({ DB: c.env.DB, AUTH_STORAGE: c.env.AUTH_STORAGE });
 
-    // Get user
-    const user = await authService.getUserByEmail(email);
-    if (!user) {
-      return c.json({ error: "Invalid credentials" }, 401);
+    // Authenticate user (validates password from users.password_hash in D1)
+    const authResult = await authService.authenticateUser(email, password);
+
+    if (!authResult.success) {
+      return c.json({ error: authResult.error || "Invalid credentials" }, 401);
     }
 
-    // Verify password
-    const storedHash = await c.env.AUTH_STORAGE.get(`password:${email}`);
-    if (!storedHash) {
-      return c.json({ error: "Invalid credentials" }, 401);
-    }
+    const user = authResult.user;
 
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    if (storedHash !== passwordHash) {
-      return c.json({ error: "Invalid credentials" }, 401);
-    }
-
-    // Create session
+    // Create session in D1
     const sessionToken = await authService.createSession(user.id, {
       ip_address: c.req.header('CF-Connecting-IP'),
       user_agent: c.req.header('User-Agent'),
