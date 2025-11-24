@@ -6,7 +6,7 @@ import { UserProfile } from "../components/auth/UserProfile";
 import HeaderNavigation from "../components/HeaderNavigation";
 import MobileNavigation from "../components/MobileNavigation";
 import { ExternalLink, ArrowLeft } from "lucide-react";
-import { buildApiUrl } from "../lib/api-utils";
+import { buildApiUrl, buildClientImageUrl } from "../lib/api-utils";
 import {
   ArticleLikeButton,
   ArticleSaveButton,
@@ -25,26 +25,42 @@ export function meta({ params }: Route.MetaArgs) {
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { source, slug } = params;
-  
+
   try {
     // Fetch single article from our D1 API using source_id and slug
     const apiUrl = buildApiUrl(request, `/api/article/by-source-slug`, new URLSearchParams({ source, slug }));
+    console.log('[ARTICLE] Fetching article:', { source, slug, apiUrl });
+
     const response = await fetch(apiUrl);
-    const data = await response.json() as { article?: any; error?: string };
-    
-    if (!data.article) {
-      throw new Error('Article not found');
+    console.log('[ARTICLE] Response status:', response.status);
+
+    if (!response.ok) {
+      console.error('[ARTICLE] API error:', response.status, response.statusText);
+      return {
+        article: null,
+        error: `Failed to load article: ${response.status} ${response.statusText}`
+      };
     }
-    
+
+    const data = await response.json() as { article?: any; error?: string };
+    console.log('[ARTICLE] Data received:', { hasArticle: !!data.article, error: data.error });
+
+    if (!data.article) {
+      return {
+        article: null,
+        error: data.error || 'Article not found'
+      };
+    }
+
     return {
       article: data.article,
       error: null
     };
-  } catch (error) {
-    console.error('Failed to load article:', error);
+  } catch (error: any) {
+    console.error('[ARTICLE] Failed to load article:', error);
     return {
       article: null,
-      error: 'Article not found'
+      error: error.message || 'Article not found'
     };
   }
 }
@@ -108,87 +124,71 @@ export default function Article({ loaderData }: Route.ComponentProps) {
           <article className="bg-card border border-border rounded-xl overflow-hidden">
             {/* Article Image */}
             {article.image_url && (
-              <div className="overflow-hidden">
-                <img 
-                  src={article.image_url} 
+              <div className="aspect-video overflow-hidden bg-muted">
+                <img
+                  src={buildClientImageUrl(article.image_url)}
                   alt={article.title}
-                  className="w-full h-auto object-cover max-h-96"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
             )}
             
             <div className="p-6 sm:p-8">
               {/* Article Meta */}
-              <div className="flex items-center space-x-2 mb-6">
-                <span className="text-sm px-3 py-1 bg-zw-green/20 text-zw-green rounded-full">
+              <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground">
+                <span className="font-medium text-zw-green">
                   {article.source || 'Unknown'}
                 </span>
-                <span className="text-sm text-muted-foreground">
+                <span>•</span>
+                <span>
                   {article.published_at ? new Date(article.published_at).toISOString().split('T')[0] : 'Today'}
                 </span>
               </div>
-              
+
               {/* Article Title */}
-              <h1 className="font-serif font-bold text-2xl sm:text-3xl leading-tight mb-6">
+              <h1 className="font-serif font-bold text-3xl sm:text-4xl leading-tight mb-6">
                 {article.title}
               </h1>
-              
+
               {/* Article Description/Summary */}
               {article.description && (
-                <div className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                <div className="text-xl text-muted-foreground mb-8 leading-relaxed">
                   {article.description}
                 </div>
               )}
-              
+
               {/* Article Content */}
               {article.content && (
-                <div className="prose max-w-none mb-8">
-                  <div className="text-foreground leading-relaxed whitespace-pre-wrap">
-                    {article.content}
-                  </div>
-                </div>
-              )}
-
-              {/* Keywords as hashtags */}
-              {article.keywords && article.keywords.length > 0 && (
                 <div className="mb-8">
-                  <h4 className="text-sm font-medium text-muted-foreground mb-3">Topics</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {article.keywords.map((keyword: any) => (
-                      <span
-                        key={keyword.id}
-                        className="text-sm px-3 py-1.5 bg-muted text-muted-foreground rounded-full hover:bg-zw-green/20 hover:text-zw-green transition-colors cursor-pointer"
-                      >
-                        #{keyword.slug}
-                      </span>
+                  <div className="text-foreground text-lg leading-relaxed space-y-4">
+                    {article.content.split('\n\n').map((paragraph: string, index: number) => (
+                      paragraph.trim() && <p key={index}>{paragraph}</p>
                     ))}
                   </div>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t border-border">
-                <div className="flex items-center space-x-2">
-                  <ArticleLikeButton
-                    articleId={article.id}
-                    initialLiked={article.isLiked}
-                    initialCount={article.likesCount || 0}
-                    size="md"
-                    showCount={true}
-                  />
-                  <ArticleSaveButton
-                    articleId={article.id}
-                    initialSaved={article.isSaved}
-                    size="md"
-                    showLabel={true}
-                  />
-                </div>
-
+              <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-border">
+                <ArticleLikeButton
+                  articleId={article.id}
+                  initialLiked={article.isLiked}
+                  initialCount={article.likesCount || 0}
+                  size="md"
+                  showCount={true}
+                />
+                <ArticleSaveButton
+                  articleId={article.id}
+                  initialSaved={article.isSaved}
+                  size="md"
+                  showLabel={true}
+                />
                 <a
                   href={article.original_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-2 px-6 py-3 bg-zw-green hover:bg-zw-green/90 text-zw-white font-medium rounded-full transition-colors"
+                  className="ml-auto inline-flex items-center gap-2 px-5 py-2.5 bg-zw-green hover:bg-zw-green/90 text-white font-medium rounded-full transition-colors"
                 >
                   <span>Read Original</span>
                   <ExternalLink className="h-4 w-4" />
@@ -200,7 +200,7 @@ export default function Article({ loaderData }: Route.ComponentProps) {
 
         {/* Comments Section */}
         {article && (
-          <div className="mt-8">
+          <div className="mt-6">
             <CommentList
               articleId={article.id}
               initialComments={article.comments || []}
