@@ -1,10 +1,11 @@
 /**
  * Simple Auth Client for Harare Metro
- * Replaces Supabase with backend API calls
- * Uses cookies for session storage (cross-worker compatible)
+ * Single-worker architecture - all API calls to same origin
+ * Uses cookies for session storage
  */
 
-const BACKEND_URL = 'https://admin.hararemetro.co.zw';
+// No need for separate backend URL - everything is same origin now
+const BACKEND_URL = '';
 
 export interface User {
   id: string;
