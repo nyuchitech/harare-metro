@@ -1,7 +1,7 @@
 {
-  "name": "mukoko-news",
-  "version": "3.0.0",
-  "description": "Mukoko News - Zimbabwe's Modern News Platform. Expo + React Native app (mobile & web) with Cloudflare Workers backend, Hono API, and D1 database",
+  "name": "harare-metro",
+  "version": "2.0.0",
+  "description": "Zimbabwe's premier news aggregation platform - a modern full-stack app powered by Cloudflare Workers, Hono backend, React Router frontend, and D1 database",
   "private": true,
   "type": "module",
   "dependencies": {

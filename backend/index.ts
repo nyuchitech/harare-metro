@@ -58,7 +58,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 // Add CORS middleware - allow credentials from frontend
 app.use("*", cors({
-  origin: ['https://www.hararemetro.co.zw', 'http://localhost:5173', 'http://localhost:3000'],
+  origin: ['https://news.mukoko.com', 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
@@ -171,7 +171,7 @@ const requireAdmin = async (c: any, next: any) => {
     if (isApiRequest) {
       return c.json({ error: 'Authentication required' }, 401);
     }
-    return c.redirect('https://www.hararemetro.co.zw/auth/login', 302);
+    return c.redirect('https://news.mukoko.com/auth/login', 302);
   }
 
   // Validate session from D1 database using OpenAuthService
@@ -184,7 +184,7 @@ const requireAdmin = async (c: any, next: any) => {
       if (isApiRequest) {
         return c.json({ error: 'Session expired or invalid' }, 401);
       }
-      return c.redirect('https://www.hararemetro.co.zw/auth/login', 302);
+      return c.redirect('https://news.mukoko.com/auth/login', 302);
     }
 
     // Check if user has admin role
@@ -193,7 +193,7 @@ const requireAdmin = async (c: any, next: any) => {
       if (isApiRequest) {
         return c.json({ error: 'Admin access required' }, 403);
       }
-      return c.redirect('https://www.hararemetro.co.zw', 302); // Redirect to homepage
+      return c.redirect('https://news.mukoko.com', 302); // Redirect to homepage
     }
 
     // Session valid and user is admin, continue
@@ -209,13 +209,13 @@ const requireAdmin = async (c: any, next: any) => {
     if (isApiRequest) {
       return c.json({ error: 'Authentication error' }, 401);
     }
-    return c.redirect('https://www.hararemetro.co.zw/auth/login', 302);
+    return c.redirect('https://news.mukoko.com/auth/login', 302);
   }
 };
 
 // Login page - redirect to frontend
 app.get("/login", (c) => {
-  return c.redirect("https://www.hararemetro.co.zw/auth/login", 302);
+  return c.redirect("https://news.mukoko.com/auth/login", 302);
 });
 
 // Login API endpoint - uses D1 users table with role-based access
@@ -297,28 +297,28 @@ app.post("/api/admin/logout", async (c) => {
 
 // User management redirects - all redirect to frontend
 app.get("/register", (c) => {
-  return c.redirect("https://www.hararemetro.co.zw/auth/register", 302);
+  return c.redirect("https://news.mukoko.com/auth/register", 302);
 });
 
 app.get("/onboarding", (c) => {
-  return c.redirect("https://www.hararemetro.co.zw/onboarding", 302);
+  return c.redirect("https://news.mukoko.com/onboarding", 302);
 });
 
 app.get("/profile", (c) => {
-  return c.redirect("https://www.hararemetro.co.zw/settings/profile", 302);
+  return c.redirect("https://news.mukoko.com/settings/profile", 302);
 });
 
 app.get("/settings/*", (c) => {
-  return c.redirect("https://www.hararemetro.co.zw/settings/profile", 302);
+  return c.redirect("https://news.mukoko.com/settings/profile", 302);
 });
 
-// Admin dashboard - PROTECTED route
-app.get("/", requireAdmin, (c) => {
+// API Documentation - PUBLIC (no auth required)
+app.get("/", (c) => {
   c.header("Content-Type", "text/html");
   return c.html(getAdminHTML());
 });
 
-app.get("/admin", requireAdmin, (c) => {
+app.get("/admin", (c) => {
   c.header("Content-Type", "text/html");
   return c.html(getAdminHTML());
 });
