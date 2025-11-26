@@ -79,6 +79,9 @@ All changes MUST go through Pull Requests. This is non-negotiable.
 ### Development Environment
 - `npm run dev` - Start React Router dev server with Vite
 - `npm run dev:backend` - Start backend worker dev server (in backend directory)
+- `npm run mobile` - Start React Native/Expo dev server for mobile app
+- `npm run mobile:ios` - Run mobile app on iOS simulator
+- `npm run mobile:android` - Run mobile app on Android emulator
 - `npm run preview` - Preview production build locally
 
 ### Build and Deployment
@@ -120,25 +123,37 @@ The Cloudflare Workers CI system builds from the repository root, which contains
 ## Architecture Overview
 
 ### Core Platform
-**Harare Metro** is a modern news aggregation platform built with a **2-worker architecture**:
+**Mukoko News** (formerly Harare Metro) is a modern news aggregation platform built with a **multi-platform architecture**:
 
-- **Frontend Worker** (www.hararemetro.co.zw): React Router 7 SSR application with minimal API endpoints
-- **Backend Worker** (admin.hararemetro.co.zw): Comprehensive admin panel, RSS processing engine, and user engagement APIs
+- **Frontend Worker** (www.hararemetro.co.zw): React Router 7 SSR web application
+- **Backend Worker** (admin.hararemetro.co.zw): Comprehensive admin panel, RSS processing engine, and REST API
+- **Mobile App**: React Native + Expo mobile application (iOS/Android)
 - **Database**: Cloudflare D1 (single database: hararemetro_articles)
 - **Analytics**: Cloudflare Analytics Engine for user interaction tracking
 - **AI Processing**: Cloudflare Workers AI for content enhancement and author recognition
-- **Deployment**: Two separate Cloudflare Workers on custom domains
+- **Deployment**: Two Cloudflare Workers + mobile app stores
 
 ### Key Technologies
+
+**Web Platform:**
 - **Frontend Framework**: React 19 with React Router 7 (SSR-enabled)
 - **Build Tool**: Vite with Cloudflare plugin
 - **Backend Framework**: Hono (lightweight web framework for Cloudflare Workers)
 - **UI Framework**: Tailwind CSS 4.x with custom Zimbabwe flag color palette
 - **Icons**: Lucide React
+
+**Mobile Platform:**
+- **Framework**: React Native + Expo
+- **UI Library**: React Native Paper (Material Design 3)
+- **Theme**: Custom Mukoko News theme with Zimbabwe flag colors
+- **Typography**: Noto Sans (body), Noto Serif (headings)
+- **API Client**: Fetch-based REST client connecting to backend worker
+
+**Shared:**
 - **RSS Processing**: fast-xml-parser for feed parsing
 - **AI Services**: Cloudflare Workers AI for author extraction and content classification
 - **Database**: Cloudflare D1 (SQLite-based edge database)
-- **TypeScript**: Full type safety across both workers
+- **TypeScript**: Full type safety across workers (mobile uses JavaScript)
 
 ### 2-Worker Architecture
 
@@ -231,6 +246,18 @@ The Cloudflare Workers CI system builds from the repository root, which contains
 │       ├── ArticleInteractionsDO.ts
 │       ├── UserBehaviorDO.ts
 │       └── RealtimeAnalyticsDO.ts
+│
+├── mobile/                     # ✅ React Native + Expo mobile app
+│   ├── App.js                  # Root component with Paper theme
+│   ├── theme.js                # Custom Material Design theme (Zimbabwe colors)
+│   ├── package.json            # Mobile dependencies
+│   ├── api/
+│   │   └── client.js           # Backend API client
+│   ├── screens/
+│   │   ├── HomeScreen.js       # News feed
+│   │   ├── NewsBytesScreen.js  # TikTok-style short news
+│   │   └── AuthScreen.js       # Login/Register
+│   └── components/             # Reusable UI components
 │
 ├── archive/                    # Archived code for future phases
 │   └── account-worker-phase3a-archived-YYYYMMDD/  # Account worker (for Phase 3+)

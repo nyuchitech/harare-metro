@@ -1,22 +1,24 @@
 /**
- * Harare Metro Backend - Admin & API Worker Configuration
- * Zimbabwe's Premier News Aggregation Platform Backend
+ * Mukoko News Backend - API & Admin Worker Configuration
+ * Zimbabwe's Modern News Platform Backend
  *
  * For more details on Wrangler configuration:
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */ {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "harare-metro-backend",
+  "name": "mukoko-news-backend",
   "compatibility_date": "2025-04-01",
   "main": "./index.ts",
   "account_id": "125a2dfbc21f76a25c980609609e8218",
-  
+
   /**
-   * Custom Domain Routes - Admin backend at admin.hararemetro.co.zw
+   * Custom Domain Routes - Backend API at news.mukoko.com/api/*
+   * NOTE: Commented out for local development
    */
-  "routes": [
-    "admin.hararemetro.co.zw/*"
-  ],
+  // "routes": [
+  //   "news.mukoko.com/api/*",
+  //   "news.mukoko.com/admin/*"
+  // ],
 
   /**
    * Environment Variables
@@ -79,7 +81,7 @@
   "vectorize": [
     {
       "binding": "VECTORIZE_INDEX",
-      "index_name": "harare-metro-articles"
+      "index_name": "mukoko-news-articles"
     }
   ],
 
@@ -88,8 +90,9 @@
    */
   "kv_namespaces": [
     {
-      "binding": "AUTH_STORAGE", 
-      "id": "28448bdb9dd041dcaaefe292a7651c8a"
+      "binding": "AUTH_STORAGE",
+      "id": "28448bdb9dd041dcaaefe292a7651c8a",
+      "preview_id": "3e5b3e5d1d0e4369be756471f7fe0661"
     }
   ],
 
@@ -102,22 +105,22 @@
   //     {
   //       "name": "ARTICLE_INTERACTIONS",
   //       "class_name": "ArticleInteractionsDO",
-  //       "script_name": "harare-metro-backend"
+  //       "script_name": "mukoko-news-backend"
   //     },
   //     {
-  //       "name": "USER_BEHAVIOR", 
+  //       "name": "USER_BEHAVIOR",
   //       "class_name": "UserBehaviorDO",
-  //       "script_name": "harare-metro-backend"
+  //       "script_name": "mukoko-news-backend"
   //     },
   //     {
   //       "name": "REALTIME_COUNTERS",
   //       "class_name": "RealtimeCountersDO",
-  //       "script_name": "harare-metro-backend"
+  //       "script_name": "mukoko-news-backend"
   //     },
   //     {
   //       "name": "REALTIME_ANALYTICS",
   //       "class_name": "RealtimeAnalyticsDO",
-  //       "script_name": "harare-metro-backend"
+  //       "script_name": "mukoko-news-backend"
   //     }
   //   ]
   // },
