@@ -76,6 +76,28 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 /**
+ * Save auth token to storage
+ */
+async function saveAuthToken(token) {
+  try {
+    await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+  } catch (error) {
+    console.error('[API] Save token error:', error);
+  }
+}
+
+/**
+ * Remove auth token from storage
+ */
+async function removeAuthToken() {
+  try {
+    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+  } catch (error) {
+    console.error('[API] Remove token error:', error);
+  }
+}
+
+/**
  * Authentication API
  */
 export const auth = {
@@ -83,29 +105,48 @@ export const auth = {
    * Sign in with email and password
    */
   async signIn(email, password) {
-    return apiRequest('/api/auth/login', {
+    const result = await apiRequest('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+
+    // Store token on successful login
+    if (result.data && result.data.session && result.data.session.access_token) {
+      await saveAuthToken(result.data.session.access_token);
+    }
+
+    return result;
   },
 
   /**
    * Register new user
    */
   async signUp(email, password, displayName) {
-    return apiRequest('/api/auth/register', {
+    const result = await apiRequest('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password, displayName }),
     });
+
+    // Automatically log in after registration
+    if (result.data && !result.error) {
+      return await auth.signIn(email, password);
+    }
+
+    return result;
   },
 
   /**
    * Sign out
    */
   async signOut() {
-    return apiRequest('/api/auth/logout', {
+    const result = await apiRequest('/api/auth/logout', {
       method: 'POST',
     });
+
+    // Remove token from storage
+    await removeAuthToken();
+
+    return result;
   },
 
   /**
@@ -113,6 +154,17 @@ export const auth = {
    */
   async getSession() {
     return apiRequest('/api/auth/session');
+  },
+
+  /**
+   * Check if user is authenticated (has valid token)
+   */
+  async isAuthenticated() {
+    const token = await getAuthToken();
+    if (!token) return false;
+
+    const result = await auth.getSession();
+    return result.data && result.data.user !== null;
   },
 };
 

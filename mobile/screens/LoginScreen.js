@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, TextInput, Button, Surface, Divider, Icon } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mukokoTheme } from '../theme';
-
-const AUTH_TOKEN_KEY = '@mukoko_auth_token';
+import { auth } from '../api/client';
 
 export default function LoginScreen({ navigation, route }) {
   const [email, setEmail] = useState('');
@@ -32,32 +30,21 @@ export default function LoginScreen({ navigation, route }) {
     setError('');
 
     try {
-      const response = await fetch(
-        'https://admin.hararemetro.co.zw/api/auth/login',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      // Use centralized auth service
+      const result = await auth.signIn(email, password);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.error || 'Login failed');
+      if (result.error) {
+        setError(result.error);
         return;
       }
 
-      const data = await response.json();
-
-      // Save auth token to AsyncStorage
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.session.access_token);
-
-      // Navigate to home or user profile
+      // Navigate to home
       navigation.reset({
         index: 0,
         routes: [{ name: 'MainApp' }],
       });
     } catch (err) {
+      console.error('[LoginScreen] Error:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);

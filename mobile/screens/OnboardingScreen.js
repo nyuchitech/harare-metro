@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Text, TextInput, Button, Surface, Chip, Icon } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mukokoTheme } from '../theme';
+import { categories as categoriesAPI } from '../api/client';
 
-const AUTH_TOKEN_KEY = '@mukoko_auth_token';
 const { width } = Dimensions.get('window');
 
 export default function OnboardingScreen({ navigation }) {
@@ -24,9 +23,10 @@ export default function OnboardingScreen({ navigation }) {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('https://admin.hararemetro.co.zw/api/categories');
-      const data = await response.json();
-      setCategories(data.categories || []);
+      const result = await categoriesAPI.getAll();
+      if (result.data && result.data.categories) {
+        setCategories(result.data.categories);
+      }
     } catch (err) {
       console.error('Failed to load categories:', err);
       setCategories([]);
@@ -47,8 +47,10 @@ export default function OnboardingScreen({ navigation }) {
 
     setCheckingUsername(true);
     try {
+      // Note: check-username endpoint not in centralized client yet
+      // TODO: Add to API client if backend supports it
       const response = await fetch(
-        `https://admin.hararemetro.co.zw/api/auth/check-username?username=${encodeURIComponent(value)}`
+        `https://mukoko-news-backend.nyuchi.workers.dev/api/auth/check-username?username=${encodeURIComponent(value)}`
       );
       const data = await response.json();
 

@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, TextInput, Button, Surface, Divider, HelperText, Icon } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mukokoTheme } from '../theme';
-
-const AUTH_TOKEN_KEY = '@mukoko_auth_token';
+import { auth } from '../api/client';
 
 export default function RegisterScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -34,48 +32,21 @@ export default function RegisterScreen({ navigation }) {
     setError('');
 
     try {
-      // Register user
-      const registerResponse = await fetch(
-        'https://admin.hararemetro.co.zw/api/auth/register',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, username, displayName }),
-        }
-      );
+      // Use centralized auth service (auto-login included)
+      const result = await auth.signUp(email, password, displayName);
 
-      if (!registerResponse.ok) {
-        const errorData = await registerResponse.json();
-        setError(errorData.error || 'Registration failed');
+      if (result.error) {
+        setError(result.error);
         return;
       }
 
-      // Auto-login after registration
-      const loginResponse = await fetch(
-        'https://admin.hararemetro.co.zw/api/auth/login',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        }
-      );
-
-      if (loginResponse.ok) {
-        const data = await loginResponse.json();
-
-        // Save auth token to AsyncStorage
-        await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.session.access_token);
-
-        // Navigate to onboarding
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Onboarding' }],
-        });
-      } else {
-        // If auto-login fails, redirect to login
-        navigation.navigate('Login');
-      }
+      // Navigate to onboarding
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Onboarding' }],
+      });
     } catch (err) {
+      console.error('[RegisterScreen] Error:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
