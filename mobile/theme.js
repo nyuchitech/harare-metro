@@ -1,29 +1,40 @@
 /**
  * Mukoko News Custom Material Design Theme
- * Based on Zimbabwe flag colors and Nyuchi Brand System v5.0
+ * Based on official Mukoko brand guidelines from assets.nyuchi.com
+ * Nyuchi Brand System v5.0 - News Platform Configuration
  *
- * Design Philosophy:
- * - Primary: Mukoko News Green (#729b63) - Growth, prosperity
- * - Accent: Zimbabwe Yellow (#ffcc00) - Energy, optimism
- * - Error: Zimbabwe Red (#e03c31) - Passion, urgency
- * - Success: Zimbabwe Green (#00843d) - Achievement, progress
- * - Roundness: 16px - Vibrant, modern feel
- * - Fonts: Noto Sans (body), Noto Serif (headings)
+ * Brand Colors (Official from assets.nyuchi.com/api/v5/platform/news):
+ * - Primary: Mukoko News Green (#729b63) - Growth, prosperity, nature
+ * - Hover: #8fb47f - Interactive states
+ * - Active: #5d804f - Pressed states
+ * - Surface: #f1f5ef - Card backgrounds, containers
+ * - Subtle: #f8faf7 - Subtle backgrounds
+ *
+ * Typography (Nyuchi Brand System):
+ * - Display/Headings: Noto Serif - Elegant, authoritative
+ * - Body: Noto Sans - Clean, modern, readable
+ *
+ * Additional Colors:
+ * - Accent: Zimbabwe Yellow (#FDD116) - Energy, highlights
+ * - Error: Zimbabwe Red (#EF3340) - Urgency, breaking news
+ * - Roundness: 16px - Vibrant, modern mobile feel
  */
 
 export const mukokoTheme = {
   // Roundness - vibrant mobile feel
   roundness: 16,
 
-  // Zimbabwe flag color palette
+  // Mukoko News official brand colors (from assets.nyuchi.com)
   colors: {
-    // Primary brand colors - Zimbabwe Green (Official flag color)
-    primary: '#00A651',
-    primaryContainer: '#e5f5ed',
+    // Primary brand colors - Mukoko News Green (#729b63)
+    primary: '#729b63',          // Official Mukoko News green
+    primaryHover: '#8fb47f',     // Hover state from brand guidelines
+    primaryActive: '#5d804f',    // Active state from brand guidelines
+    primaryContainer: '#f1f5ef', // Surface color from brand guidelines
     onPrimary: '#FFFFFF',
-    onPrimaryContainer: '#002913',
+    onPrimaryContainer: '#1f2d1a',
 
-    // Accent color - Zimbabwe Yellow (Official flag color)
+    // Accent color - Zimbabwe Yellow (kept for energy/highlights)
     accent: '#FDD116',
     accentContainer: '#fff9e5',
     onAccent: '#000000',
@@ -35,9 +46,10 @@ export const mukokoTheme = {
     onSecondary: '#FFFFFF',
     onSecondaryContainer: '#1f1a29',
 
-    // Surface colors
+    // Surface colors (from Mukoko brand guidelines)
     surface: '#FFFFFF',
-    surfaceVariant: '#f5f7f5',
+    surfaceVariant: '#f1f5ef',   // Official Mukoko surface color
+    surfaceSubtle: '#f8faf7',    // Official Mukoko subtle surface
     onSurface: '#1a1a1a',
     onSurfaceVariant: '#4a4a4a',
 
@@ -51,10 +63,10 @@ export const mukokoTheme = {
     onError: '#FFFFFF',
     onErrorContainer: '#470c08',
 
-    success: '#00A651',          // Zimbabwe Green (Official flag color)
-    successContainer: '#e5f5ed',
+    success: '#729b63',          // Mukoko News green for success states
+    successContainer: '#f1f5ef',
     onSuccess: '#FFFFFF',
-    onSuccessContainer: '#002913',
+    onSuccessContainer: '#1f2d1a',
 
     warning: '#ff9800',
     warningContainer: '#fff3e0',
@@ -65,7 +77,12 @@ export const mukokoTheme = {
     background: '#f9faf9',
     onBackground: '#1a1a1a',
 
-    // Zimbabwe flag colors (direct access - Official colors)
+    // Mukoko News brand colors (from assets.nyuchi.com)
+    mukokoGreen: '#729b63',      // Primary brand green
+    mukokoGreenHover: '#8fb47f', // Hover state
+    mukokoGreenActive: '#5d804f',// Active state
+
+    // Zimbabwe flag colors (kept for Zimbabwe flag strip component)
     zwGreen: '#00A651',
     zwYellow: '#FDD116',
     zwRed: '#EF3340',
