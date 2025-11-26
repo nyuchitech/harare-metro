@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, TextInput, Button, Surface, Divider } from 'react-native-paper';
+import { Text, TextInput, Button, Surface, Divider, Icon } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mukokoTheme } from '../theme';
-import { LogIn } from 'lucide-react-native';
 
 const AUTH_TOKEN_KEY = '@mukoko_auth_token';
 
@@ -149,7 +148,7 @@ export default function LoginScreen({ navigation, route }) {
             disabled={loading || !email || !password}
             style={styles.button}
             contentStyle={styles.buttonContent}
-            icon={() => <LogIn size={20} color={mukokoTheme.colors.onPrimary} />}
+            icon={() => <Icon source="login" size={20} color={mukokoTheme.colors.onPrimary} />}
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>

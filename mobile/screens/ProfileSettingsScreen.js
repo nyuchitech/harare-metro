@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, TextInput, Button, Surface, SegmentedButtons, Avatar } from 'react-native-paper';
+import { Text, TextInput, Button, Surface, SegmentedButtons, Avatar, Icon } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mukokoTheme } from '../theme';
-import { User, AtSign, FileText, Image as ImageIcon, Check, AlertCircle, ArrowLeft } from 'lucide-react-native';
 
 const AUTH_TOKEN_KEY = '@mukoko_auth_token';
 
@@ -167,7 +166,7 @@ export default function ProfileSettingsScreen({ navigation }) {
         <Button
           mode="text"
           onPress={() => navigation.goBack()}
-          icon={() => <ArrowLeft size={24} color={mukokoTheme.colors.onSurface} />}
+          icon={() => <Icon source="arrow-left" size={24} color={mukokoTheme.colors.onSurface} />}
           style={styles.backButton}
         >
           Back
@@ -184,14 +183,14 @@ export default function ProfileSettingsScreen({ navigation }) {
         {/* Success/Error Messages */}
         {success && (
           <Surface style={styles.successBanner} elevation={0}>
-            <Check size={20} color={mukokoTheme.colors.success} />
+            <Icon source="check" size={20} color={mukokoTheme.colors.success} />
             <Text style={styles.successText}>{success}</Text>
           </Surface>
         )}
 
         {error && (
           <Surface style={styles.errorBanner} elevation={0}>
-            <AlertCircle size={20} color={mukokoTheme.colors.error} />
+            <Icon source="alert-circle" size={20} color={mukokoTheme.colors.error} />
             <Text style={styles.errorText}>{error}</Text>
           </Surface>
         )}
@@ -220,7 +219,7 @@ export default function ProfileSettingsScreen({ navigation }) {
               label="Display Name"
               value={displayName}
               onChangeText={setDisplayName}
-              left={<TextInput.Icon icon={() => <User size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
+              left={<TextInput.Icon icon={() => <Icon source="account" size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
               style={styles.input}
               outlineColor={mukokoTheme.colors.outline}
               activeOutlineColor={mukokoTheme.colors.primary}
@@ -238,7 +237,7 @@ export default function ProfileSettingsScreen({ navigation }) {
               multiline
               numberOfLines={4}
               maxLength={160}
-              left={<TextInput.Icon icon={() => <FileText size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
+              left={<TextInput.Icon icon={() => <Icon source="file-document" size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
               style={styles.input}
               outlineColor={mukokoTheme.colors.outline}
               activeOutlineColor={mukokoTheme.colors.primary}
@@ -255,7 +254,7 @@ export default function ProfileSettingsScreen({ navigation }) {
               onChangeText={setAvatarUrl}
               keyboardType="url"
               autoCapitalize="none"
-              left={<TextInput.Icon icon={() => <ImageIcon size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
+              left={<TextInput.Icon icon={() => <Icon source="image" size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
               style={styles.input}
               outlineColor={mukokoTheme.colors.outline}
               activeOutlineColor={mukokoTheme.colors.primary}
@@ -296,7 +295,7 @@ export default function ProfileSettingsScreen({ navigation }) {
               disabled={loading}
               style={styles.button}
               contentStyle={styles.buttonContent}
-              icon={() => <Check size={20} color={mukokoTheme.colors.onPrimary} />}
+              icon={() => <Icon source="check" size={20} color={mukokoTheme.colors.onPrimary} />}
             >
               {loading ? 'Saving changes...' : 'Save Profile'}
             </Button>
@@ -336,7 +335,7 @@ export default function ProfileSettingsScreen({ navigation }) {
               value={newUsername}
               onChangeText={setNewUsername}
               autoCapitalize="none"
-              left={<TextInput.Icon icon={() => <AtSign size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
+              left={<TextInput.Icon icon={() => <Icon source="at" size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
               style={styles.input}
               outlineColor={mukokoTheme.colors.outline}
               activeOutlineColor={mukokoTheme.colors.primary}
@@ -353,7 +352,7 @@ export default function ProfileSettingsScreen({ navigation }) {
               disabled={loading || !newUsername}
               style={styles.button}
               contentStyle={styles.buttonContent}
-              icon={() => <Check size={20} color={mukokoTheme.colors.onPrimary} />}
+              icon={() => <Icon source="check" size={20} color={mukokoTheme.colors.onPrimary} />}
             >
               {loading ? 'Updating username...' : 'Update Username'}
             </Button>

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { Text, TextInput, Button, Surface, Chip } from 'react-native-paper';
+import { Text, TextInput, Button, Surface, Chip, Icon } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mukokoTheme } from '../theme';
-import { Sparkles, User, Check, ArrowRight } from 'lucide-react-native';
 
 const AUTH_TOKEN_KEY = '@mukoko_auth_token';
 const { width } = Dimensions.get('window');
@@ -193,7 +192,7 @@ export default function OnboardingScreen({ navigation }) {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Sparkles size={32} color={mukokoTheme.colors.primary} />
+            <Icon source="sparkles" size={32} color={mukokoTheme.colors.primary} />
           </View>
           <Text variant="headlineLarge" style={styles.title}>
             Welcome to Harare <Text style={styles.titleAccent}>Metro</Text>
@@ -214,7 +213,7 @@ export default function OnboardingScreen({ navigation }) {
         {step === 1 && (
           <Surface style={styles.card} elevation={2}>
             <View style={styles.stepHeader}>
-              <User size={48} color={mukokoTheme.colors.primary} />
+              <Icon source="account" size={48} color={mukokoTheme.colors.primary} />
               <Text variant="titleLarge" style={styles.stepTitle}>
                 Choose Your Username
               </Text>
@@ -239,7 +238,7 @@ export default function OnboardingScreen({ navigation }) {
                 ) : (
                   username.length >= 3 && !usernameError && (
                     <TextInput.Icon
-                      icon={() => <Check size={20} color={mukokoTheme.colors.success} />}
+                      icon={() => <Icon source="check" size={20} color={mukokoTheme.colors.success} />}
                     />
                   )
                 )
@@ -259,7 +258,7 @@ export default function OnboardingScreen({ navigation }) {
               disabled={!username || username.length < 3 || !!usernameError || checkingUsername}
               style={styles.button}
               contentStyle={styles.buttonContent}
-              icon={() => <ArrowRight size={20} color={mukokoTheme.colors.onPrimary} />}
+              icon={() => <Icon source="arrow-right" size={20} color={mukokoTheme.colors.onPrimary} />}
             >
               {checkingUsername ? 'Checking...' : 'Continue'}
             </Button>
@@ -302,7 +301,7 @@ export default function OnboardingScreen({ navigation }) {
                     </Text>
                     {isSelected && (
                       <View style={styles.checkmark}>
-                        <Check size={16} color={mukokoTheme.colors.onPrimary} />
+                        <Icon source="check" size={16} color={mukokoTheme.colors.onPrimary} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -336,7 +335,7 @@ export default function OnboardingScreen({ navigation }) {
                 loading={loading}
                 style={[styles.button, styles.buttonHalf]}
                 contentStyle={styles.buttonContent}
-                icon={() => <ArrowRight size={20} color={mukokoTheme.colors.onPrimary} />}
+                icon={() => <Icon source="arrow-right" size={20} color={mukokoTheme.colors.onPrimary} />}
               >
                 {loading ? 'Setting up...' : 'Get Started'}
               </Button>

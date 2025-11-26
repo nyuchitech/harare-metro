@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, TextInput, Button, Surface, HelperText } from 'react-native-paper';
+import { Text, TextInput, Button, Surface, HelperText, Icon } from 'react-native-paper';
 import { mukokoTheme } from '../theme';
-import { Mail, Key } from 'lucide-react-native';
 
 export default function ForgotPasswordScreen({ navigation }) {
   const [step, setStep] = useState('request'); // 'request' or 'reset'
@@ -137,7 +136,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
-                left={<TextInput.Icon icon={() => <Mail size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
+                left={<TextInput.Icon icon={() => <Icon source="email" size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
                 style={styles.input}
                 outlineColor={mukokoTheme.colors.outline}
                 activeOutlineColor={mukokoTheme.colors.primary}
@@ -152,7 +151,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                 disabled={loading || !email}
                 style={styles.button}
                 contentStyle={styles.buttonContent}
-                icon={() => <Mail size={20} color={mukokoTheme.colors.onPrimary} />}
+                icon={() => <Icon source="email" size={20} color={mukokoTheme.colors.onPrimary} />}
               >
                 {loading ? 'Sending code...' : 'Send Reset Code'}
               </Button>
@@ -194,7 +193,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                 onChangeText={setNewPassword}
                 secureTextEntry
                 autoCapitalize="none"
-                left={<TextInput.Icon icon={() => <Key size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
+                left={<TextInput.Icon icon={() => <Icon source="key" size={20} color={mukokoTheme.colors.onSurfaceVariant} />} />}
                 style={styles.input}
                 outlineColor={mukokoTheme.colors.outline}
                 activeOutlineColor={mukokoTheme.colors.primary}
@@ -212,7 +211,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                 disabled={loading || !code || !newPassword}
                 style={styles.button}
                 contentStyle={styles.buttonContent}
-                icon={() => <Key size={20} color={mukokoTheme.colors.onPrimary} />}
+                icon={() => <Icon source="key" size={20} color={mukokoTheme.colors.onPrimary} />}
               >
                 {loading ? 'Resetting password...' : 'Reset Password'}
               </Button>

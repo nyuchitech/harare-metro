@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
-import { Text, Button, Surface, Avatar, SegmentedButtons, ActivityIndicator } from 'react-native-paper';
+import { Text, Button, Surface, Avatar, SegmentedButtons, ActivityIndicator, Icon } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mukokoTheme } from '../theme';
-import { Heart, Bookmark, Clock, Calendar, ArrowLeft } from 'lucide-react-native';
 
 const AUTH_TOKEN_KEY = '@mukoko_auth_token';
 
@@ -183,7 +182,7 @@ export default function UserProfileScreen({ navigation, route }) {
         <Button
           mode="text"
           onPress={() => navigation.goBack()}
-          icon={() => <ArrowLeft size={24} color={mukokoTheme.colors.onSurface} />}
+          icon={() => <Icon source="arrow-left" size={24} color={mukokoTheme.colors.onSurface} />}
           style={styles.backButton}
         >
           Back
@@ -246,7 +245,7 @@ export default function UserProfileScreen({ navigation, route }) {
 
           {/* Member Since */}
           <View style={styles.metaRow}>
-            <Calendar size={16} color={mukokoTheme.colors.onSurfaceVariant} />
+            <Icon source="calendar" size={16} color={mukokoTheme.colors.onSurfaceVariant} />
             <Text variant="bodySmall" style={styles.metaText}>
               Member since {formatDate(stats?.member_since || profile.created_at || Date.now())}
             </Text>
@@ -254,7 +253,7 @@ export default function UserProfileScreen({ navigation, route }) {
 
           {readingTimeHours > 0 && (
             <View style={styles.metaRow}>
-              <Clock size={16} color={mukokoTheme.colors.onSurfaceVariant} />
+              <Icon source="clock-outline" size={16} color={mukokoTheme.colors.onSurfaceVariant} />
               <Text variant="bodySmall" style={styles.metaText}>
                 {readingTimeHours} hours reading time
               </Text>
@@ -283,17 +282,17 @@ export default function UserProfileScreen({ navigation, route }) {
                 {
                   value: 'bookmarks',
                   label: 'Bookmarks',
-                  icon: () => <Bookmark size={20} color={mukokoTheme.colors.primary} />,
+                  icon: () => <Icon source="bookmark" size={20} color={mukokoTheme.colors.primary} />,
                 },
                 {
                   value: 'likes',
                   label: 'Likes',
-                  icon: () => <Heart size={20} color={mukokoTheme.colors.error} />,
+                  icon: () => <Icon source="heart" size={20} color={mukokoTheme.colors.error} />,
                 },
                 {
                   value: 'history',
                   label: 'History',
-                  icon: () => <Clock size={20} color={mukokoTheme.colors.accent} />,
+                  icon: () => <Icon source="clock-outline" size={20} color={mukokoTheme.colors.accent} />,
                 },
               ]}
               style={styles.segmentedButtons}

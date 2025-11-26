@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, TextInput, Button, Surface, Divider, HelperText } from 'react-native-paper';
+import { Text, TextInput, Button, Surface, Divider, HelperText, Icon } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mukokoTheme } from '../theme';
-import { UserPlus } from 'lucide-react-native';
 
 const AUTH_TOKEN_KEY = '@mukoko_auth_token';
 
@@ -183,7 +182,7 @@ export default function RegisterScreen({ navigation }) {
             disabled={loading || !email || !password}
             style={styles.button}
             contentStyle={styles.buttonContent}
-            icon={() => <UserPlus size={20} color={mukokoTheme.colors.onPrimary} />}
+            icon={() => <Icon source="account-plus" size={20} color={mukokoTheme.colors.onPrimary} />}
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </Button>
