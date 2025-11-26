@@ -1,4 +1,4 @@
-name: Deploy Harare Metro
+name: Deploy Mukoko News Backend
 
 on:
   push:
@@ -9,44 +9,27 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: Test Both Projects
-    
+    name: Test Backend
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
-    - name: Setup Node.js for frontend
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        
-    - name: Install frontend dependencies
-      run: npm install
 
-    - name: Test frontend build
-      run: |
-        # Clean up any conflicting wrangler configs
-        rm -rf .wrangler/deploy/ .wrangler || true
-        npm run test
-      
     - name: Setup Node.js for backend
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
         cache-dependency-path: 'backend/package-lock.json'
-        
+
     - name: Install backend dependencies
       run: |
         cd backend
         npm install
-        
+
     - name: Test backend build
       run: |
         cd backend
-        # Clean up any conflicting wrangler configs
-        rm -rf ../.wrangler/deploy/ ../.wrangler || true
         npm run test
 
   deploy-backend:
@@ -54,81 +37,44 @@ jobs:
     name: Deploy Backend
     needs: test
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
         cache-dependency-path: 'backend/package-lock.json'
-        
+
     - name: Install backend dependencies
       run: |
         cd backend
         npm install
-        
+
     - name: Deploy backend to Cloudflare
       run: |
         cd backend
-        # Clean up any conflicting wrangler configs
-        rm -rf ../.wrangler/deploy/ ../.wrangler || true
         npm run deploy
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
-  deploy-frontend:
+  test-deployment:
     runs-on: ubuntu-latest
-    name: Deploy Frontend
-    needs: [test, deploy-backend]
+    name: Test Deployment
+    needs: deploy-backend
     if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        
-    - name: Install frontend dependencies
-      run: npm install
-        
-    - name: Deploy frontend to Cloudflare
-      run: npm run deploy
-      env:
-        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
-  test-deployments:
-    runs-on: ubuntu-latest
-    name: Test Deployments
-    needs: [deploy-backend, deploy-frontend]
-    if: github.ref == 'refs/heads/main'
-    
     steps:
     - name: Test backend health
       run: |
         echo "Testing backend health..."
-        response=$(curl -s -o /dev/null -w "%{http_code}" https://admin.hararemetro.co.zw/api/health)
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://news-worker.mukoko.com/api/health)
         if [ $response -eq 200 ]; then
           echo "✅ Backend is healthy!"
         else
           echo "❌ Backend health check failed (HTTP $response)"
-          exit 1
-        fi
-        
-    - name: Test frontend
-      run: |
-        echo "Testing frontend..."
-        response=$(curl -s -o /dev/null -w "%{http_code}" https://www.hararemetro.co.zw)
-        if [ $response -eq 200 ]; then
-          echo "✅ Frontend is accessible!"
-        else
-          echo "❌ Frontend health check failed (HTTP $response)"
           exit 1
         fi
