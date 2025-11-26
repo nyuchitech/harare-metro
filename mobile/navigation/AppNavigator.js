@@ -7,12 +7,18 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { IconButton } from 'react-native-paper';
 import mukokoTheme from '../theme';
 import AppHeader from '../components/AppHeader';
+import AppFooter from '../components/AppFooter';
 import ZimbabweFlagStrip from '../components/ZimbabweFlagStrip';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
 import NewsBytesScreen from '../screens/NewsBytesScreen';
-import AuthScreen from '../screens/AuthScreen';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
+import ProfileSettingsScreen from '../screens/ProfileSettingsScreen';
+import UserProfileScreen from '../screens/UserProfileScreen';
 import ArticleDetailScreen from '../screens/ArticleDetailScreen';
 import SearchScreen from '../screens/SearchScreen';
 import DiscoverScreen from '../screens/DiscoverScreen';
@@ -83,7 +89,12 @@ function ProfileStack() {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="ProfileMain" component={AuthScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+      <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} />
     </Stack.Navigator>
   );
 }
@@ -212,7 +223,7 @@ function MainTabs() {
   );
 }
 
-// Root Navigator with Global Header
+// Root Navigator with Global Header and Footer
 export default function AppNavigator() {
   return (
     <NavigationContainer>
@@ -222,6 +233,7 @@ export default function AppNavigator() {
         <View style={styles.content}>
           <MainTabs />
         </View>
+        <AppFooter />
       </SafeAreaView>
     </NavigationContainer>
   );
