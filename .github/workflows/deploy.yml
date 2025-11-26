@@ -71,7 +71,7 @@ jobs:
     - name: Test backend health
       run: |
         echo "Testing backend health..."
-        response=$(curl -s -o /dev/null -w "%{http_code}" https://admin.hararemetro.co.zw/api/health)
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://news-worker.mukoko.com/api/health)
         if [ $response -eq 200 ]; then
           echo "✅ Backend is healthy!"
         else
