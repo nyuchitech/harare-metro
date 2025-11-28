@@ -21,8 +21,8 @@
  */
 
 export const mukokoTheme = {
-  // Roundness - vibrant mobile feel
-  roundness: 16,
+  // Roundness - clean modern feel (increased to 24px like reference app)
+  roundness: 24,
 
   // Mukoko News official brand colors (from assets.nyuchi.com)
   colors: {
@@ -46,16 +46,16 @@ export const mukokoTheme = {
     onSecondary: '#FFFFFF',
     onSecondaryContainer: '#1f1a29',
 
-    // Surface colors (from Mukoko brand guidelines)
+    // Surface colors (cleaner, lighter backgrounds like reference app)
     surface: '#FFFFFF',
-    surfaceVariant: '#f1f5ef',   // Official Mukoko surface color
-    surfaceSubtle: '#f8faf7',    // Official Mukoko subtle surface
+    surfaceVariant: '#F5F5F5',   // Light gray background like reference app
+    surfaceSubtle: '#FAFAFA',    // Even lighter for subtle backgrounds
     onSurface: '#1a1a1a',
-    onSurfaceVariant: '#4a4a4a',
+    onSurfaceVariant: '#666666',
 
-    // Borders and dividers
-    outline: '#d4e0cf',
-    outlineVariant: '#e8f0e4',
+    // Borders and dividers (more subtle)
+    outline: '#E0E0E0',
+    outlineVariant: '#F0F0F0',
 
     // Semantic colors
     error: '#EF3340',            // Zimbabwe Red (Official flag color)
@@ -73,8 +73,8 @@ export const mukokoTheme = {
     onWarning: '#000000',
     onWarningContainer: '#4d2e00',
 
-    // Background
-    background: '#f9faf9',
+    // Background (lighter, cleaner like reference app)
+    background: '#F5F5F5',       // Light gray background
     onBackground: '#1a1a1a',
 
     // Mukoko News brand colors (from assets.nyuchi.com)
@@ -114,7 +114,7 @@ export const mukokoTheme = {
     },
   },
 
-  // Elevation/Shadows
+  // Elevation/Shadows (more subtle, like reference app)
   shadows: {
     none: {
       shadowColor: 'transparent',
@@ -126,34 +126,34 @@ export const mukokoTheme = {
     small: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 2,
+      shadowOpacity: 0.04,
+      shadowRadius: 3,
       elevation: 1,
     },
     medium: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 6,
-      elevation: 4,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 2,
     },
     large: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.10,
-      shadowRadius: 15,
-      elevation: 8,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 3,
     },
   },
 
-  // Spacing system (8px base)
+  // Spacing system (8px base - increased for more generous white space)
   spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
+    xs: 6,
+    sm: 12,
+    md: 20,
+    lg: 28,
+    xl: 36,
+    xxl: 56,
   },
 
   // Animation timings

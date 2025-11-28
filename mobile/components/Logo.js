@@ -4,9 +4,9 @@ import mukokoTheme from '../theme';
 
 export default function Logo({ size = 'md', style }) {
   const sizes = {
-    sm: { fontSize: 18, padding: 4 },
-    md: { fontSize: 22, padding: 8 },
-    lg: { fontSize: 28, padding: 12 },
+    sm: { fontSize: 20, padding: 4 },
+    md: { fontSize: 24, padding: 8 },
+    lg: { fontSize: 32, padding: 12 },
   };
 
   const { fontSize, padding } = sizes[size];
@@ -14,11 +14,9 @@ export default function Logo({ size = 'md', style }) {
   return (
     <View style={[styles.container, { padding }, style]}>
       <Text style={[styles.text, { fontSize }]}>
-        <Text style={styles.mukoko}>Mukoko</Text>
-        <Text style={styles.space}> </Text>
-        <Text style={styles.news}>News</Text>
+        Mukoko News
       </Text>
-      <Text style={[styles.flag, { fontSize: fontSize }]}>🇿🇼</Text>
+      <Text style={[styles.flag, { fontSize: fontSize * 0.7 }]}>🇿🇼</Text>
     </View>
   );
 }
@@ -27,19 +25,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   text: {
     fontWeight: '700',
-    fontFamily: 'Georgia, serif',
-  },
-  mukoko: {
-    color: mukokoTheme.colors.primary,
-  },
-  space: {
-    color: 'transparent',
-  },
-  news: {
+    fontFamily: mukokoTheme.fonts.serifBold.fontFamily,
     color: mukokoTheme.colors.onSurface,
   },
   flag: {
