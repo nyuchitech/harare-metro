@@ -12,8 +12,6 @@ import mukokoTheme from '../theme';
  * - Red - Heritage, struggle, passion
  * - Black - African heritage, strength
  * - White (bottom) - Peace, unity, progress
- *
- * Plus red star indicator on white stripe
  */
 export default function ZimbabweFlagStrip({ style }) {
   return (
@@ -24,11 +22,6 @@ export default function ZimbabweFlagStrip({ style }) {
       <View style={[styles.stripe, styles.red]} />
       <View style={[styles.stripe, styles.black]} />
       <View style={[styles.stripe, styles.white]} />
-
-      {/* Red star indicator on white stripe */}
-      <View style={styles.starIndicator}>
-        <View style={styles.redStar} />
-      </View>
     </View>
   );
 }
@@ -38,7 +31,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    width: 12,
+    width: 4,
     height: '100%',
     zIndex: 1000,
     flexDirection: 'column',
@@ -61,20 +54,5 @@ const styles = StyleSheet.create({
   },
   white: {
     backgroundColor: mukokoTheme.colors.zwWhite,
-  },
-  starIndicator: {
-    position: 'absolute',
-    left: 0,
-    bottom: '10%',
-    width: 12,
-    height: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  redStar: {
-    width: 6,
-    height: 6,
-    backgroundColor: mukokoTheme.colors.zwRed,
-    transform: [{ rotate: '45deg' }],
   },
 });

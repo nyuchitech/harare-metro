@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,7 +7,6 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { IconButton } from 'react-native-paper';
 import mukokoTheme from '../theme';
 import AppHeader from '../components/AppHeader';
-import AppFooter from '../components/AppFooter';
 import ZimbabweFlagStrip from '../components/ZimbabweFlagStrip';
 
 // Screens
@@ -102,13 +101,26 @@ function ProfileStack() {
 // Main Tab Navigator - 5 Tabs (Modern Mobile Pattern)
 // Pattern: Home, Discover, Bytes (Center/Featured), Search, Profile
 function MainTabs() {
+  const [isTabletOrDesktop, setIsTabletOrDesktop] = useState(false);
+
+  useEffect(() => {
+    const updateLayout = () => {
+      const { width } = Dimensions.get('window');
+      setIsTabletOrDesktop(width >= 768);
+    };
+
+    updateLayout();
+    const subscription = Dimensions.addEventListener('change', updateLayout);
+    return () => subscription?.remove();
+  }, []);
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: mukokoTheme.colors.primary,
         tabBarInactiveTintColor: mukokoTheme.colors.onSurfaceVariant,
-        tabBarStyle: {
+        tabBarStyle: isTabletOrDesktop ? { display: 'none' } : {
           position: 'absolute',
           bottom: 20,
           left: 10,
@@ -233,7 +245,6 @@ export default function AppNavigator() {
         <View style={styles.content}>
           <MainTabs />
         </View>
-        <AppFooter />
       </SafeAreaView>
     </NavigationContainer>
   );

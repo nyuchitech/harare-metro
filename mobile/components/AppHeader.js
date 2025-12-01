@@ -91,7 +91,8 @@ export default function AppHeader() {
               size={24}
             />
             <IconButton
-              icon="bell-outline"
+              icon="white-balance-sunny"
+              onPress={() => {}}
               iconColor={mukokoTheme.colors.onSurface}
               size={24}
             />
@@ -155,12 +156,14 @@ export default function AppHeader() {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: 'transparent',
+    backgroundColor: mukokoTheme.colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 56,
-    paddingHorizontal: mukokoTheme.spacing.sm,
+    height: 64,
+    paddingHorizontal: mukokoTheme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: mukokoTheme.colors.outline,
   },
   hamburgerButton: {
     marginRight: mukokoTheme.spacing.xs,
@@ -196,6 +199,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: mukokoTheme.spacing.sm,
     paddingHorizontal: mukokoTheme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: mukokoTheme.colors.outline,
   },
   menuIcon: {
     margin: 0,

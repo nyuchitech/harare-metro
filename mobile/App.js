@@ -1,21 +1,18 @@
 import React from 'react';
-import { useColorScheme } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { paperTheme, paperThemeDark } from './theme';
+import { paperTheme } from './theme';
 import AppNavigator from './navigation/AppNavigator';
 import { AuthProvider } from './contexts/AuthContext';
 
 export default function App() {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? paperThemeDark : paperTheme;
-
+  // Always use light theme for clean aesthetic
   return (
     <SafeAreaProvider>
-      <PaperProvider theme={theme}>
+      <PaperProvider theme={paperTheme}>
         <AuthProvider>
-          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+          <StatusBar style="dark" />
           <AppNavigator />
         </AuthProvider>
       </PaperProvider>

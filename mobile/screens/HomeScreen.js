@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
+  FlatList,
   StyleSheet,
   RefreshControl,
   Image,
   TouchableOpacity,
+  Dimensions,
 } from 'react-native';
 import {
   Appbar,
@@ -20,15 +22,63 @@ import {
 import { articles, categories as categoriesAPI } from '../api/client';
 import mukokoTheme from '../theme';
 
+// Helper function to format date safely
+const formatDate = (dateString) => {
+  try {
+    const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Recently';
+    }
+
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) {
+      return diffMins <= 1 ? 'Just now' : `${diffMins}m ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays}d ago`;
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  } catch (error) {
+    return 'Recently';
+  }
+};
+
 export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [articlesList, setArticlesList] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [numColumns, setNumColumns] = useState(1);
 
   useEffect(() => {
     loadInitialData();
+  }, []);
+
+  // Update number of columns based on screen width
+  useEffect(() => {
+    const updateLayout = () => {
+      const { width } = Dimensions.get('window');
+      if (width < 768) {
+        setNumColumns(1); // Mobile: 1 column
+      } else if (width < 1024) {
+        setNumColumns(2); // Tablet: 2 columns
+      } else {
+        setNumColumns(3); // Desktop: 3 columns
+      }
+    };
+
+    updateLayout();
+    const subscription = Dimensions.addEventListener('change', updateLayout);
+    return () => subscription?.remove();
   }, []);
 
   const loadInitialData = async () => {
@@ -86,31 +136,25 @@ export default function HomeScreen({ navigation }) {
     });
   };
 
-  const renderArticleCard = (article) => (
+  const renderArticleCard = ({ item: article }) => (
     <TouchableOpacity
-      key={article.id}
-      activeOpacity={0.7}
+      activeOpacity={0.85}
       onPress={() => handleArticlePress(article)}
+      style={styles.articleCardContainer}
     >
       <Card style={styles.articleCard}>
         {article.imageUrl && (
-          <Card.Cover source={{ uri: article.imageUrl }} />
+          <Card.Cover
+            source={{ uri: article.imageUrl }}
+            style={styles.articleImage}
+          />
         )}
         <Card.Content style={styles.articleContent}>
-          {article.category && (
-            <Chip
-              mode="flat"
-              style={styles.categoryChip}
-              textStyle={styles.categoryChipText}
-            >
-              {article.category}
-            </Chip>
-          )}
-          <Text variant="headlineSmall" style={styles.articleTitle}>
+          <Text variant="headlineSmall" style={styles.articleTitle} numberOfLines={3}>
             {article.title}
           </Text>
           {article.description && (
-            <Text variant="bodyMedium" style={styles.articleDescription}>
+            <Text variant="bodyMedium" style={styles.articleDescription} numberOfLines={2}>
               {article.description}
             </Text>
           )}
@@ -118,15 +162,12 @@ export default function HomeScreen({ navigation }) {
             <Text variant="bodySmall" style={styles.articleSource}>
               {article.source}
             </Text>
+            <Text variant="bodySmall" style={styles.articleDot}>•</Text>
             <Text variant="bodySmall" style={styles.articleDate}>
-              {new Date(article.pubDate).toLocaleDateString()}
+              {article.pubDate ? formatDate(article.pubDate) : 'Recently'}
             </Text>
           </View>
         </Card.Content>
-        <Card.Actions>
-          <IconButton icon="bookmark-outline" size={20} />
-          <IconButton icon="share-variant-outline" size={20} />
-        </Card.Actions>
       </Card>
     </TouchableOpacity>
   );
@@ -167,8 +208,13 @@ export default function HomeScreen({ navigation }) {
       </ScrollView>
 
       {/* Articles Feed */}
-      <ScrollView
-        style={styles.articlesContainer}
+      <FlatList
+        key={numColumns} // Force re-render when columns change
+        data={articlesList}
+        renderItem={renderArticleCard}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={numColumns}
+        columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : null}
         contentContainerStyle={styles.articlesContent}
         refreshControl={
           <RefreshControl
@@ -177,8 +223,7 @@ export default function HomeScreen({ navigation }) {
             colors={[mukokoTheme.colors.primary]}
           />
         }
-      >
-        {articlesList.length === 0 ? (
+        ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text variant="titleLarge" style={styles.emptyTitle}>
               No articles found
@@ -194,10 +239,8 @@ export default function HomeScreen({ navigation }) {
               Refresh Feed
             </Button>
           </View>
-        ) : (
-          articlesList.map(renderArticleCard)
-        )}
-      </ScrollView>
+        }
+      />
     </View>
   );
 }
@@ -208,69 +251,83 @@ const styles = StyleSheet.create({
     backgroundColor: mukokoTheme.colors.background,
   },
   categoriesContainer: {
-    backgroundColor: mukokoTheme.colors.background,
-    paddingVertical: mukokoTheme.spacing.xs,
+    backgroundColor: mukokoTheme.colors.surface,
+    paddingVertical: 10,
+    zIndex: 10,
+    ...mukokoTheme.shadows.small,
   },
   categoriesContent: {
-    paddingHorizontal: mukokoTheme.spacing.sm,
-    gap: mukokoTheme.spacing.xs,
+    paddingHorizontal: mukokoTheme.spacing.md,
+    gap: 8,
   },
   categoryFilter: {
-    marginRight: mukokoTheme.spacing.xs,
-    borderRadius: 20,
-    height: 36,
+    marginRight: 6,
+    borderRadius: 16,
+    height: 32,
   },
   categoryFilterText: {
     fontSize: 12,
     fontWeight: '500',
   },
-  articlesContainer: {
-    flex: 1,
-  },
   articlesContent: {
     padding: mukokoTheme.spacing.md,
-    paddingTop: 0,
-    paddingBottom: 100, // Extra space for floating tab bar
-    gap: mukokoTheme.spacing.md,
+    paddingTop: mukokoTheme.spacing.md,
+    paddingBottom: 100,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    marginBottom: mukokoTheme.spacing.md,
+  },
+  articleCardContainer: {
+    flex: 1,
+    marginBottom: mukokoTheme.spacing.md,
+    marginHorizontal: 4,
   },
   articleCard: {
-    marginBottom: mukokoTheme.spacing.md,
     borderRadius: mukokoTheme.roundness,
     backgroundColor: mukokoTheme.colors.surface,
-    ...mukokoTheme.shadows.medium,
+    overflow: 'hidden',
+    ...mukokoTheme.shadows.small,
+  },
+  articleImage: {
+    borderTopLeftRadius: mukokoTheme.roundness,
+    borderTopRightRadius: mukokoTheme.roundness,
   },
   articleContent: {
     paddingVertical: mukokoTheme.spacing.md,
-  },
-  categoryChip: {
-    alignSelf: 'flex-start',
-    marginBottom: mukokoTheme.spacing.sm,
-    backgroundColor: mukokoTheme.colors.primaryContainer,
-  },
-  categoryChipText: {
-    fontSize: 11,
-    color: mukokoTheme.colors.onPrimaryContainer,
+    paddingHorizontal: mukokoTheme.spacing.md,
   },
   articleTitle: {
     fontFamily: mukokoTheme.fonts.serifBold.fontFamily,
+    fontSize: 18,
+    lineHeight: 24,
     marginBottom: mukokoTheme.spacing.sm,
     color: mukokoTheme.colors.onSurface,
   },
   articleDescription: {
+    fontSize: 14,
+    lineHeight: 20,
     color: mukokoTheme.colors.onSurfaceVariant,
     marginBottom: mukokoTheme.spacing.sm,
   },
   articleMeta: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: mukokoTheme.spacing.sm,
+    alignItems: 'center',
+    marginTop: mukokoTheme.spacing.xs,
   },
   articleSource: {
     color: mukokoTheme.colors.primary,
     fontWeight: '600',
+    fontSize: 12,
+  },
+  articleDot: {
+    color: mukokoTheme.colors.onSurfaceVariant,
+    marginHorizontal: 6,
+    fontSize: 12,
   },
   articleDate: {
     color: mukokoTheme.colors.onSurfaceVariant,
+    fontSize: 12,
   },
   loadingContainer: {
     flex: 1,
